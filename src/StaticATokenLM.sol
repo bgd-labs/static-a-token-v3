@@ -11,10 +11,10 @@ import {VersionedInitializable} from 'aave-v3-core/contracts/protocol/libraries/
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
 
-import {SafeERC20} from 'openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import {IAToken} from './IAToken.sol';
 import {ERC20} from './ERC20.sol';
+import {SafeERC20} from './SafeERC20.sol'; //TODO: stop this mess with imports
 import {IInitializableStaticATokenLM} from './IInitializableStaticATokenLM.sol';
 import {StaticATokenErrors} from './StaticATokenErrors.sol';
 import {RayMathNoRounding} from './RayMathNoRounding.sol';
