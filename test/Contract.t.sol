@@ -128,6 +128,7 @@ contract ContractTest is DSTest {
         staticATokenLM.withdraw(user1, type(uint256).max, true);
         staticATokenLM.claimRewardsToSelf();
         assertEq(IERC20(STK_AAVE).balanceOf(user1), claimambleUser1);
+        assertGt(claimambleUser1, 0);
 
         assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
         assertEq(staticATokenLM.getClaimableRewards(user), 0);
