@@ -121,28 +121,6 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   function dynamicBalanceOf(address account) external view returns (uint256);
 
   /**
-   * @notice Converts a static amount (scaled balance on aToken) to the aToken/underlying value,
-   * using the current liquidity index on Aave
-   * @param amount The amount to convert from
-   * @return uint256 The dynamic amount
-   **/
-  function staticToDynamicAmount(uint256 amount)
-    external
-    view
-    returns (uint256);
-
-  /**
-   * @notice Converts an aToken or underlying amount to the what it is denominated on the aToken as
-   * scaled balance, function of the principal and the liquidity index
-   * @param amount The amount to convert from
-   * @return uint256 The static (scaled) amount
-   **/
-  function dynamicToStaticAmount(uint256 amount)
-    external
-    view
-    returns (uint256);
-
-  /**
    * @notice Returns the Aave liquidity index of the underlying aToken, denominated rate here
    * as it can be considered as an ever-increasing exchange rate
    * @return The liquidity index
@@ -220,6 +198,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     view
     returns (IAaveIncentivesController);
 
+  // from https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/interfaces/IERC4626.sol
   /**
    * @dev Returns the address of the underlying token used for the Vault for accounting, depositing, and withdrawing.
    *
@@ -236,4 +215,57 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * - MUST NOT revert.
    */
   function totalAssets() external view returns (uint256 totalManagedAssets);
+
+  /**
+   * @notice Converts an aToken or underlying amount to the what it is denominated on the aToken as
+   * scaled balance, function of the principal and the liquidity index
+   * @dev Returns the amount of shares that the Vault would exchange for the amount of assets provided, in an ideal
+   * scenario where all the conditions are met.
+   *
+   * - MUST NOT be inclusive of any fees that are charged against assets in the Vault.
+   * - MUST NOT show any variations depending on the caller.
+   * - MUST NOT reflect slippage or other on-chain conditions, when performing the actual exchange.
+   * - MUST NOT revert.
+   *
+   * NOTE: This calculation MAY NOT reflect the “per-user” price-per-share, and instead should reflect the
+   * “average-user’s” price-per-share, meaning what the average user should expect to see when exchanging to and
+   * from.
+   */
+  function convertToShares(uint256 assets)
+    external
+    view
+    returns (uint256 shares);
+
+  /**
+   * @notice Converts a static amount (scaled balance on aToken) to the aToken/underlying value,
+   * using the current liquidity index on Aave
+   * @dev Returns the amount of assets that the Vault would exchange for the amount of shares provided, in an ideal
+   * scenario where all the conditions are met.
+   *
+   * - MUST NOT be inclusive of any fees that are charged against assets in the Vault.
+   * - MUST NOT show any variations depending on the caller.
+   * - MUST NOT reflect slippage or other on-chain conditions, when performing the actual exchange.
+   * - MUST NOT revert.
+   *
+   * NOTE: This calculation MAY NOT reflect the “per-user” price-per-share, and instead should reflect the
+   * “average-user’s” price-per-share, meaning what the average user should expect to see when exchanging to and
+   * from.
+   */
+  function convertToAssets(uint256 shares)
+    external
+    view
+    returns (uint256 assets);
+
+  /**
+   * @dev Returns the maximum amount of the underlying asset that can be deposited into the Vault for the receiver,
+   * through a deposit call.
+   *
+   * - MUST return a limited value if receiver is subject to some deposit limit.
+   * - MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of assets that may be deposited.
+   * - MUST NOT revert.
+   */
+  function maxDeposit(address receiver)
+    external
+    view
+    returns (uint256 maxAssets);
 }

@@ -228,26 +228,6 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function staticToDynamicAmount(uint256 amount)
-    external
-    view
-    override
-    returns (uint256)
-  {
-    return _staticToDynamicAmount(amount, rate());
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function dynamicToStaticAmount(uint256 amount)
-    external
-    view
-    override
-    returns (uint256)
-  {
-    return _dynamicToStaticAmount(amount, rate());
-  }
-
-  ///@inheritdoc IStaticATokenLM
   function rate() public view override returns (uint256) {
     return LENDING_POOL.getReserveNormalizedIncome(address(ATOKEN_UNDERLYING));
   }
@@ -593,11 +573,38 @@ contract StaticATokenLM is
   }
 
   // 4626 compatibility
+  ///@inheritdoc IStaticATokenLM
   function asset() external view override returns (address) {
     return address(ATOKEN);
   }
 
+  ///@inheritdoc IStaticATokenLM
   function totalAssets() external view override returns (uint256) {
     return ATOKEN.balanceOf(address(this));
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function convertToShares(uint256 amount)
+    external
+    view
+    override
+    returns (uint256)
+  {
+    return _dynamicToStaticAmount(amount, rate());
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function convertToAssets(uint256 amount)
+    external
+    view
+    override
+    returns (uint256)
+  {
+    return _staticToDynamicAmount(amount, rate());
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function maxDeposit(address) public view virtual override returns (uint256) {
+    return type(uint256).max;
   }
 }
