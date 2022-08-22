@@ -586,4 +586,8 @@ contract StaticATokenLM is
   function asset() external view override returns (address) {
     return address(ATOKEN);
   }
+
+  function totalAssets() external view override returns (uint256) {
+    return ATOKEN.balanceOf(address(this));
+  }
 }
