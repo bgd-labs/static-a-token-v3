@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.10;
 
-import {IERC20} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20.sol';
-import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
-import {IAaveIncentivesController} from 'aave-v3-core/contracts/interfaces/IAaveIncentivesController.sol';
-import {IInitializableStaticATokenLM} from './IInitializableStaticATokenLM.sol';
+import { IERC20 } from "aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
+import { IPool } from "aave-v3-core/contracts/interfaces/IPool.sol";
+import { IAaveIncentivesController } from "aave-v3-core/contracts/interfaces/IAaveIncentivesController.sol";
+import { IInitializableStaticATokenLM } from "./IInitializableStaticATokenLM.sol";
 
 interface IStaticATokenLM is IInitializableStaticATokenLM {
   struct SignatureParams {

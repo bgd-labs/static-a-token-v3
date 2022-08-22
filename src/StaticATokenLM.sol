@@ -279,7 +279,12 @@ contract StaticATokenLM is
 
     if (fromUnderlying) {
       ATOKEN_UNDERLYING.safeTransferFrom(depositor, address(this), amount);
-      LENDING_POOL.deposit(address(ATOKEN_UNDERLYING), amount, address(this), referralCode);
+      LENDING_POOL.deposit(
+        address(ATOKEN_UNDERLYING),
+        amount,
+        address(this),
+        referralCode
+      );
     } else {
       ATOKEN.safeTransferFrom(depositor, address(this), amount);
     }
@@ -325,7 +330,11 @@ contract StaticATokenLM is
     _burn(owner, amountToBurn);
 
     if (toUnderlying) {
-      LENDING_POOL.withdraw(address(ATOKEN_UNDERLYING), amountToWithdraw, recipient);
+      LENDING_POOL.withdraw(
+        address(ATOKEN_UNDERLYING),
+        amountToWithdraw,
+        recipient
+      );
     } else {
       ATOKEN.safeTransfer(recipient, amountToWithdraw);
     }
@@ -583,6 +592,7 @@ contract StaticATokenLM is
     return address(ATOKEN_UNDERLYING);
   }
 
+  // 4626 compatibility
   function asset() external view override returns (address) {
     return address(ATOKEN);
   }
