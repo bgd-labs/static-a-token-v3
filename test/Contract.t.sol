@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-import "ds-test/test.sol";
-import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
+import 'forge-std/Test.sol';
 import "../src/StaticATokenLM.sol";
 import {WETH9} from 'aave-v3-core/contracts/dependencies/weth/WETH9.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 
 
-contract ContractTest is DSTest {
-    using stdStorage for StdStorage;
-    Vm private vm = Vm(HEVM_ADDRESS);
-
+contract ContractTest is Test {
     address public user;
     address public user1;
     address constant LENDING_POOL = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
@@ -24,6 +19,7 @@ contract ContractTest is DSTest {
     WETH9 weth;
 
     function setUp() public {
+        vm.createSelectFork(vm.rpcUrl('mainnet'), 14590438);
         user = address(vm.addr(1));
         user1 = address(vm.addr(2));
         weth = WETH9(WETH);
