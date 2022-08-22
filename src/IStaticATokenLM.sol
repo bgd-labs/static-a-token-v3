@@ -209,7 +209,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   function ATOKEN() external view returns (IERC20);
 
-  function ASSET() external view returns (IERC20);
+  function ATOKEN_UNDERLYING() external view returns (IERC20);
 
   function REWARD_TOKEN() external view returns (IERC20);
 
@@ -219,4 +219,12 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     external
     view
     returns (IAaveIncentivesController);
+
+  /**
+   * @dev Returns the address of the underlying token used for the Vault for accounting, depositing, and withdrawing.
+   *
+   * - MUST be an ERC-20 token contract.
+   * - MUST NOT revert.
+   */
+  function asset() external view returns (address assetTokenAddress);
 }

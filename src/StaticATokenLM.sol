@@ -54,7 +54,7 @@ contract StaticATokenLM is
   IPool public override LENDING_POOL;
   IAaveIncentivesController public override INCENTIVES_CONTROLLER;
   IERC20 public override ATOKEN;
-  IERC20 public override ASSET;
+  IERC20 public override ATOKEN_UNDERLYING;
   IERC20 public override REWARD_TOKEN;
 
   mapping(address => UserRewardsData) private _userRewardsData;
@@ -78,8 +78,8 @@ contract StaticATokenLM is
     symbol = staticATokenSymbol;
     decimals = IERC20Detailed(aToken).decimals(); // maybe make sense to add setter as was before
 
-    ASSET = IERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS());
-    ASSET.safeApprove(address(pool), type(uint256).max);
+    ATOKEN_UNDERLYING = IERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS());
+    ATOKEN_UNDERLYING.safeApprove(address(pool), type(uint256).max);
 
     try IAToken(aToken).getIncentivesController() returns (
       IAaveIncentivesController incentivesController
@@ -249,7 +249,7 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function rate() public view override returns (uint256) {
-    return LENDING_POOL.getReserveNormalizedIncome(address(ASSET));
+    return LENDING_POOL.getReserveNormalizedIncome(address(ATOKEN_UNDERLYING));
   }
 
   function _dynamicToStaticAmount(uint256 amount, uint256 rate)
@@ -278,8 +278,8 @@ contract StaticATokenLM is
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
 
     if (fromUnderlying) {
-      ASSET.safeTransferFrom(depositor, address(this), amount);
-      LENDING_POOL.deposit(address(ASSET), amount, address(this), referralCode);
+      ATOKEN_UNDERLYING.safeTransferFrom(depositor, address(this), amount);
+      LENDING_POOL.deposit(address(ATOKEN_UNDERLYING), amount, address(this), referralCode);
     } else {
       ATOKEN.safeTransferFrom(depositor, address(this), amount);
     }
@@ -325,7 +325,7 @@ contract StaticATokenLM is
     _burn(owner, amountToBurn);
 
     if (toUnderlying) {
-      LENDING_POOL.withdraw(address(ASSET), amountToWithdraw, recipient);
+      LENDING_POOL.withdraw(address(ATOKEN_UNDERLYING), amountToWithdraw, recipient);
     } else {
       ATOKEN.safeTransfer(recipient, amountToWithdraw);
     }
@@ -580,6 +580,10 @@ contract StaticATokenLM is
   }
 
   function UNDERLYING_ASSET_ADDRESS() external view override returns (address) {
-    return address(ASSET);
+    return address(ATOKEN_UNDERLYING);
+  }
+
+  function asset() external view override returns (address) {
+    return address(ATOKEN);
   }
 }
