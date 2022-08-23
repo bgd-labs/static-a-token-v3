@@ -635,6 +635,18 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
+  function deposit(uint256 assets, address receiver)
+    public
+    virtual
+    override
+    returns (uint256)
+  {
+    require(assets <= maxDeposit(receiver), "ERC4626: deposit more than max");
+
+    return _deposit(msg.sender, receiver, assets, 0, false);
+  }
+
+  ///@inheritdoc IStaticATokenLM
   function withdraw(
     uint256 assets,
     address receiver,
