@@ -607,4 +607,9 @@ contract StaticATokenLM is
   function maxDeposit(address) public view virtual override returns (uint256) {
     return type(uint256).max;
   }
+
+  ///@inheritdoc IStaticATokenLM
+  function maxMint(address) public view virtual override returns (uint256) {
+    return type(uint256).max;
+  }
 }

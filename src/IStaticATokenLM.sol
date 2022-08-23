@@ -268,4 +268,16 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     external
     view
     returns (uint256 maxAssets);
+
+  /**
+   * @dev Returns the maximum amount of the Vault shares that can be minted for the receiver, through a mint call.
+   * - MUST return a limited value if receiver is subject to some mint limit.
+   * - MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of shares that may be minted.
+   * - MUST NOT revert.
+   */
+  function maxMint(address receiver) external view returns (uint256 maxShares);
 }
+
+// must check
+// previewDeposit / previewMint
+// does it make sense to provide deposit
