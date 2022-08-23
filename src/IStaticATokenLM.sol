@@ -118,7 +118,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param account The address of the user
    * @return uint256 The aToken balance
    **/
-  function dynamicBalanceOf(address account) external view returns (uint256);
+  function previewRedeem(address account) external view returns (uint256);
 
   /**
    * @notice Returns the Aave liquidity index of the underlying aToken, denominated rate here
@@ -295,6 +295,24 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * - MUST NOT revert.
    */
   function maxRedeem(address owner) external view returns (uint256 maxShares);
+
+  /**
+   * @dev Burns exactly shares from owner and sends assets of underlying tokens to receiver.
+   *
+   * - MUST emit the Withdraw event.
+   * - MAY support an additional flow in which the underlying tokens are owned by the Vault contract before the
+   *   redeem execution, and are accounted for during redeem.
+   * - MUST revert if all of shares cannot be redeemed (due to withdrawal limit being reached, slippage, the owner
+   *   not having enough shares, etc).
+   *
+   * NOTE: some implementations will require pre-requesting to the Vault before a withdrawal may be performed.
+   * Those methods should be performed separately.
+   */
+  function redeem(
+    uint256 shares,
+    address receiver,
+    address owner
+  ) external returns (uint256 assets);
 }
 
 // must check

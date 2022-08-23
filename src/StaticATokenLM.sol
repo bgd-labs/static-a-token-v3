@@ -218,13 +218,13 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function dynamicBalanceOf(address account)
+  function previewRedeem(address account)
     external
     view
     override
     returns (uint256)
   {
-    return _staticToDynamicAmount(balanceOf[account], rate());
+    return _convertToAssets(balanceOf[account], rate());
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -232,7 +232,7 @@ contract StaticATokenLM is
     return LENDING_POOL.getReserveNormalizedIncome(address(ATOKEN_UNDERLYING));
   }
 
-  function _dynamicToStaticAmount(uint256 amount, uint256 rate)
+  function _convertToShares(uint256 amount, uint256 rate)
     internal
     pure
     returns (uint256)
@@ -240,12 +240,12 @@ contract StaticATokenLM is
     return amount.rayDiv(rate);
   }
 
-  function _staticToDynamicAmount(uint256 amount, uint256 rate)
+  function _convertToAssets(uint256 shares, uint256 rate)
     internal
     pure
     returns (uint256)
   {
-    return amount.rayMul(rate);
+    return shares.rayMul(rate);
   }
 
   function _deposit(
@@ -268,7 +268,7 @@ contract StaticATokenLM is
     } else {
       ATOKEN.safeTransferFrom(depositor, address(this), amount);
     }
-    uint256 amountToMint = _dynamicToStaticAmount(amount, rate());
+    uint256 amountToMint = _convertToShares(amount, rate());
     _mint(recipient, amountToMint);
 
     return amountToMint;
@@ -295,16 +295,13 @@ contract StaticATokenLM is
     uint256 currentRate = rate();
     if (staticAmount > 0) {
       amountToBurn = (staticAmount > userBalance) ? userBalance : staticAmount;
-      amountToWithdraw = _staticToDynamicAmount(amountToBurn, currentRate);
+      amountToWithdraw = _convertToAssets(amountToBurn, currentRate);
     } else {
-      uint256 dynamicUserBalance = _staticToDynamicAmount(
-        userBalance,
-        currentRate
-      );
+      uint256 dynamicUserBalance = _convertToAssets(userBalance, currentRate);
       amountToWithdraw = (dynamicAmount > dynamicUserBalance)
         ? dynamicUserBalance
         : dynamicAmount;
-      amountToBurn = _dynamicToStaticAmount(amountToWithdraw, currentRate);
+      amountToBurn = _convertToShares(amountToWithdraw, currentRate);
     }
 
     _burn(owner, amountToBurn);
@@ -590,7 +587,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _dynamicToStaticAmount(amount, rate());
+    return _convertToShares(amount, rate());
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -600,7 +597,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _staticToDynamicAmount(amount, rate());
+    return _convertToAssets(amount, rate());
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -623,7 +620,7 @@ contract StaticATokenLM is
   {
     uint256 userBalance = balanceOf[owner];
     uint256 currentRate = rate();
-    return _staticToDynamicAmount(userBalance, currentRate);
+    return _convertToAssets(userBalance, currentRate);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -645,9 +642,21 @@ contract StaticATokenLM is
   ) public virtual override returns (uint256) {
     require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
 
-    uint256 shares = previewWithdraw(assets);
-    _withdraw(_msgSender(), receiver, owner, assets, shares);
+    (uint256 shares, ) = _withdraw(msg.sender, receiver, 0, assets, false);
 
     return shares;
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function redeem(
+    uint256 shares,
+    address receiver,
+    address owner
+  ) public virtual override returns (uint256) {
+    require(shares <= maxRedeem(owner), "ERC4626: redeem more than max");
+
+    (, uint256 assets) = _withdraw(msg.sender, receiver, shares, 0, false);
+
+    return assets;
   }
 }
