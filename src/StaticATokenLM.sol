@@ -612,4 +612,42 @@ contract StaticATokenLM is
   function maxMint(address) public view virtual override returns (uint256) {
     return type(uint256).max;
   }
+
+  ///@inheritdoc IStaticATokenLM
+  function maxWithdraw(address owner)
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    uint256 userBalance = balanceOf[owner];
+    uint256 currentRate = rate();
+    return _staticToDynamicAmount(userBalance, currentRate);
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function maxRedeem(address owner)
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    return balanceOf[owner];
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function withdraw(
+    uint256 assets,
+    address receiver,
+    address owner
+  ) public virtual override returns (uint256) {
+    require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
+
+    uint256 shares = previewWithdraw(assets);
+    _withdraw(_msgSender(), receiver, owner, assets, shares);
+
+    return shares;
+  }
 }

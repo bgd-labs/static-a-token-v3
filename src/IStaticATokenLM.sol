@@ -276,6 +276,25 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * - MUST NOT revert.
    */
   function maxMint(address receiver) external view returns (uint256 maxShares);
+
+  /**
+   * @dev Returns the maximum amount of the underlying asset that can be withdrawn from the owner balance in the
+   * Vault, through a withdraw call.
+   *
+   * - MUST return a limited value if owner is subject to some withdrawal limit or timelock.
+   * - MUST NOT revert.
+   */
+  function maxWithdraw(address owner) external view returns (uint256 maxAssets);
+
+  /**
+   * @dev Returns the maximum amount of Vault shares that can be redeemed from the owner balance in the Vault,
+   * through a redeem call.
+   *
+   * - MUST return a limited value if owner is subject to some withdrawal limit or timelock.
+   * - MUST return balanceOf(owner) if owner is not subject to any withdrawal limit or timelock.
+   * - MUST NOT revert.
+   */
+  function maxRedeem(address owner) external view returns (uint256 maxShares);
 }
 
 // must check
