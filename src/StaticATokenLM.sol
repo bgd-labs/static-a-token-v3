@@ -228,6 +228,28 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
+  function previewWithdraw(uint256 assets)
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    return _convertToShares(assets, rate());
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function previewDeposit(uint256 assets)
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    return _convertToShares(assets, rate());
+  }
+
+  ///@inheritdoc IStaticATokenLM
   function rate() public view override returns (uint256) {
     return LENDING_POOL.getReserveNormalizedIncome(address(ATOKEN_UNDERLYING));
   }
