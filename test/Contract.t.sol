@@ -64,7 +64,7 @@ contract ContractTest is Test {
 
     weth.approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.deposit(user, amountToDeposit, 0, true);
-    assertEq(staticATokenLM.dynamicBalanceOf(user), amountToDeposit);
+    assertEq(staticATokenLM.previewRedeem(user), amountToDeposit);
 
     _skipBlocks(60);
     assertEq(IERC20(STK_AAVE).balanceOf(address(staticATokenLM)), 0);
@@ -79,7 +79,7 @@ contract ContractTest is Test {
 
     weth.approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.deposit(user, amountToDeposit, 0, true);
-    assertEq(staticATokenLM.dynamicBalanceOf(user), amountToDeposit);
+    assertEq(staticATokenLM.previewRedeem(user), amountToDeposit);
 
     _skipBlocks(60);
 
@@ -95,7 +95,7 @@ contract ContractTest is Test {
 
     weth.approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.deposit(user, amountToDeposit, 0, true);
-    assertEq(staticATokenLM.dynamicBalanceOf(user), amountToDeposit);
+    assertEq(staticATokenLM.previewRedeem(user), amountToDeposit);
 
     _skipBlocks(60);
 
@@ -112,7 +112,7 @@ contract ContractTest is Test {
 
     weth.approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.deposit(user, amountToDeposit, 0, true);
-    assertEq(staticATokenLM.dynamicBalanceOf(user), amountToDeposit);
+    assertEq(staticATokenLM.previewRedeem(user), amountToDeposit);
 
     _skipBlocks(60);
 
@@ -135,7 +135,7 @@ contract ContractTest is Test {
     assertEq(IERC20(aWETH).balanceOf(user), amountToDeposit);
     IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.deposit(user, amountToDeposit, 0, false);
-    assertEq(staticATokenLM.dynamicBalanceOf(user), amountToDeposit);
+    assertEq(staticATokenLM.previewRedeem(user), amountToDeposit);
     // assertEq(staticATokenLM.balanceOf(user), amountToDeposit); // it's not
 
     // forward time
@@ -174,7 +174,7 @@ contract ContractTest is Test {
     // deposit weth
     weth.approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.deposit(user, amountToDeposit, 0, true);
-    assertEq(staticATokenLM.dynamicBalanceOf(user), amountToDeposit);
+    assertEq(staticATokenLM.previewRedeem(user), amountToDeposit);
     // assertEq(staticATokenLM.balanceOf(user), amountToDeposit); // it's not
 
     // forward time
