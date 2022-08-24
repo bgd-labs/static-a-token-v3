@@ -147,11 +147,8 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    *
    * NOTE: any unfavorable discrepancy between convertToAssets and previewRedeem SHOULD be considered slippage in
    * share price or some other type of condition, meaning the depositor will lose assets by redeeming.
-   * @notice Utility method to get the current aToken balance of an user, from his staticAToken balance
-   * @param account The address of the user
-   * @return uint256 The aToken balance
    **/
-  function previewRedeem(address account) external view returns (uint256);
+  function previewRedeem(uint256 shares) external view returns (uint256 assets);
 
   /**
    * @dev Allows an on-chain or off-chain user to simulate the effects of their withdrawal at the current block,

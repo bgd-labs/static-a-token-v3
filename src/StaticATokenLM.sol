@@ -218,13 +218,13 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function previewRedeem(address account)
+  function previewRedeem(uint256 shares)
     external
     view
     override
     returns (uint256)
   {
-    return _convertToAssets(balanceOf[account], rate());
+    return _convertToAssets(shares, rate());
   }
 
   ///@inheritdoc IStaticATokenLM
