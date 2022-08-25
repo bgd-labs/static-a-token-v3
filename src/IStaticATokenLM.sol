@@ -214,6 +214,23 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     returns (uint256 shares);
 
   /**
+   * @dev Allows an on-chain or off-chain user to simulate the effects of their mint at the current block, given
+   * current on-chain conditions.
+   *
+   * - MUST return as close to and no fewer than the exact amount of assets that would be deposited in a mint call
+   *   in the same transaction. I.e. mint should return the same or fewer assets as previewMint if called in the
+   *   same transaction.
+   * - MUST NOT account for mint limits like those returned from maxMint and should always act as though the mint
+   *   would be accepted, regardless if the user has enough tokens approved, etc.
+   * - MUST be inclusive of deposit fees. Integrators should be aware of the existence of deposit fees.
+   * - MUST NOT revert.
+   *
+   * NOTE: any unfavorable discrepancy between convertToAssets and previewMint SHOULD be considered slippage in
+   * share price or some other type of condition, meaning the depositor will lose assets by minting.
+   */
+  function previewMint(uint256 shares) external view returns (uint256 assets);
+
+  /**
    * @dev Allows an on-chain or off-chain user to simulate the effects of their redeemption at the current block,
    * given current on-chain conditions.
    *
@@ -401,5 +418,5 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 }
 
 // must check
-// previewDeposit / previewMint
+// previewMint
 // does it make sense to provide deposit

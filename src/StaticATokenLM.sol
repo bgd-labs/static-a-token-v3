@@ -228,6 +228,17 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
+  function previewMint(uint256 assets)
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    return _convertToAssets(assets, rate());
+  }
+
+  ///@inheritdoc IStaticATokenLM
   function previewWithdraw(uint256 assets)
     public
     view
