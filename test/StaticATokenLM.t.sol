@@ -155,8 +155,8 @@ contract StaticATokenLMTest is Test {
     // forward time
     _skipBlocks(60);
 
-    // withdraw
-    staticATokenLM.withdraw(user, type(uint256).max, true);
+    // redeem
+    staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
     uint256 claimable1 = staticATokenLM.getClaimableRewards(user);
     assertEq(staticATokenLM.getTotalClaimableRewards(), claimable1);
     assertGt(claimable1, 0);
@@ -167,7 +167,7 @@ contract StaticATokenLMTest is Test {
     assertEq(staticATokenLM.balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
     assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
-    assertGt(weth.balanceOf(user), 5 ether);
+    assertGt(AToken(aWETH).balanceOf(user), 5 ether);
   }
 
   function testDepositWETHClaimWithdrawClaim() public {
@@ -194,8 +194,8 @@ contract StaticATokenLMTest is Test {
     // forward time
     _skipBlocks(60);
 
-    // withdraw
-    staticATokenLM.withdraw(user, type(uint256).max, true);
+    // redeem
+    staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
     uint256 claimable1 = staticATokenLM.getClaimableRewards(user);
     assertEq(staticATokenLM.getTotalClaimableRewards(), claimable1);
     assertGt(claimable1, 0);
@@ -206,7 +206,7 @@ contract StaticATokenLMTest is Test {
     assertEq(staticATokenLM.balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
     assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
-    assertGt(weth.balanceOf(user), 5 ether);
+    assertGt(AToken(aWETH).balanceOf(user), 5 ether);
   }
 
   function testTransfer() public {
@@ -224,15 +224,15 @@ contract StaticATokenLMTest is Test {
     // forward time
     _skipBlocks(60);
 
-    // withdraw for both
+    // redeem for both
     uint256 claimambleUser = staticATokenLM.getClaimableRewards(user);
-    staticATokenLM.withdraw(user, type(uint256).max, true);
+    staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
     staticATokenLM.claimRewardsToSelf();
     assertEq(IERC20(STK_AAVE).balanceOf(user), claimambleUser);
     vm.stopPrank();
     vm.startPrank(user1);
     uint256 claimambleUser1 = staticATokenLM.getClaimableRewards(user1);
-    staticATokenLM.withdraw(user1, type(uint256).max, true);
+    staticATokenLM.redeem(staticATokenLM.maxRedeem(user1), user1, user1);
     staticATokenLM.claimRewardsToSelf();
     assertEq(IERC20(STK_AAVE).balanceOf(user1), claimambleUser1);
     assertGt(claimambleUser1, 0);

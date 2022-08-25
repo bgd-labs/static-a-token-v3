@@ -32,22 +32,6 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   ) external returns (uint256);
 
   /**
-   * @notice Burns `amount` of static aToken, with recipient receiving the corresponding amount of `ASSET`
-   * @param recipient The address that will receive the amount of `ASSET` withdrawn from the Aave protocol
-   * @param amount The amount to withdraw, in static balance of StaticAToken
-   * @param toUnderlying bool
-   * - `true` for the recipient to get underlying tokens (e.g. USDC)
-   * - `false` for the recipient to get aTokens (e.g. aUSDC)
-   * @return amountToBurn: StaticATokens burnt, static balance
-   * @return amountToWithdraw: underlying/aToken send to `recipient`, dynamic balance
-   **/
-  function withdraw(
-    address recipient,
-    uint256 amount,
-    bool toUnderlying
-  ) external returns (uint256, uint256);
-
-  /**
    * @notice Allows to deposit on Aave via meta-transaction
    * https://github.com/ethereum/EIPs/blob/8a34d644aacf0f9f8f00815307fd7dd5da07655f/EIPS/eip-2612.md
    * @param depositor Address from which the funds to deposit are going to be pulled

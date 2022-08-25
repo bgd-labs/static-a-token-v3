@@ -110,15 +110,6 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function withdraw(
-    address recipient,
-    uint256 amount,
-    bool toUnderlying
-  ) external override returns (uint256, uint256) {
-    return _withdraw(msg.sender, recipient, amount, 0, toUnderlying);
-  }
-
-  ///@inheritdoc IStaticATokenLM
   function metaDeposit(
     address depositor,
     address recipient,
