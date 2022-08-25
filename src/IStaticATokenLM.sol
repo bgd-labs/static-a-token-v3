@@ -383,4 +383,19 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     address receiver,
     address owner
   ) external returns (uint256 shares);
+
+  /**
+   * @dev Mints exactly shares Vault shares to receiver by depositing amount of underlying tokens.
+   *
+   * - MUST emit the Deposit event.
+   * - MAY support an additional flow in which the underlying tokens are owned by the Vault contract before the mint
+   *   execution, and are accounted for during mint.
+   * - MUST revert if all of shares cannot be minted (due to deposit limit being reached, slippage, the user not
+   *   approving enough underlying tokens to the Vault contract, etc).
+   *
+   * NOTE: most implementations will require pre-approval of the Vault with the Vault’s underlying asset token.
+   */
+  function mint(uint256 shares, address receiver)
+    external
+    returns (uint256 assets);
 }

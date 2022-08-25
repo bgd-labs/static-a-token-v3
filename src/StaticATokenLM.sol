@@ -662,6 +662,21 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
+  function mint(uint256 shares, address receiver)
+    public
+    virtual
+    override
+    returns (uint256)
+  {
+    require(shares <= maxMint(receiver), "ERC4626: mint more than max");
+
+    uint256 assets = _convertToAssets(shares, rate());
+    _deposit(msg.sender, receiver, assets, 0, false);
+
+    return assets;
+  }
+
+  ///@inheritdoc IStaticATokenLM
   function withdraw(
     uint256 assets,
     address receiver,

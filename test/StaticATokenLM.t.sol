@@ -61,6 +61,19 @@ contract StaticATokenLMTest is Test {
     vm.warp(block.timestamp + blocks * 12); // assuming a block is around 12seconds
   }
 
+  function testRedeem() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit);
+
+    weth.approve(address(pool), amountToDeposit);
+    pool.deposit(WETH, amountToDeposit, user, 0);
+    IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
+    staticATokenLM.deposit(amountToDeposit, user);
+
+    assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
+    assertEq(staticATokenLM.maxRedeem(user), staticATokenLM.balanceOf(user));
+  }
+
   function testCollectAndUpdateRewards() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit);
