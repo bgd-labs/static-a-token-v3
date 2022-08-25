@@ -6,7 +6,7 @@ import '../src/StaticATokenLM.sol';
 import {WETH9} from 'aave-v3-core/contracts/dependencies/weth/WETH9.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 
-contract ContractTest is Test {
+contract StaticATokenLMTest is Test {
   address public user;
   address public user1;
   address constant LENDING_POOL = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
@@ -39,6 +39,9 @@ contract ContractTest is Test {
 
     IERC20 aToken = staticATokenLM.ATOKEN();
     assertEq(address(aToken), aWETH);
+
+    address aTokenAddress = staticATokenLM.asset();
+    assertEq(aTokenAddress, aWETH);
 
     address underlyingAddress = staticATokenLM.UNDERLYING_ASSET_ADDRESS();
     assertEq(underlyingAddress, WETH);
