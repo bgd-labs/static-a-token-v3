@@ -126,7 +126,10 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param amount The amount to convert from
    * @return uint256 The dynamic amount
    **/
-  function staticToDynamicAmount(uint256 amount) external view returns (uint256);
+  function staticToDynamicAmount(uint256 amount)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice Converts an aToken or underlying amount to the what it is denominated on the aToken as
@@ -134,7 +137,10 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param amount The amount to convert from
    * @return uint256 The static (scaled) amount
    **/
-  function dynamicToStaticAmount(uint256 amount) external view returns (uint256);
+  function dynamicToStaticAmount(uint256 amount)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice Returns the Aave liquidity index of the underlying aToken, denominated rate here
@@ -196,7 +202,10 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   function LENDING_POOL() external view returns (IPool);
 
-  function INCENTIVES_CONTROLLER() external view returns (IAaveIncentivesController);
+  function INCENTIVES_CONTROLLER()
+    external
+    view
+    returns (IAaveIncentivesController);
 
   function ATOKEN() external view returns (IERC20);
 
@@ -206,5 +215,8 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   function UNDERLYING_ASSET_ADDRESS() external view returns (address);
 
-  function getIncentivesController() external view returns (IAaveIncentivesController);
+  function getIncentivesController()
+    external
+    view
+    returns (IAaveIncentivesController);
 }
