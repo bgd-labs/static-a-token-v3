@@ -80,6 +80,34 @@ contract StaticATokenLMTest is Test {
     assertEq(IERC20(aWETH).balanceOf(user), amountToDeposit);
   }
 
+  function testRedeemAllowance() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit);
+
+    _depositAWeth(amountToDeposit);
+
+    staticATokenLM.approve(user1, staticATokenLM.maxRedeem(user));
+    vm.stopPrank();
+    vm.startPrank(user1);
+    staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user1, user);
+    assertEq(staticATokenLM.balanceOf(user), 0);
+    assertEq(IERC20(aWETH).balanceOf(user1), amountToDeposit);
+  }
+
+  function testFailRedeemOverflowAllowance() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit);
+
+    _depositAWeth(amountToDeposit);
+
+    staticATokenLM.approve(user1, staticATokenLM.maxRedeem(user) / 2);
+    vm.stopPrank();
+    vm.startPrank(user1);
+    staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user1, user);
+    assertEq(staticATokenLM.balanceOf(user), 0);
+    assertEq(IERC20(aWETH).balanceOf(user1), amountToDeposit);
+  }
+
   function testWithdraw() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit);

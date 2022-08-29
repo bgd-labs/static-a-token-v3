@@ -711,7 +711,7 @@ contract StaticATokenLM is
   ) public virtual override returns (uint256) {
     require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
 
-    (uint256 shares, ) = _withdraw(msg.sender, receiver, 0, assets, false);
+    (uint256 shares, ) = _withdraw(owner, receiver, 0, assets, false);
 
     return shares;
   }
@@ -724,7 +724,7 @@ contract StaticATokenLM is
   ) public virtual override returns (uint256) {
     require(shares <= maxRedeem(owner), "ERC4626: redeem more than max");
 
-    (, uint256 assets) = _withdraw(msg.sender, receiver, shares, 0, false);
+    (, uint256 assets) = _withdraw(owner, receiver, shares, 0, false);
 
     return assets;
   }
