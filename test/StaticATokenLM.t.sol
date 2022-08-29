@@ -25,16 +25,11 @@ contract StaticATokenLMTest is Test {
     weth = WETH9(WETH);
     vm.startPrank(user);
     staticATokenLM = new StaticATokenLM();
-    staticATokenLM.initialize(
-      pool,
-      aWETH,
-      'Static Aave Interest Bearing WETH',
-      'stataWETH'
-    );
+    staticATokenLM.initialize(pool, aWETH, 'Static Aave WETH', 'stataWETH');
   }
 
   function testGetters() public {
-    assertEq(staticATokenLM.name(), 'Static Aave Interest Bearing WETH');
+    assertEq(staticATokenLM.name(), 'Static Aave WETH');
     assertEq(staticATokenLM.symbol(), 'stataWETH');
 
     IERC20 aToken = staticATokenLM.ATOKEN();
