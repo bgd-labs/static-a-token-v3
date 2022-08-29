@@ -72,6 +72,25 @@ contract StaticATokenLMTest is Test {
 
     assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
     assertEq(staticATokenLM.maxRedeem(user), staticATokenLM.balanceOf(user));
+    staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
+    assertEq(staticATokenLM.balanceOf(user), 0);
+    assertEq(IERC20(aWETH).balanceOf(user), amountToDeposit);
+  }
+
+  function testWithdraw() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit);
+
+    weth.approve(address(pool), amountToDeposit);
+    pool.deposit(WETH, amountToDeposit, user, 0);
+    IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
+    staticATokenLM.deposit(amountToDeposit, user);
+
+    assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
+    assertEq(staticATokenLM.maxRedeem(user), staticATokenLM.balanceOf(user));
+    staticATokenLM.withdraw(staticATokenLM.maxWithdraw(user), user, user);
+    assertEq(staticATokenLM.balanceOf(user), 0);
+    assertEq(IERC20(aWETH).balanceOf(user), amountToDeposit);
   }
 
   function testCollectAndUpdateRewards() public {
