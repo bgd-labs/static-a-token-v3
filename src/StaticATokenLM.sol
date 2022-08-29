@@ -683,7 +683,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    require(assets <= maxDeposit(receiver), "ERC4626: deposit more than max");
+    require(assets <= maxDeposit(receiver), 'ERC4626: deposit more than max');
 
     return _deposit(msg.sender, receiver, assets, 0, false);
   }
@@ -695,7 +695,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    require(shares <= maxMint(receiver), "ERC4626: mint more than max");
+    require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
     uint256 assets = _convertToAssets(shares, rate());
     _deposit(msg.sender, receiver, assets, 0, false);
@@ -709,7 +709,7 @@ contract StaticATokenLM is
     address receiver,
     address owner
   ) public virtual override returns (uint256) {
-    require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
+    require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
 
     (uint256 shares, ) = _withdraw(owner, receiver, 0, assets, false);
 
@@ -722,7 +722,7 @@ contract StaticATokenLM is
     address receiver,
     address owner
   ) public virtual override returns (uint256) {
-    require(shares <= maxRedeem(owner), "ERC4626: redeem more than max");
+    require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
 
     (, uint256 assets) = _withdraw(owner, receiver, shares, 0, false);
 
