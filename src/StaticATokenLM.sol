@@ -11,7 +11,6 @@ import {VersionedInitializable} from 'aave-v3-core/contracts/protocol/libraries/
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
 
-
 import {IAToken} from './IAToken.sol';
 import {ERC20} from './ERC20.sol';
 import {SafeERC20} from './SafeERC20.sol'; //TODO: stop this mess with imports
@@ -91,7 +90,12 @@ contract StaticATokenLM is
       }
     } catch {}
 
-    emit Initialized(address(pool), aToken, staticATokenName, staticATokenSymbol);
+    emit Initialized(
+      address(pool),
+      aToken,
+      staticATokenName,
+      staticATokenSymbol
+    );
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -101,7 +105,8 @@ contract StaticATokenLM is
     uint16 referralCode,
     bool fromUnderlying
   ) external override returns (uint256) {
-    return _deposit(msg.sender, recipient, amount, referralCode, fromUnderlying);
+    return
+      _deposit(msg.sender, recipient, amount, referralCode, fromUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -208,21 +213,37 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
-    return _withdraw(owner, recipient, staticAmount, dynamicAmount, toUnderlying);
+    return
+      _withdraw(owner, recipient, staticAmount, dynamicAmount, toUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
-  function dynamicBalanceOf(address account) external view override returns (uint256) {
+  function dynamicBalanceOf(address account)
+    external
+    view
+    override
+    returns (uint256)
+  {
     return _staticToDynamicAmount(balanceOf[account], rate());
   }
 
   ///@inheritdoc IStaticATokenLM
-  function staticToDynamicAmount(uint256 amount) external view override returns (uint256) {
+  function staticToDynamicAmount(uint256 amount)
+    external
+    view
+    override
+    returns (uint256)
+  {
     return _staticToDynamicAmount(amount, rate());
   }
 
   ///@inheritdoc IStaticATokenLM
-  function dynamicToStaticAmount(uint256 amount) external view override returns (uint256) {
+  function dynamicToStaticAmount(uint256 amount)
+    external
+    view
+    override
+    returns (uint256)
+  {
     return _dynamicToStaticAmount(amount, rate());
   }
 
@@ -231,11 +252,19 @@ contract StaticATokenLM is
     return LENDING_POOL.getReserveNormalizedIncome(address(ASSET));
   }
 
-  function _dynamicToStaticAmount(uint256 amount, uint256 rate) internal pure returns (uint256) {
+  function _dynamicToStaticAmount(uint256 amount, uint256 rate)
+    internal
+    pure
+    returns (uint256)
+  {
     return amount.rayDiv(rate);
   }
 
-  function _staticToDynamicAmount(uint256 amount, uint256 rate) internal pure returns (uint256) {
+  function _staticToDynamicAmount(uint256 amount, uint256 rate)
+    internal
+    pure
+    returns (uint256)
+  {
     return amount.rayMul(rate);
   }
 
@@ -283,8 +312,13 @@ contract StaticATokenLM is
       amountToBurn = (staticAmount > userBalance) ? userBalance : staticAmount;
       amountToWithdraw = _staticToDynamicAmount(amountToBurn, currentRate);
     } else {
-      uint256 dynamicUserBalance = _staticToDynamicAmount(userBalance, currentRate);
-      amountToWithdraw = (dynamicAmount > dynamicUserBalance) ? dynamicUserBalance : dynamicAmount;
+      uint256 dynamicUserBalance = _staticToDynamicAmount(
+        userBalance,
+        currentRate
+      );
+      amountToWithdraw = (dynamicAmount > dynamicUserBalance)
+        ? dynamicUserBalance
+        : dynamicAmount;
       amountToBurn = _dynamicToStaticAmount(amountToWithdraw, currentRate);
     }
 
@@ -331,7 +365,12 @@ contract StaticATokenLM is
     address[] memory assets = new address[](1);
     assets[0] = address(ATOKEN);
 
-    return INCENTIVES_CONTROLLER.claimRewards(assets, type(uint256).max, address(this));
+    return
+      INCENTIVES_CONTROLLER.claimRewards(
+        assets,
+        type(uint256).max,
+        address(this)
+      );
   }
 
   /**
@@ -339,10 +378,16 @@ contract StaticATokenLM is
    * @param onBehalfOf The address to claim on behalf of
    * @param receiver The address to receive the rewards
    */
-  function _claimRewardsOnBehalf(address onBehalfOf, address receiver) internal {
+  function _claimRewardsOnBehalf(address onBehalfOf, address receiver)
+    internal
+  {
     uint256 currentRewardsIndex = getCurrentRewardsIndex();
     uint256 balance = balanceOf[onBehalfOf];
-    uint256 userReward = _getClaimableRewards(onBehalfOf, balance, currentRewardsIndex);
+    uint256 userReward = _getClaimableRewards(
+      onBehalfOf,
+      balance,
+      currentRewardsIndex
+    );
     uint256 totalRewardTokenBalance = REWARD_TOKEN.balanceOf(address(this));
     uint256 unclaimedReward = 0;
 
@@ -355,19 +400,25 @@ contract StaticATokenLM is
       userReward = totalRewardTokenBalance;
     }
     if (userReward > 0) {
-      _userRewardsData[onBehalfOf].unclaimedRewards = unclaimedReward.toUint128();
-      _userRewardsData[onBehalfOf].rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
+      _userRewardsData[onBehalfOf].unclaimedRewards = unclaimedReward
+        .toUint128();
+      _userRewardsData[onBehalfOf]
+        .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
       REWARD_TOKEN.safeTransfer(receiver, userReward);
     }
   }
 
-  function claimRewardsOnBehalf(address onBehalfOf, address receiver) external override {
+  function claimRewardsOnBehalf(address onBehalfOf, address receiver)
+    external
+    override
+  {
     if (address(INCENTIVES_CONTROLLER) == address(0)) {
       return;
     }
 
     require(
-      msg.sender == onBehalfOf || msg.sender == INCENTIVES_CONTROLLER.getClaimer(onBehalfOf),
+      msg.sender == onBehalfOf ||
+        msg.sender == INCENTIVES_CONTROLLER.getClaimer(onBehalfOf),
       StaticATokenErrors.INVALID_CLAIMER
     );
     _claimRewardsOnBehalf(onBehalfOf, receiver);
@@ -400,7 +451,8 @@ contract StaticATokenLM is
         currentRewardsIndex
       ).toUint128();
     }
-    _userRewardsData[user].rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
+    _userRewardsData[user].rewardsIndexOnLastInteraction = currentRewardsIndex
+      .toUint128();
   }
 
   /**
@@ -425,7 +477,10 @@ contract StaticATokenLM is
     }
 
     uint256 rayBalance = balance.wadToRay();
-    return rayBalance.rayMulNoRounding(currentRewardsIndex - rewardsIndexOnLastInteraction);
+    return
+      rayBalance.rayMulNoRounding(
+        currentRewardsIndex - rewardsIndexOnLastInteraction
+      );
   }
 
   /**
@@ -451,10 +506,14 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function getCurrentRewardsIndex() public view override returns (uint256) {
-    (uint256 index, uint256 emissionPerSecond, uint256 lastUpdateTimestamp) = INCENTIVES_CONTROLLER
-      .getAssetData(address(ATOKEN));
+    (
+      uint256 index,
+      uint256 emissionPerSecond,
+      uint256 lastUpdateTimestamp
+    ) = INCENTIVES_CONTROLLER.getAssetData(address(ATOKEN));
     uint256 distributionEnd = INCENTIVES_CONTROLLER.DISTRIBUTION_END();
-    uint256 totalSupply = IScaledBalanceToken(address(ATOKEN)).scaledTotalSupply();
+    uint256 totalSupply = IScaledBalanceToken(address(ATOKEN))
+      .scaledTotalSupply();
 
     if (
       emissionPerSecond == 0 ||
@@ -469,7 +528,9 @@ contract StaticATokenLM is
       ? distributionEnd
       : block.timestamp;
     uint256 timeDelta = currentTimestamp - lastUpdateTimestamp;
-    return ((emissionPerSecond * timeDelta * (10**uint256(18))) / totalSupply) + index; // TODO: 18- precision, should be loaded
+    return
+      ((emissionPerSecond * timeDelta * (10**uint256(18))) / totalSupply) +
+      index; // TODO: 18- precision, should be loaded
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -480,21 +541,41 @@ contract StaticATokenLM is
 
     address[] memory assets = new address[](1);
     assets[0] = address(ATOKEN);
-    uint256 freshRewards = INCENTIVES_CONTROLLER.getRewardsBalance(assets, address(this));
+    uint256 freshRewards = INCENTIVES_CONTROLLER.getRewardsBalance(
+      assets,
+      address(this)
+    );
     return REWARD_TOKEN.balanceOf(address(this)) + freshRewards;
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getClaimableRewards(address user) external view override returns (uint256) {
-    return _getClaimableRewards(user, balanceOf[user], getCurrentRewardsIndex());
+  function getClaimableRewards(address user)
+    external
+    view
+    override
+    returns (uint256)
+  {
+    return
+      _getClaimableRewards(user, balanceOf[user], getCurrentRewardsIndex());
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getUnclaimedRewards(address user) external view override returns (uint256) {
-    return uint256(_userRewardsData[user].unclaimedRewards).rayToWadNoRounding();
+  function getUnclaimedRewards(address user)
+    external
+    view
+    override
+    returns (uint256)
+  {
+    return
+      uint256(_userRewardsData[user].unclaimedRewards).rayToWadNoRounding();
   }
 
-  function getIncentivesController() external view override returns (IAaveIncentivesController) {
+  function getIncentivesController()
+    external
+    view
+    override
+    returns (IAaveIncentivesController)
+  {
     return INCENTIVES_CONTROLLER;
   }
 
