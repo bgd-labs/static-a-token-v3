@@ -35,6 +35,21 @@ contract StaticATokenLM is
   using WadRayMath for uint256;
   using RayMathNoRounding for uint256;
 
+  event Deposit(
+    address indexed caller,
+    address indexed owner,
+    uint256 assets,
+    uint256 shares
+  );
+
+  event Withdraw(
+    address indexed caller,
+    address indexed receiver,
+    address indexed owner,
+    uint256 assets,
+    uint256 shares
+  );
+
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
       'Deposit(address depositor,address recipient,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline)'
@@ -284,7 +299,10 @@ contract StaticATokenLM is
       ATOKEN.safeTransferFrom(depositor, address(this), amount);
     }
     uint256 amountToMint = _convertToShares(amount, rate());
+
     _mint(recipient, amountToMint);
+
+    emit Deposit(msg.sender, recipient, amount, amountToMint);
 
     return amountToMint;
   }
@@ -305,21 +323,30 @@ contract StaticATokenLM is
     uint256 userBalance = balanceOf[owner];
 
     uint256 amountToWithdraw;
-    uint256 amountToBurn;
+    uint256 shares;
 
     uint256 currentRate = rate();
     if (staticAmount > 0) {
-      amountToBurn = (staticAmount > userBalance) ? userBalance : staticAmount;
-      amountToWithdraw = _convertToAssets(amountToBurn, currentRate);
+      shares = (staticAmount > userBalance) ? userBalance : staticAmount;
+      amountToWithdraw = _convertToAssets(shares, currentRate);
     } else {
       uint256 dynamicUserBalance = _convertToAssets(userBalance, currentRate);
       amountToWithdraw = (dynamicAmount > dynamicUserBalance)
         ? dynamicUserBalance
         : dynamicAmount;
-      amountToBurn = _convertToShares(amountToWithdraw, currentRate);
+      shares = _convertToShares(amountToWithdraw, currentRate);
     }
 
-    _burn(owner, amountToBurn);
+    if (msg.sender != owner) {
+      uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+
+      if (allowed != type(uint256).max)
+        allowance[owner][msg.sender] = allowed - shares;
+    }
+
+    _burn(owner, shares);
+
+    emit Withdraw(msg.sender, recipient, owner, amountToWithdraw, shares);
 
     if (toUnderlying) {
       LENDING_POOL.withdraw(
@@ -331,7 +358,7 @@ contract StaticATokenLM is
       ATOKEN.safeTransfer(recipient, amountToWithdraw);
     }
 
-    return (amountToBurn, amountToWithdraw);
+    return (shares, amountToWithdraw);
   }
 
   /**
