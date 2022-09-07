@@ -249,128 +249,6 @@ contract StaticATokenLM is
     return LENDING_POOL.getReserveNormalizedIncome(address(ATOKEN_UNDERLYING));
   }
 
-  function _convertToShares(uint256 amount, uint256 rate)
-    internal
-    pure
-    returns (uint256)
-  {
-    return amount.rayDiv(rate);
-  }
-
-  function _convertToAssets(uint256 shares, uint256 rate)
-    internal
-    pure
-    returns (uint256)
-  {
-    return shares.rayMul(rate);
-  }
-
-  function _deposit(
-    address depositor,
-    address recipient,
-    uint256 amount,
-    uint16 referralCode,
-    bool fromUnderlying
-  ) internal returns (uint256) {
-    require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
-
-    if (fromUnderlying) {
-      ATOKEN_UNDERLYING.safeTransferFrom(depositor, address(this), amount);
-      LENDING_POOL.deposit(
-        address(ATOKEN_UNDERLYING),
-        amount,
-        address(this),
-        referralCode
-      );
-    } else {
-      ATOKEN.safeTransferFrom(depositor, address(this), amount);
-    }
-    uint256 amountToMint = _convertToShares(amount, rate());
-
-    _mint(recipient, amountToMint);
-
-    emit Deposit(msg.sender, recipient, amount, amountToMint);
-
-    return amountToMint;
-  }
-
-  function _withdraw(
-    address owner,
-    address recipient,
-    uint256 staticAmount,
-    uint256 dynamicAmount,
-    bool toUnderlying
-  ) internal returns (uint256, uint256) {
-    require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
-    require(
-      staticAmount == 0 || dynamicAmount == 0,
-      StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
-    );
-
-    uint256 userBalance = balanceOf[owner];
-
-    uint256 amountToWithdraw;
-    uint256 shares;
-
-    uint256 currentRate = rate();
-    if (staticAmount > 0) {
-      shares = (staticAmount > userBalance) ? userBalance : staticAmount;
-      amountToWithdraw = _convertToAssets(shares, currentRate);
-    } else {
-      uint256 dynamicUserBalance = _convertToAssets(userBalance, currentRate);
-      amountToWithdraw = (dynamicAmount > dynamicUserBalance)
-        ? dynamicUserBalance
-        : dynamicAmount;
-      shares = _convertToShares(amountToWithdraw, currentRate);
-    }
-
-    if (msg.sender != owner) {
-      uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
-
-      if (allowed != type(uint256).max)
-        allowance[owner][msg.sender] = allowed - shares;
-    }
-
-    _burn(owner, shares);
-
-    emit Withdraw(msg.sender, recipient, owner, amountToWithdraw, shares);
-
-    if (toUnderlying) {
-      LENDING_POOL.withdraw(
-        address(ATOKEN_UNDERLYING),
-        amountToWithdraw,
-        recipient
-      );
-    } else {
-      ATOKEN.safeTransfer(recipient, amountToWithdraw);
-    }
-
-    return (shares, amountToWithdraw);
-  }
-
-  /**
-   * @notice Updates rewards for senders and receiver in a transfer (not updating rewards for address(0))
-   * @param from The address of the sender of tokens
-   * @param to The address of the receiver of tokens
-   * @param amount The amount of tokens to transfer in WAD
-   */
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal override {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      return;
-    }
-    uint256 rewardsIndex = getCurrentRewardsIndex();
-    if (from != address(0)) {
-      _updateUser(from, rewardsIndex);
-    }
-    if (to != address(0) && from != to) {
-      _updateUser(to, rewardsIndex);
-    }
-  }
-
   ///@inheritdoc IStaticATokenLM
   function collectAndUpdateRewards() public override returns (uint256) {
     if (address(INCENTIVES_CONTROLLER) == address(0)) {
@@ -386,41 +264,6 @@ contract StaticATokenLM is
         type(uint256).max,
         address(this)
       );
-  }
-
-  /**
-   * @notice Claim rewards on behalf of a user and send them to a receiver
-   * @param onBehalfOf The address to claim on behalf of
-   * @param receiver The address to receive the rewards
-   */
-  function _claimRewardsOnBehalf(address onBehalfOf, address receiver)
-    internal
-  {
-    uint256 currentRewardsIndex = getCurrentRewardsIndex();
-    uint256 balance = balanceOf[onBehalfOf];
-    uint256 userReward = _getClaimableRewards(
-      onBehalfOf,
-      balance,
-      currentRewardsIndex
-    );
-    uint256 totalRewardTokenBalance = REWARD_TOKEN.balanceOf(address(this));
-    uint256 unclaimedReward = 0;
-
-    if (userReward > totalRewardTokenBalance) {
-      totalRewardTokenBalance += collectAndUpdateRewards();
-    }
-
-    if (userReward > totalRewardTokenBalance) {
-      unclaimedReward = userReward - totalRewardTokenBalance;
-      userReward = totalRewardTokenBalance;
-    }
-    if (userReward > 0) {
-      _userRewardsData[onBehalfOf].unclaimedRewards = unclaimedReward
-        .toUint128();
-      _userRewardsData[onBehalfOf]
-        .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
-      REWARD_TOKEN.safeTransfer(receiver, userReward);
-    }
   }
 
   function claimRewardsOnBehalf(address onBehalfOf, address receiver)
@@ -451,72 +294,6 @@ contract StaticATokenLM is
       return;
     }
     _claimRewardsOnBehalf(msg.sender, msg.sender);
-  }
-
-  /**
-   * @notice Adding the pending rewards to the unclaimed for specific user and updating user index
-   * @param user The address of the user to update
-   */
-  function _updateUser(address user, uint256 currentRewardsIndex) internal {
-    uint256 balance = balanceOf[user];
-    if (balance > 0) {
-      _userRewardsData[user].unclaimedRewards = _getClaimableRewards(
-        user,
-        balance,
-        currentRewardsIndex
-      ).toUint128();
-    }
-    _userRewardsData[user].rewardsIndexOnLastInteraction = currentRewardsIndex
-      .toUint128();
-  }
-
-  /**
-   * @notice Compute the pending in RAY (rounded down). Pending is the amount to add (not yet unclaimed) rewards in RAY (rounded down).
-   * @param balance The balance of the user
-   * @param rewardsIndexOnLastInteraction The index which was on the last interaction of the user
-   * @param currentRewardsIndex The current rewards index in the system
-   * @return The amound of pending rewards in RAY
-   */
-  function _getPendingRewards(
-    uint256 balance,
-    uint256 rewardsIndexOnLastInteraction,
-    uint256 currentRewardsIndex
-  ) internal view returns (uint256) {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      // TODO: let's see, looks useless
-      return 0;
-    }
-
-    if (balance == 0) {
-      return 0;
-    }
-
-    uint256 rayBalance = balance.wadToRay();
-    return
-      rayBalance.rayMulNoRounding(
-        currentRewardsIndex - rewardsIndexOnLastInteraction
-      );
-  }
-
-  /**
-   * @notice Compute the claimable rewards for a user
-   * @param user The address of the user
-   * @param balance The balance of the user in WAD
-   * @return The total rewards that can be claimed by the user (if `fresh` flag true, after updating rewards)
-   */
-  function _getClaimableRewards(
-    address user,
-    uint256 balance,
-    uint256 currentRewardsIndex
-  ) internal view returns (uint256) {
-    UserRewardsData memory currentUserRewardsData = _userRewardsData[user];
-    return
-      currentUserRewardsData.unclaimedRewards +
-      _getPendingRewards(
-        balance,
-        currentUserRewardsData.rewardsIndexOnLastInteraction,
-        currentRewardsIndex
-      );
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -714,5 +491,228 @@ contract StaticATokenLM is
     (, uint256 assets) = _withdraw(owner, receiver, shares, 0, false);
 
     return assets;
+  }
+
+  function _convertToShares(uint256 amount, uint256 rate)
+    internal
+    pure
+    returns (uint256)
+  {
+    return amount.rayDiv(rate);
+  }
+
+  function _convertToAssets(uint256 shares, uint256 rate)
+    internal
+    pure
+    returns (uint256)
+  {
+    return shares.rayMul(rate);
+  }
+
+  function _deposit(
+    address depositor,
+    address recipient,
+    uint256 amount,
+    uint16 referralCode,
+    bool fromUnderlying
+  ) internal returns (uint256) {
+    require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
+
+    if (fromUnderlying) {
+      ATOKEN_UNDERLYING.safeTransferFrom(depositor, address(this), amount);
+      LENDING_POOL.deposit(
+        address(ATOKEN_UNDERLYING),
+        amount,
+        address(this),
+        referralCode
+      );
+    } else {
+      ATOKEN.safeTransferFrom(depositor, address(this), amount);
+    }
+    uint256 amountToMint = _convertToShares(amount, rate());
+
+    _mint(recipient, amountToMint);
+
+    emit Deposit(msg.sender, recipient, amount, amountToMint);
+
+    return amountToMint;
+  }
+
+  function _withdraw(
+    address owner,
+    address recipient,
+    uint256 staticAmount,
+    uint256 dynamicAmount,
+    bool toUnderlying
+  ) internal returns (uint256, uint256) {
+    require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
+    require(
+      staticAmount == 0 || dynamicAmount == 0,
+      StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
+    );
+
+    uint256 userBalance = balanceOf[owner];
+
+    uint256 amountToWithdraw;
+    uint256 shares;
+
+    uint256 currentRate = rate();
+    if (staticAmount > 0) {
+      shares = (staticAmount > userBalance) ? userBalance : staticAmount;
+      amountToWithdraw = _convertToAssets(shares, currentRate);
+    } else {
+      uint256 dynamicUserBalance = _convertToAssets(userBalance, currentRate);
+      amountToWithdraw = (dynamicAmount > dynamicUserBalance)
+        ? dynamicUserBalance
+        : dynamicAmount;
+      shares = _convertToShares(amountToWithdraw, currentRate);
+    }
+
+    if (msg.sender != owner) {
+      uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+
+      if (allowed != type(uint256).max)
+        allowance[owner][msg.sender] = allowed - shares;
+    }
+
+    _burn(owner, shares);
+
+    emit Withdraw(msg.sender, recipient, owner, amountToWithdraw, shares);
+
+    if (toUnderlying) {
+      LENDING_POOL.withdraw(
+        address(ATOKEN_UNDERLYING),
+        amountToWithdraw,
+        recipient
+      );
+    } else {
+      ATOKEN.safeTransfer(recipient, amountToWithdraw);
+    }
+
+    return (shares, amountToWithdraw);
+  }
+
+  /**
+   * @notice Updates rewards for senders and receiver in a transfer (not updating rewards for address(0))
+   * @param from The address of the sender of tokens
+   * @param to The address of the receiver of tokens
+   * @param amount The amount of tokens to transfer in WAD
+   */
+  function _beforeTokenTransfer(
+    address from,
+    address to,
+    uint256 amount
+  ) internal override {
+    if (address(INCENTIVES_CONTROLLER) == address(0)) {
+      return;
+    }
+    uint256 rewardsIndex = getCurrentRewardsIndex();
+    if (from != address(0)) {
+      _updateUser(from, rewardsIndex);
+    }
+    if (to != address(0) && from != to) {
+      _updateUser(to, rewardsIndex);
+    }
+  }
+
+  /**
+   * @notice Adding the pending rewards to the unclaimed for specific user and updating user index
+   * @param user The address of the user to update
+   */
+  function _updateUser(address user, uint256 currentRewardsIndex) internal {
+    uint256 balance = balanceOf[user];
+    if (balance > 0) {
+      _userRewardsData[user].unclaimedRewards = _getClaimableRewards(
+        user,
+        balance,
+        currentRewardsIndex
+      ).toUint128();
+    }
+    _userRewardsData[user].rewardsIndexOnLastInteraction = currentRewardsIndex
+      .toUint128();
+  }
+
+  /**
+   * @notice Compute the pending in RAY (rounded down). Pending is the amount to add (not yet unclaimed) rewards in RAY (rounded down).
+   * @param balance The balance of the user
+   * @param rewardsIndexOnLastInteraction The index which was on the last interaction of the user
+   * @param currentRewardsIndex The current rewards index in the system
+   * @return The amound of pending rewards in RAY
+   */
+  function _getPendingRewards(
+    uint256 balance,
+    uint256 rewardsIndexOnLastInteraction,
+    uint256 currentRewardsIndex
+  ) internal view returns (uint256) {
+    if (address(INCENTIVES_CONTROLLER) == address(0)) {
+      // TODO: let's see, looks useless
+      return 0;
+    }
+
+    if (balance == 0) {
+      return 0;
+    }
+
+    uint256 rayBalance = balance.wadToRay();
+    return
+      rayBalance.rayMulNoRounding(
+        currentRewardsIndex - rewardsIndexOnLastInteraction
+      );
+  }
+
+  /**
+   * @notice Compute the claimable rewards for a user
+   * @param user The address of the user
+   * @param balance The balance of the user in WAD
+   * @return The total rewards that can be claimed by the user (if `fresh` flag true, after updating rewards)
+   */
+  function _getClaimableRewards(
+    address user,
+    uint256 balance,
+    uint256 currentRewardsIndex
+  ) internal view returns (uint256) {
+    UserRewardsData memory currentUserRewardsData = _userRewardsData[user];
+    return
+      currentUserRewardsData.unclaimedRewards +
+      _getPendingRewards(
+        balance,
+        currentUserRewardsData.rewardsIndexOnLastInteraction,
+        currentRewardsIndex
+      );
+  }
+
+  /**
+   * @notice Claim rewards on behalf of a user and send them to a receiver
+   * @param onBehalfOf The address to claim on behalf of
+   * @param receiver The address to receive the rewards
+   */
+  function _claimRewardsOnBehalf(address onBehalfOf, address receiver)
+    internal
+  {
+    uint256 currentRewardsIndex = getCurrentRewardsIndex();
+    uint256 balance = balanceOf[onBehalfOf];
+    uint256 userReward = _getClaimableRewards(
+      onBehalfOf,
+      balance,
+      currentRewardsIndex
+    );
+    uint256 totalRewardTokenBalance = REWARD_TOKEN.balanceOf(address(this));
+    uint256 unclaimedReward = 0;
+
+    if (userReward > totalRewardTokenBalance) {
+      totalRewardTokenBalance += collectAndUpdateRewards();
+    }
+
+    if (userReward > totalRewardTokenBalance) {
+      unclaimedReward = userReward - totalRewardTokenBalance;
+      userReward = totalRewardTokenBalance;
+    }
+    if (userReward > 0) {
+      _userRewardsData[onBehalfOf].unclaimedRewards = unclaimedReward
+        .toUint128();
+      _userRewardsData[onBehalfOf]
+        .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
+      REWARD_TOKEN.safeTransfer(receiver, userReward);
+    }
   }
 }
