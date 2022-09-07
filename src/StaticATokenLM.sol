@@ -11,12 +11,13 @@ import {VersionedInitializable} from 'aave-v3-core/contracts/protocol/libraries/
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
 
-import {IAToken} from './IAToken.sol';
+import {IAToken} from './interfaces/IAToken.sol';
 import {ERC20} from './ERC20.sol';
 import {SafeERC20} from './SafeERC20.sol'; //TODO: stop this mess with imports
-import {IInitializableStaticATokenLM} from './IInitializableStaticATokenLM.sol';
+import {IInitializableStaticATokenLM} from './interfaces/IInitializableStaticATokenLM.sol';
 import {StaticATokenErrors} from './StaticATokenErrors.sol';
 import {RayMathNoRounding} from './RayMathNoRounding.sol';
+import {IERC4626} from './interfaces/IERC4626.sol';
 
 /**
  * @title StaticATokenLM
@@ -28,27 +29,13 @@ import {RayMathNoRounding} from './RayMathNoRounding.sol';
 contract StaticATokenLM is
   VersionedInitializable,
   ERC20('STATIC_ATOKEN_IMPL', 'STATIC_ATOKEN_IMPL', 18),
-  IStaticATokenLM
+  IStaticATokenLM,
+  IERC4626
 {
   using SafeERC20 for IERC20;
   using SafeCast for uint256;
   using WadRayMath for uint256;
   using RayMathNoRounding for uint256;
-
-  event Deposit(
-    address indexed caller,
-    address indexed owner,
-    uint256 assets,
-    uint256 shares
-  );
-
-  event Withdraw(
-    address indexed caller,
-    address indexed receiver,
-    address indexed owner,
-    uint256 assets,
-    uint256 shares
-  );
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
@@ -214,7 +201,7 @@ contract StaticATokenLM is
       _withdraw(owner, recipient, staticAmount, dynamicAmount, toUnderlying);
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function previewRedeem(uint256 shares)
     external
     view
@@ -224,7 +211,7 @@ contract StaticATokenLM is
     return _convertToAssets(shares, rate());
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function previewMint(uint256 assets)
     public
     view
@@ -235,7 +222,7 @@ contract StaticATokenLM is
     return _convertToAssets(assets, rate());
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function previewWithdraw(uint256 assets)
     public
     view
@@ -246,7 +233,7 @@ contract StaticATokenLM is
     return _convertToShares(assets, rate());
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function previewDeposit(uint256 assets)
     public
     view
@@ -612,17 +599,17 @@ contract StaticATokenLM is
   }
 
   // 4626 compatibility
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function asset() external view override returns (address) {
     return address(ATOKEN);
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function totalAssets() external view override returns (uint256) {
     return ATOKEN.balanceOf(address(this));
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function convertToShares(uint256 amount)
     external
     view
@@ -632,7 +619,7 @@ contract StaticATokenLM is
     return _convertToShares(amount, rate());
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function convertToAssets(uint256 amount)
     external
     view
@@ -642,17 +629,17 @@ contract StaticATokenLM is
     return _convertToAssets(amount, rate());
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function maxDeposit(address) public view virtual override returns (uint256) {
     return type(uint256).max;
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function maxMint(address) public view virtual override returns (uint256) {
     return type(uint256).max;
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function maxWithdraw(address owner)
     public
     view
@@ -665,7 +652,7 @@ contract StaticATokenLM is
     return _convertToAssets(userBalance, currentRate);
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function maxRedeem(address owner)
     public
     view
@@ -676,7 +663,7 @@ contract StaticATokenLM is
     return balanceOf[owner];
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function deposit(uint256 assets, address receiver)
     public
     virtual
@@ -688,7 +675,7 @@ contract StaticATokenLM is
     return _deposit(msg.sender, receiver, assets, 0, false);
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function mint(uint256 shares, address receiver)
     public
     virtual
@@ -703,7 +690,7 @@ contract StaticATokenLM is
     return assets;
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function withdraw(
     uint256 assets,
     address receiver,
@@ -716,7 +703,7 @@ contract StaticATokenLM is
     return shares;
   }
 
-  ///@inheritdoc IStaticATokenLM
+  ///@inheritdoc IERC4626
   function redeem(
     uint256 shares,
     address receiver,
