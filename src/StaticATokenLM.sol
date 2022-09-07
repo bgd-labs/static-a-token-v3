@@ -502,7 +502,7 @@ contract StaticATokenLM is
   ) public virtual override returns (uint256, uint256) {
     require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
 
-    return _withdraw(owner, receiver, shares, 0, true);
+    return _withdraw(owner, receiver, shares, 0, toUnderlying);
   }
 
   function _convertToShares(uint256 amount, uint256 rate)
