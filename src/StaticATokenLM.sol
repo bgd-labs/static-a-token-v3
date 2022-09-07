@@ -493,6 +493,18 @@ contract StaticATokenLM is
     return assets;
   }
 
+  ///@inheritdoc IStaticATokenLM
+  function redeem(
+    uint256 shares,
+    address receiver,
+    address owner,
+    bool toUnderlying
+  ) public virtual override returns (uint256, uint256) {
+    require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
+
+    return _withdraw(owner, receiver, shares, 0, true);
+  }
+
   function _convertToShares(uint256 amount, uint256 rate)
     internal
     pure
