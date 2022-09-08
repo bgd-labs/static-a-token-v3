@@ -102,13 +102,13 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function deposit(
+    uint256 assets,
     address recipient,
-    uint256 amount,
     uint16 referralCode,
     bool fromUnderlying
   ) external override returns (uint256) {
     return
-      _deposit(msg.sender, recipient, amount, referralCode, fromUnderlying);
+      _deposit(msg.sender, recipient, assets, referralCode, fromUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -212,14 +212,14 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function previewMint(uint256 assets)
+  function previewMint(uint256 shares)
     public
     view
     virtual
     override
     returns (uint256)
   {
-    return _convertToAssets(assets, rate());
+    return _convertToAssets(shares, rate());
   }
 
   ///@inheritdoc IERC4626
