@@ -53,13 +53,18 @@ contract StaticATokenLM is
     uint128 unclaimedRewards; // (in RAYs)
   }
 
+  struct RewardData {
+    IERC20 token;
+    uint8 decimals;
+  }
+
   IPool public override LENDING_POOL;
   IAaveIncentivesController public override INCENTIVES_CONTROLLER;
   IERC20 public override ATOKEN;
   IERC20 public override ATOKEN_UNDERLYING;
-  IERC20 public override REWARD_TOKEN;
 
   mapping(address => UserRewardsData) private _userRewardsData;
+  RewardData public rewardData;
 
   ///@inheritdoc VersionedInitializable
   function getRevision() internal pure virtual override returns (uint256) {
@@ -88,7 +93,11 @@ contract StaticATokenLM is
     ) {
       if (address(incentivesController) != address(0)) {
         INCENTIVES_CONTROLLER = incentivesController;
-        REWARD_TOKEN = IERC20(INCENTIVES_CONTROLLER.REWARD_TOKEN());
+        IERC20 token = IERC20(INCENTIVES_CONTROLLER.REWARD_TOKEN());
+        rewardData = RewardData(
+          token,
+          IERC20Detailed(address(token)).decimals()
+        );
       }
     } catch {}
 
@@ -321,8 +330,8 @@ contract StaticATokenLM is
       : block.timestamp;
     uint256 timeDelta = currentTimestamp - lastUpdateTimestamp;
     return
-      ((emissionPerSecond * timeDelta * (10**uint256(18))) / totalSupply) +
-      index; // TODO: 18- precision, should be loaded
+      ((emissionPerSecond * timeDelta * (10**uint256(rewardData.decimals))) /
+        totalSupply) + index;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -337,7 +346,7 @@ contract StaticATokenLM is
       assets,
       address(this)
     );
-    return REWARD_TOKEN.balanceOf(address(this)) + freshRewards;
+    return rewardData.token.balanceOf(address(this)) + freshRewards;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -379,6 +388,11 @@ contract StaticATokenLM is
   ///@inheritdoc IERC4626
   function asset() external view override returns (address) {
     return address(ATOKEN);
+  }
+
+  //@inheritdoc IStaticATokenLM
+  function rewardToken() external view override returns (IERC20) {
+    return rewardData.token;
   }
 
   ///@inheritdoc IERC4626
@@ -708,7 +722,7 @@ contract StaticATokenLM is
       balance,
       currentRewardsIndex
     );
-    uint256 totalRewardTokenBalance = REWARD_TOKEN.balanceOf(address(this));
+    uint256 totalRewardTokenBalance = rewardData.token.balanceOf(address(this));
     uint256 unclaimedReward = 0;
 
     if (userReward > totalRewardTokenBalance) {
@@ -724,7 +738,7 @@ contract StaticATokenLM is
         .toUint128();
       _userRewardsData[onBehalfOf]
         .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
-      REWARD_TOKEN.safeTransfer(receiver, userReward);
+      rewardData.token.safeTransfer(receiver, userReward);
     }
   }
 }

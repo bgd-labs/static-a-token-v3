@@ -167,7 +167,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   function ATOKEN_UNDERLYING() external view returns (IERC20);
 
-  function REWARD_TOKEN() external view returns (IERC20);
+  function rewardToken() external view returns (IERC20);
 
   function UNDERLYING_ASSET_ADDRESS() external view returns (address);
 
