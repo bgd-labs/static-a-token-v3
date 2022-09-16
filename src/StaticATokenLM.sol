@@ -222,7 +222,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return this.convertToAssets(assets);
+    return this.convertToAssets(shares);
   }
 
   ///@inheritdoc IERC4626
@@ -541,18 +541,13 @@ contract StaticATokenLM is
 
     uint256 userBalance = balanceOf[owner];
 
-    uint256 amountToWithdraw;
-    uint256 shares;
+    uint256 amountToWithdraw = dynamicAmount;
+    uint256 shares = staticAmount;
 
     if (staticAmount > 0) {
-      shares = (staticAmount > userBalance) ? userBalance : staticAmount;
-      amountToWithdraw = this.convertToAssets(shares);
+      amountToWithdraw = this.convertToAssets(staticAmount);
     } else {
-      uint256 dynamicUserBalance = this.convertToAssets(userBalance);
-      amountToWithdraw = (dynamicAmount > dynamicUserBalance)
-        ? dynamicUserBalance
-        : dynamicAmount;
-      shares = this.convertToShares(amountToWithdraw);
+      shares = this.convertToShares(dynamicAmount);
     }
 
     if (msg.sender != owner) {
