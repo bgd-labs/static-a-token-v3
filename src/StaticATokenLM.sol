@@ -300,6 +300,7 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
+  // @dev This should be simplified once the INCENTIVES_CONTROLLER is updated to expose index directly.
   function getCurrentRewardsIndex() public view override returns (uint256) {
     if (address(INCENTIVES_CONTROLLER) == address(0)) {
       return 0;
