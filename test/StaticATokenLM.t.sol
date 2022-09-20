@@ -62,14 +62,14 @@ contract StaticATokenLMTest is Test {
     address aTokenAddress = staticATokenLM.asset();
     assertEq(aTokenAddress, aWETH);
 
-    address underlyingAddress = staticATokenLM.UNDERLYING_ASSET_ADDRESS();
+    address underlyingAddress = address(staticATokenLM.ATOKEN_UNDERLYING());
     assertEq(underlyingAddress, WETH);
 
     IERC20Detailed underlying = IERC20Detailed(underlyingAddress);
     assertEq(staticATokenLM.decimals(), underlying.decimals());
 
     assertEq(
-      address(staticATokenLM.getIncentivesController()),
+      address(staticATokenLM.INCENTIVES_CONTROLLER()),
       address(AToken(aWETH).getIncentivesController())
     );
   }

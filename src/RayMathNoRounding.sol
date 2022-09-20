@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.10;
-pragma experimental ABIEncoderV2;
-
-import {Errors} from 'aave-v3-core/contracts/protocol/libraries/helpers/Errors.sol';
 
 library RayMathNoRounding {
   uint256 internal constant RAY = 1e27;
@@ -16,7 +13,6 @@ library RayMathNoRounding {
     if (a == 0 || b == 0) {
       return 0;
     }
-    //    require(a <= type(uint256).max / b, Errors.MATH_MULTIPLICATION_OVERFLOW);
     return (a * b) / RAY;
   }
 
@@ -25,8 +21,6 @@ library RayMathNoRounding {
     pure
     returns (uint256)
   {
-    //    require(b != 0, Errors.MATH_DIVISION_BY_ZERO);
-    //    require(a <= (type(uint256).max) / RAY, Errors.MATH_MULTIPLICATION_OVERFLOW);
     return (a * RAY) / b;
   }
 

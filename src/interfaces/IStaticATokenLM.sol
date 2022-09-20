@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import {IERC20} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20.sol';
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
 import {IAaveIncentivesController} from 'aave-v3-core/contracts/interfaces/IAaveIncentivesController.sol';
-import {IInitializableStaticATokenLM} from './interfaces/IInitializableStaticATokenLM.sol';
+import {IInitializableStaticATokenLM} from './IInitializableStaticATokenLM.sol';
 
 interface IStaticATokenLM is IInitializableStaticATokenLM {
   struct SignatureParams {
@@ -168,11 +168,4 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   function ATOKEN_UNDERLYING() external view returns (IERC20);
 
   function REWARD_TOKEN() external view returns (IERC20);
-
-  function UNDERLYING_ASSET_ADDRESS() external view returns (address);
-
-  function getIncentivesController()
-    external
-    view
-    returns (IAaveIncentivesController);
 }

@@ -5,12 +5,12 @@ import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
 import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBalanceToken.sol';
 import {IERC20} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20.sol';
 import {IERC20Detailed} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20Detailed.sol';
-import {IStaticATokenLM} from './IStaticATokenLM.sol';
 import {IAaveIncentivesController} from 'aave-v3-core/contracts/interfaces/IAaveIncentivesController.sol';
 import {VersionedInitializable} from 'aave-v3-core/contracts/protocol/libraries/aave-upgradeability/VersionedInitializable.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
 
+import {IStaticATokenLM} from './interfaces/IStaticATokenLM.sol';
 import {IAToken} from './interfaces/IAToken.sol';
 import {ERC20} from './ERC20.sol';
 import {SafeERC20} from './SafeERC20.sol'; //TODO: stop this mess with imports
@@ -55,11 +55,11 @@ contract StaticATokenLM is
     uint128 unclaimedRewards; // (in RAYs)
   }
 
-  IPool public override LENDING_POOL;
-  IAaveIncentivesController public override INCENTIVES_CONTROLLER;
-  IERC20 public override ATOKEN;
-  IERC20 public override ATOKEN_UNDERLYING;
-  IERC20 public override REWARD_TOKEN;
+  IPool public LENDING_POOL;
+  IAaveIncentivesController public INCENTIVES_CONTROLLER;
+  IERC20 public ATOKEN;
+  IERC20 public ATOKEN_UNDERLYING;
+  IERC20 public REWARD_TOKEN;
 
   mapping(address => UserRewardsData) private _userRewardsData;
 
@@ -80,7 +80,7 @@ contract StaticATokenLM is
 
     name = staticATokenName;
     symbol = staticATokenSymbol;
-    decimals = IERC20Detailed(aToken).decimals(); // maybe make sense to add setter as was before
+    decimals = IERC20Detailed(aToken).decimals();
 
     ATOKEN_UNDERLYING = IERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS());
     ATOKEN_UNDERLYING.safeApprove(address(pool), type(uint256).max);
@@ -207,6 +207,7 @@ contract StaticATokenLM is
   function previewRedeem(uint256 shares)
     external
     view
+    virtual
     override
     returns (uint256)
   {
@@ -300,6 +301,9 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function getCurrentRewardsIndex() public view override returns (uint256) {
+    if (address(INCENTIVES_CONTROLLER) == address(0)) {
+      return 0;
+    }
     (
       uint256 index,
       uint256 emissionPerSecond,
@@ -349,6 +353,9 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
+    if (address(INCENTIVES_CONTROLLER) == address(0)) {
+      return 0;
+    }
     return
       _getClaimableRewards(user, balanceOf[user], getCurrentRewardsIndex());
   }
@@ -362,19 +369,6 @@ contract StaticATokenLM is
   {
     return
       uint256(_userRewardsData[user].unclaimedRewards).rayToWadNoRounding();
-  }
-
-  function getIncentivesController()
-    external
-    view
-    override
-    returns (IAaveIncentivesController)
-  {
-    return INCENTIVES_CONTROLLER;
-  }
-
-  function UNDERLYING_ASSET_ADDRESS() external view override returns (address) {
-    return address(ATOKEN_UNDERLYING);
   }
 
   // 4626 compatibility
@@ -426,9 +420,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    uint256 userBalance = balanceOf[owner];
-    uint256 currentRate = rate();
-    return _convertToAssets(userBalance, currentRate);
+    return _convertToAssets(balanceOf[owner], rate());
   }
 
   ///@inheritdoc IERC4626
@@ -658,11 +650,6 @@ contract StaticATokenLM is
     uint256 rewardsIndexOnLastInteraction,
     uint256 currentRewardsIndex
   ) internal view returns (uint256) {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      // TODO: let's see, looks useless
-      return 0;
-    }
-
     if (balance == 0) {
       return 0;
     }
