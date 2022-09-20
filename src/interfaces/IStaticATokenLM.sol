@@ -132,40 +132,60 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   /**
    * @notice Get the total claimable rewards of the contract.
-   * @return The current balance + pending rewards from the `_incentivesController`
+   * @return uint256 The current balance + pending rewards from the `_incentivesController`
    */
   function getTotalClaimableRewards() external view returns (uint256);
 
   /**
    * @notice Get the total claimable rewards for a user in WAD
    * @param user The address of the user
-   * @return The claimable amount of rewards in WAD
+   * @return uint256 The claimable amount of rewards in WAD
    */
   function getClaimableRewards(address user) external view returns (uint256);
 
   /**
    * @notice The unclaimed rewards for a user in WAD
    * @param user The address of the user
-   * @return The unclaimed amount of rewards in WAD
+   * @return uint256 The unclaimed amount of rewards in WAD
    */
   function getUnclaimedRewards(address user) external view returns (uint256);
 
   /**
    * @notice The underlying asset reward index in RAY
-   * @return The underlying asset reward index in RAY
+   * @return uint256 The underlying asset reward index in RAY
    */
   function getCurrentRewardsIndex() external view returns (uint256);
 
-  function LENDING_POOL() external view returns (IPool);
+  /**
+   * @notice The Pool where the underlying aToken is supplied and withdrawn.
+   * @return IPool The Pool address.
+   */
+  function POOL() external view returns (IPool);
 
+  /**
+   * @notice The incentives controller required for claiming rewards on behalf of the users.
+   * @return IAaveIncentivesController The incentives controller address.
+   */
   function INCENTIVES_CONTROLLER()
     external
     view
     returns (IAaveIncentivesController);
 
+  /**
+   * @notice The aToken used inside the 4626 vault.
+   * @return IERC20 The aToken IERC20.
+   */
   function ATOKEN() external view returns (IERC20);
 
+  /**
+   * @notice The underlying of the aToken used inside the 4626 vault.
+   * @return IERC20 The aToken underlying IERC20.
+   */
   function ATOKEN_UNDERLYING() external view returns (IERC20);
 
+  /**
+   * @notice The IERC20 that is currently rewarded to addresses of the vault via LM on incentivescontroller.
+   * @return IERC20 The IERC20 of the reward.
+   */
   function REWARD_TOKEN() external view returns (IERC20);
 }

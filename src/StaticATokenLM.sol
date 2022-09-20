@@ -55,7 +55,7 @@ contract StaticATokenLM is
     uint128 unclaimedRewards; // (in RAYs)
   }
 
-  IPool public LENDING_POOL;
+  IPool public POOL;
   IAaveIncentivesController public INCENTIVES_CONTROLLER;
   IERC20 public ATOKEN;
   IERC20 public ATOKEN_UNDERLYING;
@@ -75,7 +75,7 @@ contract StaticATokenLM is
     string calldata staticATokenName,
     string calldata staticATokenSymbol
   ) external override initializer {
-    LENDING_POOL = pool;
+    POOL = pool;
     ATOKEN = IERC20(aToken);
 
     name = staticATokenName;
@@ -249,7 +249,7 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function rate() public view override returns (uint256) {
-    return LENDING_POOL.getReserveNormalizedIncome(address(ATOKEN_UNDERLYING));
+    return POOL.getReserveNormalizedIncome(address(ATOKEN_UNDERLYING));
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -353,9 +353,6 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      return 0;
-    }
     return
       _getClaimableRewards(user, balanceOf[user], getCurrentRewardsIndex());
   }
@@ -526,7 +523,7 @@ contract StaticATokenLM is
 
     if (fromUnderlying) {
       ATOKEN_UNDERLYING.safeTransferFrom(depositor, address(this), amount);
-      LENDING_POOL.deposit(
+      POOL.deposit(
         address(ATOKEN_UNDERLYING),
         amount,
         address(this),
@@ -586,11 +583,7 @@ contract StaticATokenLM is
     emit Withdraw(msg.sender, recipient, owner, amountToWithdraw, shares);
 
     if (toUnderlying) {
-      LENDING_POOL.withdraw(
-        address(ATOKEN_UNDERLYING),
-        amountToWithdraw,
-        recipient
-      );
+      POOL.withdraw(address(ATOKEN_UNDERLYING), amountToWithdraw, recipient);
     } else {
       ATOKEN.safeTransfer(recipient, amountToWithdraw);
     }
