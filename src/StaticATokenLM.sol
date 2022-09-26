@@ -211,7 +211,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _convertToAssets(shares, rate());
+    return this.convertToAssets(shares);
   }
 
   ///@inheritdoc IERC4626
@@ -222,7 +222,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _convertToAssets(shares, rate());
+    return this.convertToAssets(shares);
   }
 
   ///@inheritdoc IERC4626
@@ -233,7 +233,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _convertToShares(assets, rate());
+    return this.convertToShares(assets);
   }
 
   ///@inheritdoc IERC4626
@@ -244,7 +244,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _convertToShares(assets, rate());
+    return this.convertToShares(assets);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -387,17 +387,17 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _convertToShares(amount, rate());
+    return amount.rayDiv(rate());
   }
 
   ///@inheritdoc IERC4626
-  function convertToAssets(uint256 amount)
+  function convertToAssets(uint256 shares)
     external
     view
     override
     returns (uint256)
   {
-    return _convertToAssets(amount, rate());
+    return shares.rayMul(rate());
   }
 
   ///@inheritdoc IERC4626
@@ -418,7 +418,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _convertToAssets(balanceOf[owner], rate());
+    return this.convertToAssets(balanceOf[owner]);
   }
 
   ///@inheritdoc IERC4626
@@ -453,7 +453,7 @@ contract StaticATokenLM is
   {
     require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
-    uint256 assets = _convertToAssets(shares, rate());
+    uint256 assets = this.convertToAssets(shares);
     _deposit(msg.sender, receiver, assets, 0, false);
 
     return assets;
@@ -497,22 +497,6 @@ contract StaticATokenLM is
     return _withdraw(owner, receiver, shares, 0, toUnderlying);
   }
 
-  function _convertToShares(uint256 amount, uint256 rate)
-    internal
-    pure
-    returns (uint256)
-  {
-    return amount.rayDiv(rate);
-  }
-
-  function _convertToAssets(uint256 shares, uint256 rate)
-    internal
-    pure
-    returns (uint256)
-  {
-    return shares.rayMul(rate);
-  }
-
   function _deposit(
     address depositor,
     address recipient,
@@ -533,7 +517,7 @@ contract StaticATokenLM is
     } else {
       ATOKEN.safeTransferFrom(depositor, address(this), amount);
     }
-    uint256 amountToMint = _convertToShares(amount, rate());
+    uint256 amountToMint = this.convertToShares(amount);
 
     _mint(recipient, amountToMint);
 
@@ -557,19 +541,13 @@ contract StaticATokenLM is
 
     uint256 userBalance = balanceOf[owner];
 
-    uint256 amountToWithdraw;
-    uint256 shares;
+    uint256 amountToWithdraw = dynamicAmount;
+    uint256 shares = staticAmount;
 
-    uint256 currentRate = rate();
     if (staticAmount > 0) {
-      shares = (staticAmount > userBalance) ? userBalance : staticAmount;
-      amountToWithdraw = _convertToAssets(shares, currentRate);
+      amountToWithdraw = this.convertToAssets(staticAmount);
     } else {
-      uint256 dynamicUserBalance = _convertToAssets(userBalance, currentRate);
-      amountToWithdraw = (dynamicAmount > dynamicUserBalance)
-        ? dynamicUserBalance
-        : dynamicAmount;
-      shares = _convertToShares(amountToWithdraw, currentRate);
+      shares = this.convertToShares(dynamicAmount);
     }
 
     if (msg.sender != owner) {

@@ -160,11 +160,17 @@ contract StaticATokenLMTest is Test {
     assertEq(IERC20(aWETH).balanceOf(user), amountToDeposit);
   }
 
+  // function testMetaWithdraw() public {
+  //   staticATokenLM.metaWithdraw(user, user, 100, 0, false, deadline, sigParams);
+  // }
+
   function testFailWithdrawAboveBalance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
+    _fundUser(amountToDeposit, user1);
 
     _depositAWeth(amountToDeposit, user);
+    _depositAWeth(amountToDeposit, user1);
 
     assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
     staticATokenLM.withdraw(staticATokenLM.maxWithdraw(user) + 1, user, user);
