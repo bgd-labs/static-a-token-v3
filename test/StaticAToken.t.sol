@@ -5,8 +5,12 @@ import 'forge-std/Test.sol';
 import '../src/StaticATokenLM.sol';
 import {WETH9} from 'aave-v3-core/contracts/dependencies/weth/WETH9.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
+import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 
 contract StaticATokenLMTest is Test {
+  address constant OWNER = address(1234);
+  address constant ADMIN = address(2345);
+
   address public user;
   address public user1;
   address constant LENDING_POOL = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
@@ -23,9 +27,23 @@ contract StaticATokenLMTest is Test {
     user = address(vm.addr(1));
     user1 = address(vm.addr(2));
     weth = WETH9(WETH);
+    TransparentProxyFactory proxyFactory = new TransparentProxyFactory();
+    StaticATokenLM staticATokenLMImpl = new StaticATokenLM();
+    hoax(OWNER);
+    staticATokenLM = StaticATokenLM(
+      proxyFactory.create(
+        address(staticATokenLMImpl),
+        ADMIN,
+        abi.encodeWithSelector(
+          StaticATokenLM.initialize.selector,
+          pool,
+          aWETH,
+          'Static Aave WETH',
+          'stataWETH'
+        )
+      )
+    );
     vm.startPrank(user);
-    staticATokenLM = new StaticATokenLM();
-    staticATokenLM.initialize(pool, aWETH, 'Static Aave WETH', 'stataWETH');
   }
 
   function _fundUser(uint128 amountToDeposit, address user) private {

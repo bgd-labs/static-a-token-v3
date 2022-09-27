@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.10;
 
-import {IERC20} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20.sol';
+import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
 import {IAaveIncentivesController} from 'aave-v3-core/contracts/interfaces/IAaveIncentivesController.sol';
 import {IInitializableStaticATokenLM} from './IInitializableStaticATokenLM.sol';
@@ -160,13 +160,13 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @notice The Pool where the underlying aToken is supplied and withdrawn.
    * @return IPool The Pool address.
    */
-  function POOL() external view returns (IPool);
+  function pool() external view returns (IPool);
 
   /**
    * @notice The incentives controller required for claiming rewards on behalf of the users.
    * @return IAaveIncentivesController The incentives controller address.
    */
-  function INCENTIVES_CONTROLLER()
+  function incentivesController()
     external
     view
     returns (IAaveIncentivesController);
@@ -175,17 +175,17 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @notice The aToken used inside the 4626 vault.
    * @return IERC20 The aToken IERC20.
    */
-  function ATOKEN() external view returns (IERC20);
+  function aToken() external view returns (IERC20);
 
   /**
    * @notice The underlying of the aToken used inside the 4626 vault.
    * @return IERC20 The aToken underlying IERC20.
    */
-  function ATOKEN_UNDERLYING() external view returns (IERC20);
+  function aTokenUnderlying() external view returns (IERC20);
 
   /**
    * @notice The IERC20 that is currently rewarded to addresses of the vault via LM on incentivescontroller.
    * @return IERC20 The IERC20 of the reward.
    */
-  function REWARD_TOKEN() external view returns (IERC20);
+  function rewardToken() external view returns (IERC20);
 }
