@@ -425,7 +425,7 @@ contract StaticATokenLM is
     view
     returns (uint256)
   {
-    if (rounding == Rounding.UP) return amount.rayDiv(rate());
+    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
     return amount.rayDivNoRounding(rate());
   }
 
@@ -444,7 +444,7 @@ contract StaticATokenLM is
     view
     returns (uint256)
   {
-    if (rounding == Rounding.UP) return shares.rayMul(rate());
+    if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
     return shares.rayMulNoRounding(rate());
   }
 
