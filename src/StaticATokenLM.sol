@@ -244,7 +244,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return _convertToShares(assets, Rounding.UP);
+    return _convertToShares(assets, Rounding.DOWN);
   }
 
   ///@inheritdoc IStaticATokenLM
