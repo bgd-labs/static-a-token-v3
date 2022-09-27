@@ -95,13 +95,17 @@ contract StaticATokenLMTest is Test {
   function testConvertersAndPreviews() public {
     uint128 amount = 5 ether;
     uint256 shares = staticATokenLM.convertToShares(amount);
-    assertLt(shares, amount);
-    assertEq(shares, staticATokenLM.previewDeposit(amount));
-    assertEq(shares, staticATokenLM.previewWithdraw(amount));
+    assertLt(shares, amount, 'SHARES LOWER');
+    assertLt(shares, staticATokenLM.previewDeposit(amount), 'PREVIEW_DEPOSIT');
+    assertLt(
+      shares,
+      staticATokenLM.previewWithdraw(amount),
+      'PREVIEW_WITHDRAW'
+    );
     uint256 assets = staticATokenLM.convertToAssets(shares);
-    assertEq(assets, amount);
-    assertEq(assets, staticATokenLM.previewMint(shares));
-    assertEq(assets, staticATokenLM.previewRedeem(shares));
+    assertGt(assets, shares, 'ASSETS GREATER');
+    assertEq(assets, staticATokenLM.previewMint(shares), 'PREVIEW_MINT');
+    assertEq(assets, staticATokenLM.previewRedeem(shares), 'PREVIEW_REDEEM');
   }
 
   // Redeem tests
