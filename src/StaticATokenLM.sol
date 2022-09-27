@@ -61,7 +61,7 @@ contract StaticATokenLM is
   IERC20 internal _aTokenUnderlying;
   IERC20 internal _rewardToken;
 
-  mapping(address => UserRewardsData) private _userRewardsData;
+  mapping(address => UserRewardsData) internal _userRewardsData;
 
   ///@inheritdoc IInitializableStaticATokenLM
   function initialize(
