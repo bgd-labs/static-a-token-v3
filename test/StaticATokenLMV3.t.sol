@@ -2,36 +2,36 @@
 pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
-import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
+import {StaticATokenLMV3, IERC20, IERC20Metadata} from '../src/StaticATokenLMV3.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
-import {AaveV2Ethereum, ILendingPool} from 'aave-address-book/AaveV2Ethereum.sol';
+import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
 
-contract StaticATokenLMTest is Test {
+contract StaticATokenLMV3Test is Test {
   address constant OWNER = address(1234);
   address constant ADMIN = address(2345);
 
   address public user;
   address public user1;
-  address constant REWARD_TOKEN = 0x4da27a545c0c5B758a6BA100e3a049001de870f5;
-  address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  address constant aWETH = 0x030bA81f1c18d280636F32af80b9AAd02Cf0854e;
-  ILendingPool pool = ILendingPool(AaveV2Ethereum.POOL);
-  StaticATokenLM staticATokenLM;
+  address constant REWARD_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+  address constant WETH = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
+  address constant aWETH = 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
+  IPool pool = IPool(AaveV3Avalanche.POOL);
+  StaticATokenLMV3 staticATokenLM;
 
   function setUp() public {
-    vm.createSelectFork(vm.rpcUrl('mainnet'), 14590438);
+    vm.createSelectFork(vm.rpcUrl('avalanche'), 20389332);
     user = address(vm.addr(1));
     user1 = address(vm.addr(2));
     TransparentProxyFactory proxyFactory = new TransparentProxyFactory();
-    StaticATokenLM staticATokenLMImpl = new StaticATokenLM();
+    StaticATokenLMV3 staticATokenLMImpl = new StaticATokenLMV3();
     hoax(OWNER);
-    staticATokenLM = StaticATokenLM(
+    staticATokenLM = StaticATokenLMV3(
       proxyFactory.create(
         address(staticATokenLMImpl),
         ADMIN,
         abi.encodeWithSelector(
-          StaticATokenLM.initialize.selector,
+          StaticATokenLMV3.initialize.selector,
           pool,
           aWETH,
           'Static Aave WETH',
