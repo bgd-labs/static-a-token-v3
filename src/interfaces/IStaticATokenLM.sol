@@ -166,10 +166,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @notice The incentives controller required for claiming rewards on behalf of the users.
    * @return IAaveIncentivesController The incentives controller address.
    */
-  function incentivesController()
-    external
-    view
-    returns (IAaveIncentivesController);
+  function incentivesController() external view returns (address);
 
   /**
    * @notice The aToken used inside the 4626 vault.

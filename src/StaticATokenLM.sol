@@ -81,10 +81,10 @@ contract StaticATokenLM is
     IERC20(_aTokenUnderlying).safeApprove(address(pool), type(uint256).max);
 
     try IAToken(aToken).getIncentivesController() returns (
-      IAaveIncentivesController incentivesController
+      address incentivesController
     ) {
-      if (address(incentivesController) != address(0)) {
-        _incentivesController = incentivesController;
+      if (incentivesController != address(0)) {
+        _incentivesController = IAaveIncentivesController(incentivesController);
         _rewardToken = IERC20(_incentivesController.REWARD_TOKEN());
       }
     } catch {}
@@ -370,13 +370,8 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function incentivesController()
-    external
-    view
-    override
-    returns (IAaveIncentivesController)
-  {
-    return _incentivesController;
+  function incentivesController() external view override returns (address) {
+    return address(_incentivesController);
   }
 
   ///@inheritdoc IStaticATokenLM

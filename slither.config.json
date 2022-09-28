@@ -3,6 +3,7 @@
   "solc_remaps": [
     "forge-std/=lib/forge-std/src/",
     "aave-v3-core/=lib/aave-v3-core/",
+    "aave-v3-periphery/=lib/aave-v3-periphery/",
     "openzeppelin-contracts/=lib/openzeppelin-contracts/"
   ]
 }

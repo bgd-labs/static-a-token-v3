@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
 import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBalanceToken.sol';
-import {IAaveIncentivesController} from 'aave-v3-core/contracts/interfaces/IAaveIncentivesController.sol';
+import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
 import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
@@ -56,7 +56,7 @@ contract StaticATokenLMV3 is
   }
 
   IPool internal _pool;
-  IAaveIncentivesController internal _incentivesController;
+  IRewardsController internal _incentivesController;
   IERC20 internal _aToken;
   address internal _aTokenUnderlying;
   IERC20 internal _rewardToken;
@@ -81,11 +81,11 @@ contract StaticATokenLMV3 is
     IERC20(_aTokenUnderlying).safeApprove(address(pool), type(uint256).max);
 
     try IAToken(aToken).getIncentivesController() returns (
-      IAaveIncentivesController incentivesController
+      address incentivesController
     ) {
-      if (address(incentivesController) != address(0)) {
-        _incentivesController = incentivesController;
-        _rewardToken = IERC20(_incentivesController.REWARD_TOKEN());
+      if (incentivesController != address(0)) {
+        _incentivesController = IRewardsController(incentivesController);
+        _rewardToken = IERC20(_incentivesController.getRewardsList()[0]);
       }
     } catch {}
 
@@ -260,7 +260,8 @@ contract StaticATokenLMV3 is
       _incentivesController.claimRewards(
         assets,
         type(uint256).max,
-        address(this)
+        address(this),
+        address(_rewardToken)
       );
   }
 
@@ -303,9 +304,12 @@ contract StaticATokenLMV3 is
     (
       uint256 index,
       uint256 emissionPerSecond,
-      uint256 lastUpdateTimestamp
-    ) = _incentivesController.getAssetData(address(_aToken));
-    uint256 distributionEnd = _incentivesController.DISTRIBUTION_END();
+      uint256 lastUpdateTimestamp,
+      uint256 distributionEnd
+    ) = _incentivesController.getRewardsData(
+        address(_aToken),
+        address(_rewardToken)
+      );
     uint256 totalSupply = IScaledBalanceToken(address(_aToken))
       .scaledTotalSupply();
 
@@ -335,9 +339,10 @@ contract StaticATokenLMV3 is
 
     address[] memory assets = new address[](1);
     assets[0] = address(_aToken);
-    uint256 freshRewards = _incentivesController.getRewardsBalance(
+    uint256 freshRewards = _incentivesController.getUserRewards(
       assets,
-      address(this)
+      address(this),
+      address(_rewardToken)
     );
     return _rewardToken.balanceOf(address(this)) + freshRewards;
   }
@@ -370,13 +375,8 @@ contract StaticATokenLMV3 is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function incentivesController()
-    external
-    view
-    override
-    returns (IAaveIncentivesController)
-  {
-    return _incentivesController;
+  function incentivesController() external view override returns (address) {
+    return address(_incentivesController);
   }
 
   ///@inheritdoc IStaticATokenLM
