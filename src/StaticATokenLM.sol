@@ -58,7 +58,7 @@ contract StaticATokenLM is
   IPool internal _pool;
   IAaveIncentivesController internal _incentivesController;
   IERC20 internal _aToken;
-  IERC20 internal _aTokenUnderlying;
+  address internal _aTokenUnderlying;
   IERC20 internal _rewardToken;
 
   mapping(address => UserRewardsData) internal _userRewardsData;
@@ -77,8 +77,8 @@ contract StaticATokenLM is
     symbol = staticATokenSymbol;
     decimals = IERC20Metadata(aToken).decimals();
 
-    _aTokenUnderlying = IERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS());
-    _aTokenUnderlying.safeApprove(address(pool), type(uint256).max);
+    _aTokenUnderlying = IAToken(aToken).UNDERLYING_ASSET_ADDRESS();
+    IERC20(_aTokenUnderlying).safeApprove(address(pool), type(uint256).max);
 
     try IAToken(aToken).getIncentivesController() returns (
       IAaveIncentivesController incentivesController
@@ -244,7 +244,7 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function rate() public view override returns (uint256) {
-    return _pool.getReserveNormalizedIncome(address(_aTokenUnderlying));
+    return _pool.getReserveNormalizedIncome(_aTokenUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -391,7 +391,7 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function aTokenUnderlying() external view override returns (IERC20) {
-    return _aTokenUnderlying;
+    return IERC20(_aTokenUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -481,8 +481,6 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    require(assets <= maxDeposit(receiver), 'ERC4626: deposit more than max');
-
     return _deposit(msg.sender, receiver, assets, 0, false);
   }
 
@@ -549,13 +547,12 @@ contract StaticATokenLM is
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
 
     if (fromUnderlying) {
-      _aTokenUnderlying.safeTransferFrom(depositor, address(this), assets);
-      _pool.deposit(
-        address(_aTokenUnderlying),
-        assets,
+      IERC20(_aTokenUnderlying).safeTransferFrom(
+        depositor,
         address(this),
-        referralCode
+        assets
       );
+      _pool.deposit(_aTokenUnderlying, assets, address(this), referralCode);
     } else {
       _aToken.safeTransferFrom(depositor, address(this), assets);
     }
@@ -604,7 +601,7 @@ contract StaticATokenLM is
     emit Withdraw(msg.sender, recipient, owner, amountToWithdraw, shares);
 
     if (toUnderlying) {
-      _pool.withdraw(address(_aTokenUnderlying), amountToWithdraw, recipient);
+      _pool.withdraw(_aTokenUnderlying, amountToWithdraw, recipient);
     } else {
       _aToken.safeTransfer(recipient, amountToWithdraw);
     }
