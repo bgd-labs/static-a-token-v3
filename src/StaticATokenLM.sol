@@ -16,7 +16,7 @@ import {IAToken} from './interfaces/IAToken.sol';
 import {ERC20} from './ERC20.sol';
 import {IInitializableStaticATokenLM} from './interfaces/IInitializableStaticATokenLM.sol';
 import {StaticATokenErrors} from './StaticATokenErrors.sol';
-import {RayMathNoRounding} from './RayMathNoRounding.sol';
+import {RayMathExplicitRounding} from './RayMathExplicitRounding.sol';
 import {IERC4626} from './interfaces/IERC4626.sol';
 
 /**
@@ -35,7 +35,7 @@ contract StaticATokenLM is
   using SafeERC20 for IERC20;
   using SafeCast for uint256;
   using WadRayMath for uint256;
-  using RayMathNoRounding for uint256;
+  using RayMathExplicitRounding for uint256;
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
@@ -365,8 +365,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return
-      uint256(_userRewardsData[user].unclaimedRewards).rayToWadNoRounding();
+    return uint256(_userRewardsData[user].unclaimedRewards).rayToWadRoundDown();
   }
 
   // 4626 compatibility
@@ -426,7 +425,7 @@ contract StaticATokenLM is
     returns (uint256)
   {
     if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
-    return amount.rayDivNoRounding(rate());
+    return amount.rayDivRoundDown(rate());
   }
 
   ///@inheritdoc IERC4626
@@ -445,7 +444,7 @@ contract StaticATokenLM is
     returns (uint256)
   {
     if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
-    return shares.rayMulNoRounding(rate());
+    return shares.rayMulRoundDown(rate());
   }
 
   ///@inheritdoc IERC4626
@@ -676,7 +675,7 @@ contract StaticATokenLM is
 
     uint256 rayBalance = balance.wadToRay();
     return
-      rayBalance.rayMulNoRounding(
+      rayBalance.rayMulRoundDown(
         currentRewardsIndex - rewardsIndexOnLastInteraction
       );
   }
