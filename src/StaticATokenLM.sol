@@ -16,7 +16,7 @@ import {IAToken} from './interfaces/IAToken.sol';
 import {ERC20} from './ERC20.sol';
 import {IInitializableStaticATokenLM} from './interfaces/IInitializableStaticATokenLM.sol';
 import {StaticATokenErrors} from './StaticATokenErrors.sol';
-import {RayMathNoRounding} from './RayMathNoRounding.sol';
+import {RayMathExplicitRounding, Rounding} from './RayMathExplicitRounding.sol';
 import {IERC4626} from './interfaces/IERC4626.sol';
 
 /**
@@ -35,7 +35,7 @@ contract StaticATokenLM is
   using SafeERC20 for IERC20;
   using SafeCast for uint256;
   using WadRayMath for uint256;
-  using RayMathNoRounding for uint256;
+  using RayMathExplicitRounding for uint256;
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
@@ -200,13 +200,13 @@ contract StaticATokenLM is
 
   ///@inheritdoc IERC4626
   function previewRedeem(uint256 shares)
-    external
+    public
     view
     virtual
     override
     returns (uint256)
   {
-    return this.convertToAssets(shares);
+    return _convertToAssets(shares, Rounding.DOWN);
   }
 
   ///@inheritdoc IERC4626
@@ -217,7 +217,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return this.convertToAssets(shares);
+    return _convertToAssets(shares, Rounding.UP);
   }
 
   ///@inheritdoc IERC4626
@@ -228,7 +228,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return this.convertToShares(assets);
+    return _convertToShares(assets, Rounding.UP);
   }
 
   ///@inheritdoc IERC4626
@@ -239,7 +239,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return this.convertToShares(assets);
+    return _convertToShares(assets, Rounding.DOWN);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -360,8 +360,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return
-      uint256(_userRewardsData[user].unclaimedRewards).rayToWadNoRounding();
+    return uint256(_userRewardsData[user].unclaimedRewards).rayToWadRoundDown();
   }
 
   // 4626 compatibility
@@ -412,7 +411,16 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return amount.rayDiv(rate());
+    return _convertToShares(amount, Rounding.DOWN);
+  }
+
+  function _convertToShares(uint256 amount, Rounding rounding)
+    internal
+    view
+    returns (uint256)
+  {
+    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
+    return amount.rayDivRoundDown(rate());
   }
 
   ///@inheritdoc IERC4626
@@ -422,7 +430,16 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return shares.rayMul(rate());
+    return _convertToAssets(shares, Rounding.DOWN);
+  }
+
+  function _convertToAssets(uint256 shares, Rounding rounding)
+    internal
+    view
+    returns (uint256)
+  {
+    if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
+    return shares.rayMulRoundDown(rate());
   }
 
   ///@inheritdoc IERC4626
@@ -443,7 +460,7 @@ contract StaticATokenLM is
     override
     returns (uint256)
   {
-    return this.convertToAssets(balanceOf[owner]);
+    return _convertToAssets(balanceOf[owner], Rounding.DOWN);
   }
 
   ///@inheritdoc IERC4626
@@ -478,7 +495,7 @@ contract StaticATokenLM is
   {
     require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
-    uint256 assets = this.convertToAssets(shares);
+    uint256 assets = previewMint(shares);
     _deposit(msg.sender, receiver, assets, 0, false);
 
     return assets;
@@ -525,30 +542,30 @@ contract StaticATokenLM is
   function _deposit(
     address depositor,
     address recipient,
-    uint256 amount,
+    uint256 assets,
     uint16 referralCode,
     bool fromUnderlying
   ) internal returns (uint256) {
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
 
     if (fromUnderlying) {
-      _aTokenUnderlying.safeTransferFrom(depositor, address(this), amount);
+      _aTokenUnderlying.safeTransferFrom(depositor, address(this), assets);
       _pool.deposit(
         address(_aTokenUnderlying),
-        amount,
+        assets,
         address(this),
         referralCode
       );
     } else {
-      _aToken.safeTransferFrom(depositor, address(this), amount);
+      _aToken.safeTransferFrom(depositor, address(this), assets);
     }
-    uint256 amountToMint = this.convertToShares(amount);
+    uint256 shares = previewDeposit(assets);
 
-    _mint(recipient, amountToMint);
+    _mint(recipient, shares);
 
-    emit Deposit(msg.sender, recipient, amount, amountToMint);
+    emit Deposit(msg.sender, recipient, assets, shares);
 
-    return amountToMint;
+    return shares;
   }
 
   function _withdraw(
@@ -570,9 +587,9 @@ contract StaticATokenLM is
     uint256 shares = staticAmount;
 
     if (staticAmount > 0) {
-      amountToWithdraw = this.convertToAssets(staticAmount);
+      amountToWithdraw = previewRedeem(staticAmount);
     } else {
-      shares = this.convertToShares(dynamicAmount);
+      shares = previewWithdraw(dynamicAmount);
     }
 
     if (msg.sender != owner) {
@@ -653,7 +670,7 @@ contract StaticATokenLM is
 
     uint256 rayBalance = balance.wadToRay();
     return
-      rayBalance.rayMulNoRounding(
+      rayBalance.rayMulRoundDown(
         currentRewardsIndex - rewardsIndexOnLastInteraction
       );
   }

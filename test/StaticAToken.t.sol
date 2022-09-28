@@ -77,7 +77,6 @@ contract StaticATokenLMTest is Test {
 
     weth.approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.deposit(amountToDeposit, user, 0, true);
-    assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
 
     _skipBlocks(60);
     assertEq(IERC20(STK_AAVE).balanceOf(address(staticATokenLM)), 0);
@@ -92,7 +91,6 @@ contract StaticATokenLMTest is Test {
 
     weth.approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.deposit(amountToDeposit, user, 0, true);
-    assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
 
     _skipBlocks(60);
 
