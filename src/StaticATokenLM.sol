@@ -16,7 +16,7 @@ import {IAToken} from './interfaces/IAToken.sol';
 import {ERC20} from './ERC20.sol';
 import {IInitializableStaticATokenLM} from './interfaces/IInitializableStaticATokenLM.sol';
 import {StaticATokenErrors} from './StaticATokenErrors.sol';
-import {RayMathExplicitRounding} from './RayMathExplicitRounding.sol';
+import {RayMathExplicitRounding, Rounding} from './RayMathExplicitRounding.sol';
 import {IERC4626} from './interfaces/IERC4626.sol';
 
 /**
@@ -53,11 +53,6 @@ contract StaticATokenLM is
   struct UserRewardsData {
     uint128 rewardsIndexOnLastInteraction; // (in RAYs)
     uint128 unclaimedRewards; // (in RAYs)
-  }
-
-  enum Rounding {
-    UP,
-    DOWN
   }
 
   IPool internal _pool;
