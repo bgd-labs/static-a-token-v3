@@ -26,7 +26,7 @@ import {IERC4626} from './interfaces/IERC4626.sol';
  * The token support claiming liquidity mining rewards from the Aave system.
  * @author Aave
  **/
-contract StaticATokenLM is
+contract StaticATokenLMV2 is
   Initializable,
   ERC20('STATIC__aToken_IMPL', 'STATIC__aToken_IMPL', 18),
   IStaticATokenLM,

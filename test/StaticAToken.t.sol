@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
-import '../src/StaticATokenLM.sol';
+import '../src/StaticATokenLMV2.sol';
 import {WETH9} from 'aave-v3-core/contracts/dependencies/weth/WETH9.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
@@ -19,7 +19,7 @@ contract StaticATokenLMTest is Test {
     payable(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
   address constant aWETH = 0x030bA81f1c18d280636F32af80b9AAd02Cf0854e;
   IPool pool = IPool(LENDING_POOL);
-  StaticATokenLM staticATokenLM;
+  StaticATokenLMV2 staticATokenLM;
   WETH9 weth;
 
   function setUp() public {
@@ -28,14 +28,14 @@ contract StaticATokenLMTest is Test {
     user1 = address(vm.addr(2));
     weth = WETH9(WETH);
     TransparentProxyFactory proxyFactory = new TransparentProxyFactory();
-    StaticATokenLM staticATokenLMImpl = new StaticATokenLM();
+    StaticATokenLMV2 staticATokenLMImpl = new StaticATokenLMV2();
     hoax(OWNER);
-    staticATokenLM = StaticATokenLM(
+    staticATokenLM = StaticATokenLMV2(
       proxyFactory.create(
         address(staticATokenLMImpl),
         ADMIN,
         abi.encodeWithSelector(
-          StaticATokenLM.initialize.selector,
+          StaticATokenLMV2.initialize.selector,
           pool,
           aWETH,
           'Static Aave WETH',
