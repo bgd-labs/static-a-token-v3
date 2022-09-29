@@ -2,12 +2,12 @@
 pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
-import {StaticATokenLMV3, IERC20, IERC20Metadata} from '../src/StaticATokenLMV3.sol';
+import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
 
-contract StaticATokenLMV3Test is Test {
+contract StaticATokenLMTest is Test {
   address constant OWNER = address(1234);
   address constant ADMIN = address(2345);
 
@@ -17,21 +17,21 @@ contract StaticATokenLMV3Test is Test {
   address constant WETH = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
   address constant aWETH = 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
   IPool pool = IPool(AaveV3Avalanche.POOL);
-  StaticATokenLMV3 staticATokenLM;
+  StaticATokenLM staticATokenLM;
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 20389332);
     user = address(vm.addr(1));
     user1 = address(vm.addr(2));
     TransparentProxyFactory proxyFactory = new TransparentProxyFactory();
-    StaticATokenLMV3 staticATokenLMImpl = new StaticATokenLMV3();
+    StaticATokenLM staticATokenLMImpl = new StaticATokenLM();
     hoax(OWNER);
-    staticATokenLM = StaticATokenLMV3(
+    staticATokenLM = StaticATokenLM(
       proxyFactory.create(
         address(staticATokenLMImpl),
         ADMIN,
         abi.encodeWithSelector(
-          StaticATokenLMV3.initialize.selector,
+          StaticATokenLM.initialize.selector,
           pool,
           aWETH,
           'Static Aave WETH',

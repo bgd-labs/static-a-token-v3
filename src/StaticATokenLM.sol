@@ -26,7 +26,7 @@ import {IERC4626} from './interfaces/IERC4626.sol';
  * The token support claiming liquidity mining rewards from the Aave system.
  * @author Aave
  **/
-contract StaticATokenLMV3 is
+contract StaticATokenLM is
   Initializable,
   ERC20('STATIC__aToken_IMPL', 'STATIC__aToken_IMPL', 18),
   IStaticATokenLM,
@@ -85,7 +85,10 @@ contract StaticATokenLMV3 is
     ) {
       if (incentivesController != address(0)) {
         _incentivesController = IRewardsController(incentivesController);
-        _rewardToken = IERC20(_incentivesController.getRewardsList()[0]);
+        address[] memory rewards = _incentivesController.getRewardsList();
+        if (rewards.length > 0) {
+          _rewardToken = IERC20(_incentivesController.getRewardsList()[0]);
+        }
       }
     } catch {}
 
@@ -249,7 +252,7 @@ contract StaticATokenLMV3 is
 
   ///@inheritdoc IStaticATokenLM
   function collectAndUpdateRewards() public override returns (uint256) {
-    if (address(_incentivesController) == address(0)) {
+    if (address(_rewardToken) == address(0)) {
       return 0;
     }
 
@@ -269,7 +272,7 @@ contract StaticATokenLMV3 is
     external
     override
   {
-    if (address(_incentivesController) == address(0)) {
+    if (address(_rewardToken) == address(0)) {
       return;
     }
 
@@ -282,14 +285,14 @@ contract StaticATokenLMV3 is
   }
 
   function claimRewards(address receiver) external override {
-    if (address(_incentivesController) == address(0)) {
+    if (address(_rewardToken) == address(0)) {
       return;
     }
     _claimRewardsOnBehalf(msg.sender, receiver);
   }
 
   function claimRewardsToSelf() external override {
-    if (address(_incentivesController) == address(0)) {
+    if (address(_rewardToken) == address(0)) {
       return;
     }
     _claimRewardsOnBehalf(msg.sender, msg.sender);
@@ -298,7 +301,7 @@ contract StaticATokenLMV3 is
   ///@inheritdoc IStaticATokenLM
   // @dev This should be simplified once the _incentivesController is updated to expose index directly.
   function getCurrentRewardsIndex() public view override returns (uint256) {
-    if (address(_incentivesController) == address(0)) {
+    if (address(_rewardToken) == address(0)) {
       return 0;
     }
     (
@@ -333,7 +336,7 @@ contract StaticATokenLMV3 is
 
   ///@inheritdoc IStaticATokenLM
   function getTotalClaimableRewards() external view override returns (uint256) {
-    if (address(_incentivesController) == address(0)) {
+    if (address(_rewardToken) == address(0)) {
       return 0;
     }
 
@@ -620,7 +623,7 @@ contract StaticATokenLMV3 is
     address to,
     uint256 amount
   ) internal override {
-    if (address(_incentivesController) == address(0)) {
+    if (address(_rewardToken) == address(0)) {
       return;
     }
     uint256 rewardsIndex = getCurrentRewardsIndex();
