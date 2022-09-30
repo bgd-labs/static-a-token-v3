@@ -48,8 +48,6 @@ contract StaticATokenLM is
 
   uint256 public constant STATIC__ATOKEN_LM_REVISION = 1;
 
-  uint8 public constant REWARD_PRECISION = 18;
-
   struct UserRewardsData {
     uint128 rewardsIndexOnLastInteraction; // (in RAYs)
     uint128 unclaimedRewards; // (in RAYs)
@@ -330,7 +328,7 @@ contract StaticATokenLM is
       : block.timestamp;
     uint256 timeDelta = currentTimestamp - lastUpdateTimestamp;
     return
-      ((emissionPerSecond * timeDelta * (10**uint256(REWARD_PRECISION))) /
+      ((emissionPerSecond * timeDelta * (10**uint256(decimals))) /
         totalSupply) + index;
   }
 
