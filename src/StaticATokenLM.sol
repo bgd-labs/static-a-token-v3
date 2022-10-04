@@ -272,10 +272,6 @@ contract StaticATokenLM is
     external
     override
   {
-    if (address(_rewardToken) == address(0)) {
-      return;
-    }
-
     require(
       msg.sender == onBehalfOf ||
         msg.sender == _incentivesController.getClaimer(onBehalfOf),
@@ -285,16 +281,10 @@ contract StaticATokenLM is
   }
 
   function claimRewards(address receiver) external override {
-    if (address(_rewardToken) == address(0)) {
-      return;
-    }
     _claimRewardsOnBehalf(msg.sender, receiver);
   }
 
   function claimRewardsToSelf() external override {
-    if (address(_rewardToken) == address(0)) {
-      return;
-    }
     _claimRewardsOnBehalf(msg.sender, msg.sender);
   }
 
@@ -708,6 +698,10 @@ contract StaticATokenLM is
   function _claimRewardsOnBehalf(address onBehalfOf, address receiver)
     internal
   {
+    IERC20 rewardToken = _rewardToken;
+    if (address(rewardToken) == address(0)) {
+      return;
+    }
     uint256 currentRewardsIndex = getCurrentRewardsIndex();
     uint256 balance = balanceOf[onBehalfOf];
     uint256 userReward = _getClaimableRewards(
@@ -715,7 +709,7 @@ contract StaticATokenLM is
       balance,
       currentRewardsIndex
     );
-    uint256 totalRewardTokenBalance = _rewardToken.balanceOf(address(this));
+    uint256 totalRewardTokenBalance = rewardToken.balanceOf(address(this));
     uint256 unclaimedReward = 0;
 
     if (userReward > totalRewardTokenBalance) {
@@ -731,7 +725,7 @@ contract StaticATokenLM is
         .toUint128();
       _userRewardsData[onBehalfOf]
         .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
-      _rewardToken.safeTransfer(receiver, userReward);
+      rewardToken.safeTransfer(receiver, userReward);
     }
   }
 }
