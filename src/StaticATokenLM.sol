@@ -83,9 +83,10 @@ contract StaticATokenLM is
     ) {
       if (incentivesController != address(0)) {
         _incentivesController = IRewardsController(incentivesController);
-        address[] memory rewards = _incentivesController.getRewardsList();
+        address[] memory rewards = IRewardsController(incentivesController)
+          .getRewardsList();
         if (rewards.length > 0) {
-          _rewardToken = IERC20(_incentivesController.getRewardsList()[0]);
+          _rewardToken = IERC20(rewards[0]);
         }
       }
     } catch {}
@@ -250,7 +251,8 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function collectAndUpdateRewards() public override returns (uint256) {
-    if (address(_rewardToken) == address(0)) {
+    address rewardToken = address(_rewardToken);
+    if (rewardToken == address(0)) {
       return 0;
     }
 
@@ -262,7 +264,7 @@ contract StaticATokenLM is
         assets,
         type(uint256).max,
         address(this),
-        address(_rewardToken)
+        rewardToken
       );
   }
 
@@ -299,7 +301,9 @@ contract StaticATokenLM is
   ///@inheritdoc IStaticATokenLM
   // @dev This should be simplified once the _incentivesController is updated to expose index directly.
   function getCurrentRewardsIndex() public view override returns (uint256) {
-    if (address(_rewardToken) == address(0)) {
+    address rewardToken = address(_rewardToken);
+    address aToken = address(_aToken);
+    if (address(rewardToken) == address(0)) {
       return 0;
     }
     (
@@ -308,10 +312,10 @@ contract StaticATokenLM is
       uint256 lastUpdateTimestamp,
       uint256 distributionEnd
     ) = _incentivesController.getRewardsData(
-        address(_aToken),
-        address(_rewardToken)
+        address(aToken),
+        address(rewardToken)
       );
-    uint256 totalSupply = IScaledBalanceToken(address(_aToken))
+    uint256 totalSupply = IScaledBalanceToken(address(aToken))
       .scaledTotalSupply();
 
     if (
@@ -334,7 +338,8 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function getTotalClaimableRewards() external view override returns (uint256) {
-    if (address(_rewardToken) == address(0)) {
+    address rewardToken = address(_rewardToken);
+    if (rewardToken == address(0)) {
       return 0;
     }
 
@@ -343,9 +348,9 @@ contract StaticATokenLM is
     uint256 freshRewards = _incentivesController.getUserRewards(
       assets,
       address(this),
-      address(_rewardToken)
+      rewardToken
     );
-    return _rewardToken.balanceOf(address(this)) + freshRewards;
+    return IERC20(rewardToken).balanceOf(address(this)) + freshRewards;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -546,14 +551,15 @@ contract StaticATokenLM is
     bool fromUnderlying
   ) internal returns (uint256) {
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
+    address aTokenUnderlying = _aTokenUnderlying;
 
     if (fromUnderlying) {
-      IERC20(_aTokenUnderlying).safeTransferFrom(
+      IERC20(aTokenUnderlying).safeTransferFrom(
         depositor,
         address(this),
         assets
       );
-      _pool.deposit(_aTokenUnderlying, assets, address(this), referralCode);
+      _pool.deposit(aTokenUnderlying, assets, address(this), referralCode);
     } else {
       _aToken.safeTransferFrom(depositor, address(this), assets);
     }
