@@ -381,27 +381,9 @@ contract StaticATokenLM is
     return _convertToShares(amount, Rounding.DOWN);
   }
 
-  function _convertToShares(uint256 amount, Rounding rounding)
-    internal
-    view
-    returns (uint256)
-  {
-    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
-    return amount.rayDivRoundDown(rate());
-  }
-
   ///@inheritdoc IERC4626
   function convertToAssets(uint256 shares) external view returns (uint256) {
     return _convertToAssets(shares, Rounding.DOWN);
-  }
-
-  function _convertToAssets(uint256 shares, Rounding rounding)
-    internal
-    view
-    returns (uint256)
-  {
-    if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
-    return shares.rayMulRoundDown(rate());
   }
 
   ///@inheritdoc IERC4626
@@ -679,5 +661,23 @@ contract StaticATokenLM is
         .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
       rewardToken.safeTransfer(receiver, userReward);
     }
+  }
+
+  function _convertToShares(uint256 amount, Rounding rounding)
+    internal
+    view
+    returns (uint256)
+  {
+    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
+    return amount.rayDivRoundDown(rate());
+  }
+
+  function _convertToAssets(uint256 shares, Rounding rounding)
+    internal
+    view
+    returns (uint256)
+  {
+    if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
+    return shares.rayMulRoundDown(rate());
   }
 }
