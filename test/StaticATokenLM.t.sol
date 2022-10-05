@@ -292,7 +292,7 @@ contract StaticATokenLMTest is Test {
     _wethToAWeth(amountToDeposit, user);
     IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
     uint256 shares = 1 ether;
-    uint256 assets = staticATokenLM.mint(shares, user);
+    staticATokenLM.mint(shares, user);
     assertEq(shares, staticATokenLM.balanceOf(user));
   }
 
@@ -302,7 +302,7 @@ contract StaticATokenLMTest is Test {
 
     _wethToAWeth(amountToDeposit, user);
     IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
-    uint256 assets = staticATokenLM.mint(amountToDeposit, user);
+    staticATokenLM.mint(amountToDeposit, user);
   }
 
   // test rewards
