@@ -254,6 +254,7 @@ contract StaticATokenLM is
       );
   }
 
+  ///@inheritdoc IStaticATokenLM
   function claimRewardsOnBehalf(address onBehalfOf, address receiver) external {
     require(
       msg.sender == onBehalfOf ||
@@ -263,10 +264,12 @@ contract StaticATokenLM is
     _claimRewardsOnBehalf(onBehalfOf, receiver);
   }
 
+  ///@inheritdoc IStaticATokenLM
   function claimRewards(address receiver) external {
     _claimRewardsOnBehalf(msg.sender, receiver);
   }
 
+  ///@inheritdoc IStaticATokenLM
   function claimRewardsToSelf() external {
     _claimRewardsOnBehalf(msg.sender, msg.sender);
   }
