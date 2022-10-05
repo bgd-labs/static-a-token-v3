@@ -6,6 +6,8 @@ import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
+import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
+import {SigUtils} from './SigUtils.sol';
 
 contract StaticATokenLMTest is Test {
   address constant OWNER = address(1234);
@@ -13,6 +15,11 @@ contract StaticATokenLMTest is Test {
 
   address public user;
   address public user1;
+  address internal spender;
+
+  uint256 internal userPrivateKey;
+  uint256 internal spenderPrivateKey;
+
   address constant REWARD_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
   address constant WETH = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
   address constant aWETH = 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
@@ -21,8 +28,14 @@ contract StaticATokenLMTest is Test {
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 20389332);
-    user = address(vm.addr(1));
+
+    userPrivateKey = 0xA11CE;
+    spenderPrivateKey = 0xB0B0;
+
+    user = address(vm.addr(userPrivateKey));
     user1 = address(vm.addr(2));
+    spender = vm.addr(spenderPrivateKey);
+
     TransparentProxyFactory proxyFactory = new TransparentProxyFactory();
     StaticATokenLM staticATokenLMImpl = new StaticATokenLM();
     hoax(OWNER);
@@ -181,9 +194,41 @@ contract StaticATokenLMTest is Test {
     assertApproxEqAbs(IERC20(aWETH).balanceOf(user), amountToDeposit, 1);
   }
 
-  // function testMetaWithdraw() public {
-  //   staticATokenLM.metaWithdraw(user, user, 100, 0, false, deadline, sigParams);
-  // }
+  function testMetaWithdraw() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit, user);
+
+    _depositAWeth(amountToDeposit, user);
+
+    SigUtils.Permit memory permit = SigUtils.Permit({
+      owner: user,
+      spender: address(staticATokenLM),
+      staticAmount: 1e18,
+      dynamicAmount: 0,
+      toUnderlying: false,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp + 1 days
+    });
+    bytes32 digest = SigUtils.getTypedDataHash(
+      permit,
+      staticATokenLM.METAWITHDRAWAL_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
+
+    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
+      .SignatureParams(v, r, s);
+
+    staticATokenLM.metaWithdraw(
+      permit.owner,
+      permit.spender,
+      permit.staticAmount,
+      permit.dynamicAmount,
+      permit.toUnderlying,
+      permit.deadline,
+      sigParams
+    );
+  }
 
   function testFailWithdrawAboveBalance() public {
     uint128 amountToDeposit = 5 ether;
@@ -223,8 +268,7 @@ contract StaticATokenLMTest is Test {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    IERC20(WETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, true);
+    _depositAWeth(amountToDeposit, user);
 
     _skipBlocks(60);
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
@@ -240,8 +284,7 @@ contract StaticATokenLMTest is Test {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    IERC20(WETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, true);
+    _depositAWeth(amountToDeposit, user);
 
     _skipBlocks(60);
 
@@ -255,8 +298,7 @@ contract StaticATokenLMTest is Test {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    IERC20(WETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, true);
+    _depositAWeth(amountToDeposit, user);
 
     _skipBlocks(60);
 
@@ -271,8 +313,7 @@ contract StaticATokenLMTest is Test {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    IERC20(WETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, true);
+    _depositAWeth(amountToDeposit, user);
     assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
 
     _skipBlocks(60);
@@ -291,11 +332,7 @@ contract StaticATokenLMTest is Test {
     _fundUser(amountToDeposit, user);
 
     // deposit aweth
-    IERC20(WETH).approve(address(pool), amountToDeposit);
-    pool.deposit(WETH, amountToDeposit, user, 0);
-
-    IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, false);
+    _depositAWeth(amountToDeposit, user);
 
     // forward time
     _skipBlocks(60);
@@ -330,9 +367,7 @@ contract StaticATokenLMTest is Test {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    // deposit weth
-    IERC20(WETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, true);
+    _depositAWeth(amountToDeposit, user);
 
     // forward time
     _skipBlocks(60);
@@ -367,9 +402,7 @@ contract StaticATokenLMTest is Test {
     uint128 amountToDeposit = 10 ether;
     _fundUser(amountToDeposit, user);
 
-    // deposit weth
-    IERC20(WETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, true);
+    _depositAWeth(amountToDeposit, user);
 
     // transfer to 2nd user
     staticATokenLM.transfer(user1, amountToDeposit / 2);

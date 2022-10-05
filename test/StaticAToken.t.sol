@@ -70,8 +70,7 @@ contract StaticATokenTest is Test {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    IERC20(WETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, true);
+    _depositAWeth(amountToDeposit, user);
 
     _skipBlocks(60);
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
@@ -84,14 +83,14 @@ contract StaticATokenTest is Test {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    IERC20(WETH).approve(address(staticATokenLM), amountToDeposit);
-    staticATokenLM.deposit(amountToDeposit, user, 0, true);
+    _depositAWeth(amountToDeposit, user);
 
     _skipBlocks(60);
 
     uint256 claimable = staticATokenLM.getClaimableRewards(user);
     staticATokenLM.claimRewardsToSelf();
-    assertEq(IERC20(REWARD_TOKEN).balanceOf(user), claimable);
+    assertEq(claimable, 0);
+    assertEq(IERC20(REWARD_TOKEN).balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
   }
 }
