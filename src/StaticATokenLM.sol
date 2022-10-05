@@ -123,7 +123,6 @@ contract StaticATokenLM is
     require(depositor != address(0), StaticATokenErrors.INVALID_DEPOSITOR);
     //solium-disable-next-line
     require(deadline >= block.timestamp, StaticATokenErrors.INVALID_EXPIRATION);
-    uint256 nonce = nonces[depositor];
 
     // Unchecked because the only math done is incrementing
     // the owner's nonce which cannot realistically overflow.
@@ -140,13 +139,12 @@ contract StaticATokenLM is
               value,
               referralCode,
               fromUnderlying,
-              nonce,
+              nonces[depositor]++,
               deadline
             )
           )
         )
       );
-      nonces[depositor] = nonce + 1;
       require(
         depositor == ecrecover(digest, sigParams.v, sigParams.r, sigParams.s),
         StaticATokenErrors.INVALID_SIGNATURE
@@ -168,7 +166,6 @@ contract StaticATokenLM is
     require(owner != address(0), StaticATokenErrors.INVALID_OWNER);
     //solium-disable-next-line
     require(deadline >= block.timestamp, StaticATokenErrors.INVALID_EXPIRATION);
-    uint256 nonce = nonces[owner];
     // Unchecked because the only math done is incrementing
     // the owner's nonce which cannot realistically overflow.
     unchecked {
@@ -184,13 +181,12 @@ contract StaticATokenLM is
               staticAmount,
               dynamicAmount,
               toUnderlying,
-              nonce,
+              nonces[owner]++,
               deadline
             )
           )
         )
       );
-      nonces[owner] = nonce + 1;
       require(
         owner == ecrecover(digest, sigParams.v, sigParams.r, sigParams.s),
         StaticATokenErrors.INVALID_SIGNATURE
