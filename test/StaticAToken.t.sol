@@ -66,7 +66,7 @@ contract StaticATokenTest is Test {
   }
 
   // test rewards
-  function testCollectAndUpdateRewards() public {
+  function test_collectAndUpdateRewards() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -79,7 +79,7 @@ contract StaticATokenTest is Test {
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
   }
 
-  function testClaimRewardsToSelf() public {
+  function test_claimRewardsToSelf() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 

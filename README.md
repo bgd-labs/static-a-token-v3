@@ -7,5 +7,6 @@ The static token vault tokens are designed to increase in value instead of balan
 
 ## Limitations
 
-The static aToken will keep track of LM rewards per user only for the incentives controller present on token initialization.
-In token is using transparent proxy pattern, so the token is potentially upgradable to keep track of a new incentives controller.
+The static aToken will keep track of LM rewards per user only for the first token listed on the incentives controller present on token initialization. This is probably good enough for most use cases.
+
+The static aToken is using transparent proxy pattern, so the token is potentially upgradable to keep track of a new incentives controller or token down the line.

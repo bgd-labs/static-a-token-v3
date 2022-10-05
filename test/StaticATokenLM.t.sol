@@ -78,7 +78,7 @@ contract StaticATokenLMTest is Test {
     return staticATokenLM.deposit(amountToDeposit, user);
   }
 
-  function testGetters() public {
+  function test_getters() public {
     assertEq(staticATokenLM.name(), 'Static Aave WETH');
     assertEq(staticATokenLM.symbol(), 'stataWETH');
 
@@ -100,7 +100,7 @@ contract StaticATokenLMTest is Test {
     );
   }
 
-  function testConvertersAndPreviews() public {
+  function test_convertersAndPreviews() public {
     uint128 amount = 5 ether;
     uint256 shares = staticATokenLM.convertToShares(amount);
     assertLe(shares, amount, 'SHARES LOWER');
@@ -117,7 +117,7 @@ contract StaticATokenLMTest is Test {
   }
 
   // Redeem tests
-  function testRedeem() public {
+  function test_redeem() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -130,7 +130,7 @@ contract StaticATokenLMTest is Test {
     assertApproxEqAbs(IERC20(aWETH).balanceOf(user), amountToDeposit, 1);
   }
 
-  function testRedeemUnderlying() public {
+  function test_redeemUnderlying() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -143,7 +143,7 @@ contract StaticATokenLMTest is Test {
     assertApproxEqAbs(IERC20(WETH).balanceOf(user), amountToDeposit, 1);
   }
 
-  function testRedeemAllowance() public {
+  function test_redeemAllowance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -158,7 +158,7 @@ contract StaticATokenLMTest is Test {
     assertApproxEqAbs(IERC20(aWETH).balanceOf(user1), amountToDeposit, 1);
   }
 
-  function testFailRedeemOverflowAllowance() public {
+  function testFail_redeemOverflowAllowance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -172,7 +172,7 @@ contract StaticATokenLMTest is Test {
     assertEq(IERC20(aWETH).balanceOf(user1), amountToDeposit);
   }
 
-  function testFailRedeemAboveBalance() public {
+  function testFail_redeemAboveBalance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -181,7 +181,7 @@ contract StaticATokenLMTest is Test {
   }
 
   // Withdraw tests
-  function testWithdraw() public {
+  function test_withdraw() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -194,7 +194,7 @@ contract StaticATokenLMTest is Test {
     assertApproxEqAbs(IERC20(aWETH).balanceOf(user), amountToDeposit, 1);
   }
 
-  function testMetaWithdraw() public {
+  function test_metaWithdraw() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -232,7 +232,7 @@ contract StaticATokenLMTest is Test {
     assertEq(IERC20(aWETH).balanceOf(permit.spender), permit.dynamicAmount);
   }
 
-  function testFailWithdrawAboveBalance() public {
+  function testFail_withdrawAboveBalance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
     _fundUser(amountToDeposit, user1);
@@ -245,7 +245,7 @@ contract StaticATokenLMTest is Test {
   }
 
   // mint
-  function testMint() public {
+  function test_mint() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -256,7 +256,7 @@ contract StaticATokenLMTest is Test {
     assertEq(shares, staticATokenLM.balanceOf(user));
   }
 
-  function testFailMintAboveBalance() public {
+  function testFail_mintAboveBalance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -266,7 +266,7 @@ contract StaticATokenLMTest is Test {
   }
 
   // test rewards
-  function testCollectAndUpdateRewards() public {
+  function test_collectAndUpdateRewards() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -282,7 +282,7 @@ contract StaticATokenLMTest is Test {
     );
   }
 
-  function testClaimRewardsToSelf() public {
+  function test_claimRewardsToSelf() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -296,7 +296,7 @@ contract StaticATokenLMTest is Test {
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
   }
 
-  function testClaimRewards() public {
+  function test_claimRewards() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -311,7 +311,7 @@ contract StaticATokenLMTest is Test {
   }
 
   // should fail as user1 is not a valid claimer
-  function testFailClaimRewardsOnBehalfOf() public {
+  function testFail_claimRewardsOnBehalfOf() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -329,7 +329,7 @@ contract StaticATokenLMTest is Test {
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
   }
 
-  function testDepositAWETHClaimWithdrawClaim() public {
+  function test_depositAWETHClaimWithdrawClaim() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -365,7 +365,7 @@ contract StaticATokenLMTest is Test {
     assertGt(AToken(aWETH).balanceOf(user), 5 ether);
   }
 
-  function testDepositWETHClaimWithdrawClaim() public {
+  function test_depositWETHClaimWithdrawClaim() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -400,7 +400,7 @@ contract StaticATokenLMTest is Test {
     assertGt(AToken(aWETH).balanceOf(user), 5 ether);
   }
 
-  function testTransfer() public {
+  function test_transfer() public {
     uint128 amountToDeposit = 10 ether;
     _fundUser(amountToDeposit, user);
 
@@ -432,7 +432,7 @@ contract StaticATokenLMTest is Test {
   }
 
   // getUnclaimedRewards
-  function testGetUnclaimedRewards() public {
+  function test_getUnclaimedRewards() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
