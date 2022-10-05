@@ -509,8 +509,6 @@ contract StaticATokenLM is
       StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
     );
 
-    uint256 userBalance = balanceOf[owner];
-
     uint256 amountToWithdraw = dynamicAmount;
     uint256 shares = staticAmount;
 
