@@ -194,13 +194,53 @@ contract StaticATokenLMTest is Test {
     assertApproxEqAbs(IERC20(aWETH).balanceOf(user), amountToDeposit, 1);
   }
 
+  function test_metaDeposit() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit, user);
+
+    _wethToAWeth(amountToDeposit, user);
+    IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
+
+    SigUtils.DepositPermit memory permit = SigUtils.DepositPermit({
+      owner: user,
+      spender: spender,
+      value: 1 ether,
+      referralCode: 0,
+      fromUnderlying: false,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp + 1 days
+    });
+    bytes32 digest = SigUtils.getTypedDepositHash(
+      permit,
+      staticATokenLM.METADEPOSIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
+
+    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
+      .SignatureParams(v, r, s);
+
+    uint256 previewDeposit = staticATokenLM.previewDeposit(permit.value);
+    staticATokenLM.metaDeposit(
+      permit.owner,
+      permit.spender,
+      permit.value,
+      permit.referralCode,
+      permit.fromUnderlying,
+      permit.deadline,
+      sigParams
+    );
+
+    assertEq(staticATokenLM.balanceOf(permit.spender), previewDeposit);
+  }
+
   function test_metaWithdraw() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
     _depositAWeth(amountToDeposit, user);
 
-    SigUtils.Permit memory permit = SigUtils.Permit({
+    SigUtils.WithdrawPermit memory permit = SigUtils.WithdrawPermit({
       owner: user,
       spender: spender,
       staticAmount: 0,
@@ -209,7 +249,7 @@ contract StaticATokenLMTest is Test {
       nonce: staticATokenLM.nonces(user),
       deadline: block.timestamp + 1 days
     });
-    bytes32 digest = SigUtils.getTypedDataHash(
+    bytes32 digest = SigUtils.getTypedWithdrawHash(
       permit,
       staticATokenLM.METAWITHDRAWAL_TYPEHASH(),
       staticATokenLM.DOMAIN_SEPARATOR()
