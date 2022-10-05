@@ -202,9 +202,9 @@ contract StaticATokenLMTest is Test {
 
     SigUtils.Permit memory permit = SigUtils.Permit({
       owner: user,
-      spender: address(staticATokenLM),
-      staticAmount: 1e18,
-      dynamicAmount: 0,
+      spender: spender,
+      staticAmount: 0,
+      dynamicAmount: 1e18,
       toUnderlying: false,
       nonce: staticATokenLM.nonces(user),
       deadline: block.timestamp + 1 days
@@ -228,6 +228,8 @@ contract StaticATokenLMTest is Test {
       permit.deadline,
       sigParams
     );
+
+    assertEq(IERC20(aWETH).balanceOf(permit.spender), permit.dynamicAmount);
   }
 
   function testFailWithdrawAboveBalance() public {
