@@ -2,10 +2,10 @@
 pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
-import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
 import {AaveV3Polygon, IPool} from 'aave-address-book/AaveV3Polygon.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
+import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
 
 contract StaticATokenTest is Test {
   address constant OWNER = address(1234);

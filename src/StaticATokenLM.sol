@@ -254,6 +254,7 @@ contract StaticATokenLM is
       );
   }
 
+  ///@inheritdoc IStaticATokenLM
   function claimRewardsOnBehalf(address onBehalfOf, address receiver) external {
     require(
       msg.sender == onBehalfOf ||
@@ -263,10 +264,12 @@ contract StaticATokenLM is
     _claimRewardsOnBehalf(onBehalfOf, receiver);
   }
 
+  ///@inheritdoc IStaticATokenLM
   function claimRewards(address receiver) external {
     _claimRewardsOnBehalf(msg.sender, receiver);
   }
 
+  ///@inheritdoc IStaticATokenLM
   function claimRewardsToSelf() external {
     _claimRewardsOnBehalf(msg.sender, msg.sender);
   }
@@ -378,27 +381,9 @@ contract StaticATokenLM is
     return _convertToShares(amount, Rounding.DOWN);
   }
 
-  function _convertToShares(uint256 amount, Rounding rounding)
-    internal
-    view
-    returns (uint256)
-  {
-    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
-    return amount.rayDivRoundDown(rate());
-  }
-
   ///@inheritdoc IERC4626
   function convertToAssets(uint256 shares) external view returns (uint256) {
     return _convertToAssets(shares, Rounding.DOWN);
-  }
-
-  function _convertToAssets(uint256 shares, Rounding rounding)
-    internal
-    view
-    returns (uint256)
-  {
-    if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
-    return shares.rayMulRoundDown(rate());
   }
 
   ///@inheritdoc IERC4626
@@ -523,8 +508,6 @@ contract StaticATokenLM is
       staticAmount == 0 || dynamicAmount == 0,
       StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
     );
-
-    uint256 userBalance = balanceOf[owner];
 
     uint256 amountToWithdraw = dynamicAmount;
     uint256 shares = staticAmount;
@@ -676,5 +659,23 @@ contract StaticATokenLM is
         .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
       rewardToken.safeTransfer(receiver, userReward);
     }
+  }
+
+  function _convertToShares(uint256 amount, Rounding rounding)
+    internal
+    view
+    returns (uint256)
+  {
+    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
+    return amount.rayDivRoundDown(rate());
+  }
+
+  function _convertToAssets(uint256 shares, Rounding rounding)
+    internal
+    view
+    returns (uint256)
+  {
+    if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
+    return shares.rayMulRoundDown(rate());
   }
 }
