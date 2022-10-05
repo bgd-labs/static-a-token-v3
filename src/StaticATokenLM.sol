@@ -3,20 +3,21 @@ pragma solidity ^0.8.10;
 
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
 import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBalanceToken.sol';
-import {IERC20} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20.sol';
-import {IERC20Detailed} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20Detailed.sol';
-import {IStaticATokenLM} from './IStaticATokenLM.sol';
-import {IAaveIncentivesController} from 'aave-v3-core/contracts/interfaces/IAaveIncentivesController.sol';
-import {VersionedInitializable} from 'aave-v3-core/contracts/protocol/libraries/aave-upgradeability/VersionedInitializable.sol';
+import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
+import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
+import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
+import {IERC20Metadata} from 'solidity-utils/contracts/oz-common/interfaces/IERC20Metadata.sol';
+import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
 
-import {IAToken} from './IAToken.sol';
+import {IStaticATokenLM} from './interfaces/IStaticATokenLM.sol';
+import {IAToken} from './interfaces/IAToken.sol';
 import {ERC20} from './ERC20.sol';
-import {SafeERC20} from './SafeERC20.sol'; //TODO: stop this mess with imports
-import {IInitializableStaticATokenLM} from './IInitializableStaticATokenLM.sol';
+import {IInitializableStaticATokenLM} from './interfaces/IInitializableStaticATokenLM.sol';
 import {StaticATokenErrors} from './StaticATokenErrors.sol';
-import {RayMathNoRounding} from './RayMathNoRounding.sol';
+import {RayMathExplicitRounding, Rounding} from './RayMathExplicitRounding.sol';
+import {IERC4626} from './interfaces/IERC4626.sol';
 
 /**
  * @title StaticATokenLM
@@ -26,14 +27,15 @@ import {RayMathNoRounding} from './RayMathNoRounding.sol';
  * @author Aave
  **/
 contract StaticATokenLM is
-  VersionedInitializable,
-  ERC20('STATIC_ATOKEN_IMPL', 'STATIC_ATOKEN_IMPL', 18),
-  IStaticATokenLM
+  Initializable,
+  ERC20('STATIC__aToken_IMPL', 'STATIC__aToken_IMPL', 18),
+  IStaticATokenLM,
+  IERC4626
 {
   using SafeERC20 for IERC20;
   using SafeCast for uint256;
   using WadRayMath for uint256;
-  using RayMathNoRounding for uint256;
+  using RayMathExplicitRounding for uint256;
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
@@ -44,25 +46,20 @@ contract StaticATokenLM is
       'Withdraw(address owner,address recipient,uint256 staticAmount,uint256 dynamicAmount,bool toUnderlying,uint256 nonce,uint256 deadline)'
     );
 
-  uint256 public constant STATIC_ATOKEN_LM_REVISION = 0x1;
+  uint256 public constant STATIC__ATOKEN_LM_REVISION = 1;
 
   struct UserRewardsData {
     uint128 rewardsIndexOnLastInteraction; // (in RAYs)
     uint128 unclaimedRewards; // (in RAYs)
   }
 
-  IPool public override LENDING_POOL;
-  IAaveIncentivesController public override INCENTIVES_CONTROLLER;
-  IERC20 public override ATOKEN;
-  IERC20 public override ASSET;
-  IERC20 public override REWARD_TOKEN;
+  IPool internal _pool;
+  IRewardsController internal _incentivesController;
+  IERC20 internal _aToken;
+  address internal _aTokenUnderlying;
+  IERC20 internal _rewardToken;
 
-  mapping(address => UserRewardsData) private _userRewardsData;
-
-  ///@inheritdoc VersionedInitializable
-  function getRevision() internal pure virtual override returns (uint256) {
-    return STATIC_ATOKEN_LM_REVISION;
-  }
+  mapping(address => UserRewardsData) internal _userRewardsData;
 
   ///@inheritdoc IInitializableStaticATokenLM
   function initialize(
@@ -71,22 +68,26 @@ contract StaticATokenLM is
     string calldata staticATokenName,
     string calldata staticATokenSymbol
   ) external override initializer {
-    LENDING_POOL = pool;
-    ATOKEN = IERC20(aToken);
+    _pool = pool;
+    _aToken = IERC20(aToken);
 
     name = staticATokenName;
     symbol = staticATokenSymbol;
-    decimals = IERC20Detailed(aToken).decimals(); // maybe make sense to add setter as was before
+    decimals = IERC20Metadata(aToken).decimals();
 
-    ASSET = IERC20(IAToken(aToken).UNDERLYING_ASSET_ADDRESS());
-    ASSET.safeApprove(address(pool), type(uint256).max);
+    _aTokenUnderlying = IAToken(aToken).UNDERLYING_ASSET_ADDRESS();
+    IERC20(_aTokenUnderlying).safeApprove(address(pool), type(uint256).max);
 
     try IAToken(aToken).getIncentivesController() returns (
-      IAaveIncentivesController incentivesController
+      address incentivesController
     ) {
-      if (address(incentivesController) != address(0)) {
-        INCENTIVES_CONTROLLER = incentivesController;
-        REWARD_TOKEN = IERC20(INCENTIVES_CONTROLLER.REWARD_TOKEN());
+      if (incentivesController != address(0)) {
+        _incentivesController = IRewardsController(incentivesController);
+        address[] memory rewards = IRewardsController(incentivesController)
+          .getRewardsList();
+        if (rewards.length > 0) {
+          _rewardToken = IERC20(rewards[0]);
+        }
       }
     } catch {}
 
@@ -100,31 +101,13 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function deposit(
+    uint256 assets,
     address recipient,
-    uint256 amount,
     uint16 referralCode,
     bool fromUnderlying
   ) external override returns (uint256) {
     return
-      _deposit(msg.sender, recipient, amount, referralCode, fromUnderlying);
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function withdraw(
-    address recipient,
-    uint256 amount,
-    bool toUnderlying
-  ) external override returns (uint256, uint256) {
-    return _withdraw(msg.sender, recipient, amount, 0, toUnderlying);
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function withdrawDynamicAmount(
-    address recipient,
-    uint256 amount,
-    bool toUnderlying
-  ) external override returns (uint256, uint256) {
-    return _withdraw(msg.sender, recipient, 0, amount, toUnderlying);
+      _deposit(msg.sender, recipient, assets, referralCode, fromUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -217,76 +200,366 @@ contract StaticATokenLM is
       _withdraw(owner, recipient, staticAmount, dynamicAmount, toUnderlying);
   }
 
-  ///@inheritdoc IStaticATokenLM
-  function dynamicBalanceOf(address account)
-    external
+  ///@inheritdoc IERC4626
+  function previewRedeem(uint256 shares)
+    public
     view
+    virtual
     override
     returns (uint256)
   {
-    return _staticToDynamicAmount(balanceOf[account], rate());
+    return _convertToAssets(shares, Rounding.DOWN);
   }
 
-  ///@inheritdoc IStaticATokenLM
-  function staticToDynamicAmount(uint256 amount)
-    external
+  ///@inheritdoc IERC4626
+  function previewMint(uint256 shares)
+    public
     view
+    virtual
     override
     returns (uint256)
   {
-    return _staticToDynamicAmount(amount, rate());
+    return _convertToAssets(shares, Rounding.UP);
   }
 
-  ///@inheritdoc IStaticATokenLM
-  function dynamicToStaticAmount(uint256 amount)
-    external
+  ///@inheritdoc IERC4626
+  function previewWithdraw(uint256 assets)
+    public
     view
+    virtual
     override
     returns (uint256)
   {
-    return _dynamicToStaticAmount(amount, rate());
+    return _convertToShares(assets, Rounding.UP);
+  }
+
+  ///@inheritdoc IERC4626
+  function previewDeposit(uint256 assets)
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    return _convertToShares(assets, Rounding.DOWN);
   }
 
   ///@inheritdoc IStaticATokenLM
   function rate() public view override returns (uint256) {
-    return LENDING_POOL.getReserveNormalizedIncome(address(ASSET));
+    return _pool.getReserveNormalizedIncome(_aTokenUnderlying);
   }
 
-  function _dynamicToStaticAmount(uint256 amount, uint256 rate)
-    internal
-    pure
-    returns (uint256)
-  {
-    return amount.rayDiv(rate);
+  ///@inheritdoc IStaticATokenLM
+  function collectAndUpdateRewards() public override returns (uint256) {
+    address rewardToken = address(_rewardToken);
+    if (rewardToken == address(0)) {
+      return 0;
+    }
+
+    address[] memory assets = new address[](1);
+    assets[0] = address(_aToken);
+
+    return
+      _incentivesController.claimRewards(
+        assets,
+        type(uint256).max,
+        address(this),
+        rewardToken
+      );
   }
 
-  function _staticToDynamicAmount(uint256 amount, uint256 rate)
-    internal
-    pure
+  function claimRewardsOnBehalf(address onBehalfOf, address receiver)
+    external
+    override
+  {
+    require(
+      msg.sender == onBehalfOf ||
+        msg.sender == _incentivesController.getClaimer(onBehalfOf),
+      StaticATokenErrors.INVALID_CLAIMER
+    );
+    _claimRewardsOnBehalf(onBehalfOf, receiver);
+  }
+
+  function claimRewards(address receiver) external override {
+    _claimRewardsOnBehalf(msg.sender, receiver);
+  }
+
+  function claimRewardsToSelf() external override {
+    _claimRewardsOnBehalf(msg.sender, msg.sender);
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  // @dev This should be simplified once the _incentivesController is updated to expose index directly.
+  function getCurrentRewardsIndex() public view override returns (uint256) {
+    address rewardToken = address(_rewardToken);
+    address aToken = address(_aToken);
+    if (address(rewardToken) == address(0)) {
+      return 0;
+    }
+    (
+      uint256 index,
+      uint256 emissionPerSecond,
+      uint256 lastUpdateTimestamp,
+      uint256 distributionEnd
+    ) = _incentivesController.getRewardsData(
+        address(aToken),
+        address(rewardToken)
+      );
+    uint256 totalSupply = IScaledBalanceToken(address(aToken))
+      .scaledTotalSupply();
+
+    if (
+      emissionPerSecond == 0 ||
+      totalSupply == 0 ||
+      lastUpdateTimestamp == block.timestamp ||
+      lastUpdateTimestamp >= distributionEnd
+    ) {
+      return index;
+    }
+
+    uint256 currentTimestamp = block.timestamp > distributionEnd
+      ? distributionEnd
+      : block.timestamp;
+    uint256 timeDelta = currentTimestamp - lastUpdateTimestamp;
+    return
+      ((emissionPerSecond * timeDelta * (10**uint256(decimals))) /
+        totalSupply) + index;
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function getTotalClaimableRewards() external view override returns (uint256) {
+    address rewardToken = address(_rewardToken);
+    if (rewardToken == address(0)) {
+      return 0;
+    }
+
+    address[] memory assets = new address[](1);
+    assets[0] = address(_aToken);
+    uint256 freshRewards = _incentivesController.getUserRewards(
+      assets,
+      address(this),
+      rewardToken
+    );
+    return IERC20(rewardToken).balanceOf(address(this)) + freshRewards;
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function getClaimableRewards(address user)
+    external
+    view
+    override
     returns (uint256)
   {
-    return amount.rayMul(rate);
+    return
+      _getClaimableRewards(user, balanceOf[user], getCurrentRewardsIndex());
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function getUnclaimedRewards(address user)
+    external
+    view
+    override
+    returns (uint256)
+  {
+    return uint256(_userRewardsData[user].unclaimedRewards).rayToWadRoundDown();
+  }
+
+  // 4626 compatibility
+  ///@inheritdoc IERC4626
+  function asset() external view override returns (address) {
+    return address(_aToken);
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function incentivesController() external view override returns (address) {
+    return address(_incentivesController);
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function pool() external view override returns (IPool) {
+    return _pool;
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function aToken() external view override returns (IERC20) {
+    return _aToken;
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function aTokenUnderlying() external view override returns (IERC20) {
+    return IERC20(_aTokenUnderlying);
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function rewardToken() external view override returns (IERC20) {
+    return _rewardToken;
+  }
+
+  ///@inheritdoc IERC4626
+  function totalAssets() external view override returns (uint256) {
+    return _aToken.balanceOf(address(this));
+  }
+
+  ///@inheritdoc IERC4626
+  function convertToShares(uint256 amount)
+    external
+    view
+    override
+    returns (uint256)
+  {
+    return _convertToShares(amount, Rounding.DOWN);
+  }
+
+  function _convertToShares(uint256 amount, Rounding rounding)
+    internal
+    view
+    returns (uint256)
+  {
+    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
+    return amount.rayDivRoundDown(rate());
+  }
+
+  ///@inheritdoc IERC4626
+  function convertToAssets(uint256 shares)
+    external
+    view
+    override
+    returns (uint256)
+  {
+    return _convertToAssets(shares, Rounding.DOWN);
+  }
+
+  function _convertToAssets(uint256 shares, Rounding rounding)
+    internal
+    view
+    returns (uint256)
+  {
+    if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
+    return shares.rayMulRoundDown(rate());
+  }
+
+  ///@inheritdoc IERC4626
+  function maxDeposit(address) public view virtual override returns (uint256) {
+    return type(uint256).max;
+  }
+
+  ///@inheritdoc IERC4626
+  function maxMint(address) public view virtual override returns (uint256) {
+    return type(uint256).max;
+  }
+
+  ///@inheritdoc IERC4626
+  function maxWithdraw(address owner)
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    return _convertToAssets(balanceOf[owner], Rounding.DOWN);
+  }
+
+  ///@inheritdoc IERC4626
+  function maxRedeem(address owner)
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    return balanceOf[owner];
+  }
+
+  ///@inheritdoc IERC4626
+  function deposit(uint256 assets, address receiver)
+    public
+    virtual
+    override
+    returns (uint256)
+  {
+    return _deposit(msg.sender, receiver, assets, 0, false);
+  }
+
+  ///@inheritdoc IERC4626
+  function mint(uint256 shares, address receiver)
+    public
+    virtual
+    override
+    returns (uint256)
+  {
+    require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
+
+    uint256 assets = previewMint(shares);
+    _deposit(msg.sender, receiver, assets, 0, false);
+
+    return assets;
+  }
+
+  ///@inheritdoc IERC4626
+  function withdraw(
+    uint256 assets,
+    address receiver,
+    address owner
+  ) public virtual override returns (uint256) {
+    require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
+
+    (uint256 shares, ) = _withdraw(owner, receiver, 0, assets, false);
+
+    return shares;
+  }
+
+  ///@inheritdoc IERC4626
+  function redeem(
+    uint256 shares,
+    address receiver,
+    address owner
+  ) public virtual override returns (uint256) {
+    require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
+
+    (, uint256 assets) = _withdraw(owner, receiver, shares, 0, false);
+
+    return assets;
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function redeem(
+    uint256 shares,
+    address receiver,
+    address owner,
+    bool toUnderlying
+  ) public virtual override returns (uint256, uint256) {
+    require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
+
+    return _withdraw(owner, receiver, shares, 0, toUnderlying);
   }
 
   function _deposit(
     address depositor,
     address recipient,
-    uint256 amount,
+    uint256 assets,
     uint16 referralCode,
     bool fromUnderlying
   ) internal returns (uint256) {
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
+    address aTokenUnderlying = _aTokenUnderlying;
 
     if (fromUnderlying) {
-      ASSET.safeTransferFrom(depositor, address(this), amount);
-      LENDING_POOL.deposit(address(ASSET), amount, address(this), referralCode);
+      IERC20(aTokenUnderlying).safeTransferFrom(
+        depositor,
+        address(this),
+        assets
+      );
+      _pool.deposit(aTokenUnderlying, assets, address(this), referralCode);
     } else {
-      ATOKEN.safeTransferFrom(depositor, address(this), amount);
+      _aToken.safeTransferFrom(depositor, address(this), assets);
     }
-    uint256 amountToMint = _dynamicToStaticAmount(amount, rate());
-    _mint(recipient, amountToMint);
+    uint256 shares = previewDeposit(assets);
 
-    return amountToMint;
+    _mint(recipient, shares);
+
+    emit Deposit(msg.sender, recipient, assets, shares);
+
+    return shares;
   }
 
   function _withdraw(
@@ -304,33 +577,33 @@ contract StaticATokenLM is
 
     uint256 userBalance = balanceOf[owner];
 
-    uint256 amountToWithdraw;
-    uint256 amountToBurn;
+    uint256 amountToWithdraw = dynamicAmount;
+    uint256 shares = staticAmount;
 
-    uint256 currentRate = rate();
     if (staticAmount > 0) {
-      amountToBurn = (staticAmount > userBalance) ? userBalance : staticAmount;
-      amountToWithdraw = _staticToDynamicAmount(amountToBurn, currentRate);
+      amountToWithdraw = previewRedeem(staticAmount);
     } else {
-      uint256 dynamicUserBalance = _staticToDynamicAmount(
-        userBalance,
-        currentRate
-      );
-      amountToWithdraw = (dynamicAmount > dynamicUserBalance)
-        ? dynamicUserBalance
-        : dynamicAmount;
-      amountToBurn = _dynamicToStaticAmount(amountToWithdraw, currentRate);
+      shares = previewWithdraw(dynamicAmount);
     }
 
-    _burn(owner, amountToBurn);
+    if (msg.sender != owner) {
+      uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+
+      if (allowed != type(uint256).max)
+        allowance[owner][msg.sender] = allowed - shares;
+    }
+
+    _burn(owner, shares);
+
+    emit Withdraw(msg.sender, recipient, owner, amountToWithdraw, shares);
 
     if (toUnderlying) {
-      LENDING_POOL.withdraw(address(ASSET), amountToWithdraw, recipient);
+      _pool.withdraw(_aTokenUnderlying, amountToWithdraw, recipient);
     } else {
-      ATOKEN.safeTransfer(recipient, amountToWithdraw);
+      _aToken.safeTransfer(recipient, amountToWithdraw);
     }
 
-    return (amountToBurn, amountToWithdraw);
+    return (shares, amountToWithdraw);
   }
 
   /**
@@ -344,7 +617,7 @@ contract StaticATokenLM is
     address to,
     uint256 amount
   ) internal override {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
+    if (address(_rewardToken) == address(0)) {
       return;
     }
     uint256 rewardsIndex = getCurrentRewardsIndex();
@@ -354,88 +627,6 @@ contract StaticATokenLM is
     if (to != address(0) && from != to) {
       _updateUser(to, rewardsIndex);
     }
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function collectAndUpdateRewards() public override returns (uint256) {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      return 0;
-    }
-
-    address[] memory assets = new address[](1);
-    assets[0] = address(ATOKEN);
-
-    return
-      INCENTIVES_CONTROLLER.claimRewards(
-        assets,
-        type(uint256).max,
-        address(this)
-      );
-  }
-
-  /**
-   * @notice Claim rewards on behalf of a user and send them to a receiver
-   * @param onBehalfOf The address to claim on behalf of
-   * @param receiver The address to receive the rewards
-   */
-  function _claimRewardsOnBehalf(address onBehalfOf, address receiver)
-    internal
-  {
-    uint256 currentRewardsIndex = getCurrentRewardsIndex();
-    uint256 balance = balanceOf[onBehalfOf];
-    uint256 userReward = _getClaimableRewards(
-      onBehalfOf,
-      balance,
-      currentRewardsIndex
-    );
-    uint256 totalRewardTokenBalance = REWARD_TOKEN.balanceOf(address(this));
-    uint256 unclaimedReward = 0;
-
-    if (userReward > totalRewardTokenBalance) {
-      totalRewardTokenBalance += collectAndUpdateRewards();
-    }
-
-    if (userReward > totalRewardTokenBalance) {
-      unclaimedReward = userReward - totalRewardTokenBalance;
-      userReward = totalRewardTokenBalance;
-    }
-    if (userReward > 0) {
-      _userRewardsData[onBehalfOf].unclaimedRewards = unclaimedReward
-        .toUint128();
-      _userRewardsData[onBehalfOf]
-        .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
-      REWARD_TOKEN.safeTransfer(receiver, userReward);
-    }
-  }
-
-  function claimRewardsOnBehalf(address onBehalfOf, address receiver)
-    external
-    override
-  {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      return;
-    }
-
-    require(
-      msg.sender == onBehalfOf ||
-        msg.sender == INCENTIVES_CONTROLLER.getClaimer(onBehalfOf),
-      StaticATokenErrors.INVALID_CLAIMER
-    );
-    _claimRewardsOnBehalf(onBehalfOf, receiver);
-  }
-
-  function claimRewards(address receiver) external override {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      return;
-    }
-    _claimRewardsOnBehalf(msg.sender, receiver);
-  }
-
-  function claimRewardsToSelf() external override {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      return;
-    }
-    _claimRewardsOnBehalf(msg.sender, msg.sender);
   }
 
   /**
@@ -467,18 +658,13 @@ contract StaticATokenLM is
     uint256 rewardsIndexOnLastInteraction,
     uint256 currentRewardsIndex
   ) internal view returns (uint256) {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      // TODO: let's see, looks useless
-      return 0;
-    }
-
     if (balance == 0) {
       return 0;
     }
 
     uint256 rayBalance = balance.wadToRay();
     return
-      rayBalance.rayMulNoRounding(
+      rayBalance.rayMulRoundDown(
         currentRewardsIndex - rewardsIndexOnLastInteraction
       );
   }
@@ -504,82 +690,42 @@ contract StaticATokenLM is
       );
   }
 
-  ///@inheritdoc IStaticATokenLM
-  function getCurrentRewardsIndex() public view override returns (uint256) {
-    (
-      uint256 index,
-      uint256 emissionPerSecond,
-      uint256 lastUpdateTimestamp
-    ) = INCENTIVES_CONTROLLER.getAssetData(address(ATOKEN));
-    uint256 distributionEnd = INCENTIVES_CONTROLLER.DISTRIBUTION_END();
-    uint256 totalSupply = IScaledBalanceToken(address(ATOKEN))
-      .scaledTotalSupply();
-
-    if (
-      emissionPerSecond == 0 ||
-      totalSupply == 0 ||
-      lastUpdateTimestamp == block.timestamp ||
-      lastUpdateTimestamp >= distributionEnd
-    ) {
-      return index;
+  /**
+   * @notice Claim rewards on behalf of a user and send them to a receiver
+   * @param onBehalfOf The address to claim on behalf of
+   * @param receiver The address to receive the rewards
+   */
+  function _claimRewardsOnBehalf(address onBehalfOf, address receiver)
+    internal
+  {
+    IERC20 rewardToken = _rewardToken;
+    if (address(rewardToken) == address(0)) {
+      return;
     }
-
-    uint256 currentTimestamp = block.timestamp > distributionEnd
-      ? distributionEnd
-      : block.timestamp;
-    uint256 timeDelta = currentTimestamp - lastUpdateTimestamp;
-    return
-      ((emissionPerSecond * timeDelta * (10**uint256(18))) / totalSupply) +
-      index; // TODO: 18- precision, should be loaded
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function getTotalClaimableRewards() external view override returns (uint256) {
-    if (address(INCENTIVES_CONTROLLER) == address(0)) {
-      return 0;
-    }
-
-    address[] memory assets = new address[](1);
-    assets[0] = address(ATOKEN);
-    uint256 freshRewards = INCENTIVES_CONTROLLER.getRewardsBalance(
-      assets,
-      address(this)
+    uint256 currentRewardsIndex = getCurrentRewardsIndex();
+    uint256 balance = balanceOf[onBehalfOf];
+    uint256 userReward = _getClaimableRewards(
+      onBehalfOf,
+      balance,
+      currentRewardsIndex
     );
-    return REWARD_TOKEN.balanceOf(address(this)) + freshRewards;
-  }
+    uint256 totalRewardTokenBalance = rewardToken.balanceOf(address(this));
+    uint256 unclaimedReward = 0;
 
-  ///@inheritdoc IStaticATokenLM
-  function getClaimableRewards(address user)
-    external
-    view
-    override
-    returns (uint256)
-  {
-    return
-      _getClaimableRewards(user, balanceOf[user], getCurrentRewardsIndex());
-  }
+    if (userReward > totalRewardTokenBalance) {
+      totalRewardTokenBalance += collectAndUpdateRewards();
+    }
 
-  ///@inheritdoc IStaticATokenLM
-  function getUnclaimedRewards(address user)
-    external
-    view
-    override
-    returns (uint256)
-  {
-    return
-      uint256(_userRewardsData[user].unclaimedRewards).rayToWadNoRounding();
-  }
-
-  function getIncentivesController()
-    external
-    view
-    override
-    returns (IAaveIncentivesController)
-  {
-    return INCENTIVES_CONTROLLER;
-  }
-
-  function UNDERLYING_ASSET_ADDRESS() external view override returns (address) {
-    return address(ASSET);
+    if (userReward > totalRewardTokenBalance) {
+      unclaimedReward = userReward - totalRewardTokenBalance;
+      userReward = totalRewardTokenBalance;
+    }
+    if (userReward > 0) {
+      _userRewardsData[onBehalfOf].unclaimedRewards = unclaimedReward
+        .toUint128();
+      _userRewardsData[onBehalfOf]
+        .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
+      rewardToken.safeTransfer(receiver, userReward);
+    }
   }
 }

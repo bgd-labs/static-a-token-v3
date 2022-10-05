@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.10;
 
-import {IERC20} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20.sol';
+import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
 import {IAaveIncentivesController} from 'aave-v3-core/contracts/interfaces/IAaveIncentivesController.sol';
 import {IInitializableStaticATokenLM} from './IInitializableStaticATokenLM.sol';
@@ -14,9 +14,26 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   }
 
   /**
+   * @notice Burns `amount` of static aToken, with recipient receiving the corresponding amount of `ASSET`
+   * @param shares The amount to withdraw, in static balance of StaticAToken
+   * @param recipient The address that will receive the amount of `ASSET` withdrawn from the Aave protocol
+   * @param toUnderlying bool
+   * - `true` for the recipient to get underlying tokens (e.g. USDC)
+   * - `false` for the recipient to get aTokens (e.g. aUSDC)
+   * @return amountToBurn: StaticATokens burnt, static balance
+   * @return amountToWithdraw: underlying/aToken send to `recipient`, dynamic balance
+   **/
+  function redeem(
+    uint256 shares,
+    address recipient,
+    address owner,
+    bool toUnderlying
+  ) external returns (uint256, uint256);
+
+  /**
    * @notice Deposits `ASSET` in the Aave protocol and mints static aTokens to msg.sender
+   * @param assets The amount of underlying `ASSET` to deposit (e.g. deposit of 100 USDC)
    * @param recipient The address that will receive the static aTokens
-   * @param amount The amount of underlying `ASSET` to deposit (e.g. deposit of 100 USDC)
    * @param referralCode Code used to register the integrator originating the operation, for potential rewards.
    *   0 if the action is executed directly by the user, without any middle-man
    * @param fromUnderlying bool
@@ -25,43 +42,11 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @return uint256 The amount of StaticAToken minted, static balance
    **/
   function deposit(
+    uint256 assets,
     address recipient,
-    uint256 amount,
     uint16 referralCode,
     bool fromUnderlying
   ) external returns (uint256);
-
-  /**
-   * @notice Burns `amount` of static aToken, with recipient receiving the corresponding amount of `ASSET`
-   * @param recipient The address that will receive the amount of `ASSET` withdrawn from the Aave protocol
-   * @param amount The amount to withdraw, in static balance of StaticAToken
-   * @param toUnderlying bool
-   * - `true` for the recipient to get underlying tokens (e.g. USDC)
-   * - `false` for the recipient to get aTokens (e.g. aUSDC)
-   * @return amountToBurn: StaticATokens burnt, static balance
-   * @return amountToWithdraw: underlying/aToken send to `recipient`, dynamic balance
-   **/
-  function withdraw(
-    address recipient,
-    uint256 amount,
-    bool toUnderlying
-  ) external returns (uint256, uint256);
-
-  /**
-   * @notice Burns `amount` of static aToken, with recipient receiving the corresponding amount of `ASSET`
-   * @param recipient The address that will receive the amount of `ASSET` withdrawn from the Aave protocol
-   * @param amount The amount to withdraw, in dynamic balance of aToken/underlying asset
-   * @param toUnderlying bool
-   * - `true` for the recipient to get underlying tokens (e.g. USDC)
-   * - `false` for the recipient to get aTokens (e.g. aUSDC)
-   * @return amountToBurn: StaticATokens burnt, static balance
-   * @return amountToWithdraw: underlying/aToken send to `recipient`, dynamic balance
-   **/
-  function withdrawDynamicAmount(
-    address recipient,
-    uint256 amount,
-    bool toUnderlying
-  ) external returns (uint256, uint256);
 
   /**
    * @notice Allows to deposit on Aave via meta-transaction
@@ -114,35 +99,6 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   ) external returns (uint256, uint256);
 
   /**
-   * @notice Utility method to get the current aToken balance of an user, from his staticAToken balance
-   * @param account The address of the user
-   * @return uint256 The aToken balance
-   **/
-  function dynamicBalanceOf(address account) external view returns (uint256);
-
-  /**
-   * @notice Converts a static amount (scaled balance on aToken) to the aToken/underlying value,
-   * using the current liquidity index on Aave
-   * @param amount The amount to convert from
-   * @return uint256 The dynamic amount
-   **/
-  function staticToDynamicAmount(uint256 amount)
-    external
-    view
-    returns (uint256);
-
-  /**
-   * @notice Converts an aToken or underlying amount to the what it is denominated on the aToken as
-   * scaled balance, function of the principal and the liquidity index
-   * @param amount The amount to convert from
-   * @return uint256 The static (scaled) amount
-   **/
-  function dynamicToStaticAmount(uint256 amount)
-    external
-    view
-    returns (uint256);
-
-  /**
    * @notice Returns the Aave liquidity index of the underlying aToken, denominated rate here
    * as it can be considered as an ever-increasing exchange rate
    * @return The liquidity index
@@ -176,47 +132,57 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   /**
    * @notice Get the total claimable rewards of the contract.
-   * @return The current balance + pending rewards from the `_incentivesController`
+   * @return uint256 The current balance + pending rewards from the `_incentivesController`
    */
   function getTotalClaimableRewards() external view returns (uint256);
 
   /**
    * @notice Get the total claimable rewards for a user in WAD
    * @param user The address of the user
-   * @return The claimable amount of rewards in WAD
+   * @return uint256 The claimable amount of rewards in WAD
    */
   function getClaimableRewards(address user) external view returns (uint256);
 
   /**
    * @notice The unclaimed rewards for a user in WAD
    * @param user The address of the user
-   * @return The unclaimed amount of rewards in WAD
+   * @return uint256 The unclaimed amount of rewards in WAD
    */
   function getUnclaimedRewards(address user) external view returns (uint256);
 
   /**
    * @notice The underlying asset reward index in RAY
-   * @return The underlying asset reward index in RAY
+   * @return uint256 The underlying asset reward index in RAY
    */
   function getCurrentRewardsIndex() external view returns (uint256);
 
-  function LENDING_POOL() external view returns (IPool);
+  /**
+   * @notice The Pool where the underlying aToken is supplied and withdrawn.
+   * @return IPool The Pool address.
+   */
+  function pool() external view returns (IPool);
 
-  function INCENTIVES_CONTROLLER()
-    external
-    view
-    returns (IAaveIncentivesController);
+  /**
+   * @notice The incentives controller required for claiming rewards on behalf of the users.
+   * @return IAaveIncentivesController The incentives controller address.
+   */
+  function incentivesController() external view returns (address);
 
-  function ATOKEN() external view returns (IERC20);
+  /**
+   * @notice The aToken used inside the 4626 vault.
+   * @return IERC20 The aToken IERC20.
+   */
+  function aToken() external view returns (IERC20);
 
-  function ASSET() external view returns (IERC20);
+  /**
+   * @notice The underlying of the aToken used inside the 4626 vault.
+   * @return IERC20 The aToken underlying IERC20.
+   */
+  function aTokenUnderlying() external view returns (IERC20);
 
-  function REWARD_TOKEN() external view returns (IERC20);
-
-  function UNDERLYING_ASSET_ADDRESS() external view returns (address);
-
-  function getIncentivesController()
-    external
-    view
-    returns (IAaveIncentivesController);
+  /**
+   * @notice The IERC20 that is currently rewarded to addresses of the vault via LM on incentivescontroller.
+   * @return IERC20 The IERC20 of the reward.
+   */
+  function rewardToken() external view returns (IERC20);
 }
