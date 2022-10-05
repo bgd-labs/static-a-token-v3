@@ -67,7 +67,7 @@ contract StaticATokenLM is
     address aToken,
     string calldata staticATokenName,
     string calldata staticATokenSymbol
-  ) external override initializer {
+  ) external initializer {
     _pool = pool;
     _aToken = IERC20(aToken);
 
@@ -105,7 +105,7 @@ contract StaticATokenLM is
     address recipient,
     uint16 referralCode,
     bool fromUnderlying
-  ) external override returns (uint256) {
+  ) external returns (uint256) {
     return
       _deposit(msg.sender, recipient, assets, referralCode, fromUnderlying);
   }
@@ -119,7 +119,7 @@ contract StaticATokenLM is
     bool fromUnderlying,
     uint256 deadline,
     SignatureParams calldata sigParams
-  ) external override returns (uint256) {
+  ) external returns (uint256) {
     require(depositor != address(0), StaticATokenErrors.INVALID_DEPOSITOR);
     //solium-disable-next-line
     require(deadline >= block.timestamp, StaticATokenErrors.INVALID_EXPIRATION);
@@ -164,7 +164,7 @@ contract StaticATokenLM is
     bool toUnderlying,
     uint256 deadline,
     SignatureParams calldata sigParams
-  ) external override returns (uint256, uint256) {
+  ) external returns (uint256, uint256) {
     require(owner != address(0), StaticATokenErrors.INVALID_OWNER);
     //solium-disable-next-line
     require(deadline >= block.timestamp, StaticATokenErrors.INVALID_EXPIRATION);
@@ -201,24 +201,12 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function previewRedeem(uint256 shares)
-    public
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function previewRedeem(uint256 shares) public view virtual returns (uint256) {
     return _convertToAssets(shares, Rounding.DOWN);
   }
 
   ///@inheritdoc IERC4626
-  function previewMint(uint256 shares)
-    public
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function previewMint(uint256 shares) public view virtual returns (uint256) {
     return _convertToAssets(shares, Rounding.UP);
   }
 
@@ -227,7 +215,6 @@ contract StaticATokenLM is
     public
     view
     virtual
-    override
     returns (uint256)
   {
     return _convertToShares(assets, Rounding.UP);
@@ -238,19 +225,18 @@ contract StaticATokenLM is
     public
     view
     virtual
-    override
     returns (uint256)
   {
     return _convertToShares(assets, Rounding.DOWN);
   }
 
   ///@inheritdoc IStaticATokenLM
-  function rate() public view override returns (uint256) {
+  function rate() public view returns (uint256) {
     return _pool.getReserveNormalizedIncome(_aTokenUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
-  function collectAndUpdateRewards() public override returns (uint256) {
+  function collectAndUpdateRewards() public returns (uint256) {
     address rewardToken = address(_rewardToken);
     if (rewardToken == address(0)) {
       return 0;
@@ -268,10 +254,7 @@ contract StaticATokenLM is
       );
   }
 
-  function claimRewardsOnBehalf(address onBehalfOf, address receiver)
-    external
-    override
-  {
+  function claimRewardsOnBehalf(address onBehalfOf, address receiver) external {
     require(
       msg.sender == onBehalfOf ||
         msg.sender == _incentivesController.getClaimer(onBehalfOf),
@@ -280,17 +263,17 @@ contract StaticATokenLM is
     _claimRewardsOnBehalf(onBehalfOf, receiver);
   }
 
-  function claimRewards(address receiver) external override {
+  function claimRewards(address receiver) external {
     _claimRewardsOnBehalf(msg.sender, receiver);
   }
 
-  function claimRewardsToSelf() external override {
+  function claimRewardsToSelf() external {
     _claimRewardsOnBehalf(msg.sender, msg.sender);
   }
 
   ///@inheritdoc IStaticATokenLM
   // @dev This should be simplified once the _incentivesController is updated to expose index directly.
-  function getCurrentRewardsIndex() public view override returns (uint256) {
+  function getCurrentRewardsIndex() public view returns (uint256) {
     address rewardToken = address(_rewardToken);
     address aToken = address(_aToken);
     if (address(rewardToken) == address(0)) {
@@ -327,7 +310,7 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getTotalClaimableRewards() external view override returns (uint256) {
+  function getTotalClaimableRewards() external view returns (uint256) {
     address rewardToken = address(_rewardToken);
     if (rewardToken == address(0)) {
       return 0;
@@ -344,69 +327,54 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getClaimableRewards(address user)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function getClaimableRewards(address user) external view returns (uint256) {
     return
       _getClaimableRewards(user, balanceOf[user], getCurrentRewardsIndex());
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getUnclaimedRewards(address user)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function getUnclaimedRewards(address user) external view returns (uint256) {
     return uint256(_userRewardsData[user].unclaimedRewards).rayToWadRoundDown();
   }
 
   // 4626 compatibility
   ///@inheritdoc IERC4626
-  function asset() external view override returns (address) {
+  function asset() external view returns (address) {
     return address(_aToken);
   }
 
   ///@inheritdoc IStaticATokenLM
-  function incentivesController() external view override returns (address) {
+  function incentivesController() external view returns (address) {
     return address(_incentivesController);
   }
 
   ///@inheritdoc IStaticATokenLM
-  function pool() external view override returns (IPool) {
+  function pool() external view returns (IPool) {
     return _pool;
   }
 
   ///@inheritdoc IStaticATokenLM
-  function aToken() external view override returns (IERC20) {
+  function aToken() external view returns (IERC20) {
     return _aToken;
   }
 
   ///@inheritdoc IStaticATokenLM
-  function aTokenUnderlying() external view override returns (IERC20) {
+  function aTokenUnderlying() external view returns (IERC20) {
     return IERC20(_aTokenUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
-  function rewardToken() external view override returns (IERC20) {
+  function rewardToken() external view returns (IERC20) {
     return _rewardToken;
   }
 
   ///@inheritdoc IERC4626
-  function totalAssets() external view override returns (uint256) {
+  function totalAssets() external view returns (uint256) {
     return _aToken.balanceOf(address(this));
   }
 
   ///@inheritdoc IERC4626
-  function convertToShares(uint256 amount)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function convertToShares(uint256 amount) external view returns (uint256) {
     return _convertToShares(amount, Rounding.DOWN);
   }
 
@@ -420,12 +388,7 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function convertToAssets(uint256 shares)
-    external
-    view
-    override
-    returns (uint256)
-  {
+  function convertToAssets(uint256 shares) external view returns (uint256) {
     return _convertToAssets(shares, Rounding.DOWN);
   }
 
@@ -439,34 +402,22 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function maxDeposit(address) public view virtual override returns (uint256) {
+  function maxDeposit(address) public view virtual returns (uint256) {
     return type(uint256).max;
   }
 
   ///@inheritdoc IERC4626
-  function maxMint(address) public view virtual override returns (uint256) {
+  function maxMint(address) public view virtual returns (uint256) {
     return type(uint256).max;
   }
 
   ///@inheritdoc IERC4626
-  function maxWithdraw(address owner)
-    public
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function maxWithdraw(address owner) public view virtual returns (uint256) {
     return _convertToAssets(balanceOf[owner], Rounding.DOWN);
   }
 
   ///@inheritdoc IERC4626
-  function maxRedeem(address owner)
-    public
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function maxRedeem(address owner) public view virtual returns (uint256) {
     return balanceOf[owner];
   }
 
@@ -474,7 +425,6 @@ contract StaticATokenLM is
   function deposit(uint256 assets, address receiver)
     public
     virtual
-    override
     returns (uint256)
   {
     return _deposit(msg.sender, receiver, assets, 0, false);
@@ -484,7 +434,6 @@ contract StaticATokenLM is
   function mint(uint256 shares, address receiver)
     public
     virtual
-    override
     returns (uint256)
   {
     require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
@@ -500,7 +449,7 @@ contract StaticATokenLM is
     uint256 assets,
     address receiver,
     address owner
-  ) public virtual override returns (uint256) {
+  ) public virtual returns (uint256) {
     require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
 
     (uint256 shares, ) = _withdraw(owner, receiver, 0, assets, false);
@@ -513,7 +462,7 @@ contract StaticATokenLM is
     uint256 shares,
     address receiver,
     address owner
-  ) public virtual override returns (uint256) {
+  ) public virtual returns (uint256) {
     require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
 
     (, uint256 assets) = _withdraw(owner, receiver, shares, 0, false);
@@ -527,7 +476,7 @@ contract StaticATokenLM is
     address receiver,
     address owner,
     bool toUnderlying
-  ) public virtual override returns (uint256, uint256) {
+  ) public virtual returns (uint256, uint256) {
     require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
 
     return _withdraw(owner, receiver, shares, 0, toUnderlying);
@@ -541,9 +490,9 @@ contract StaticATokenLM is
     bool fromUnderlying
   ) internal returns (uint256) {
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
-    address aTokenUnderlying = _aTokenUnderlying;
 
     if (fromUnderlying) {
+      address aTokenUnderlying = _aTokenUnderlying;
       IERC20(aTokenUnderlying).safeTransferFrom(
         depositor,
         address(this),

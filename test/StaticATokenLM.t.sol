@@ -379,17 +379,17 @@ contract StaticATokenLMTest is Test {
     _skipBlocks(60);
 
     // redeem for both
-    uint256 claimambleUser = staticATokenLM.getClaimableRewards(user);
+    uint256 claimableUser = staticATokenLM.getClaimableRewards(user);
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
     staticATokenLM.claimRewardsToSelf();
-    assertEq(IERC20(REWARD_TOKEN).balanceOf(user), claimambleUser);
+    assertEq(IERC20(REWARD_TOKEN).balanceOf(user), claimableUser);
     vm.stopPrank();
     vm.startPrank(user1);
-    uint256 claimambleUser1 = staticATokenLM.getClaimableRewards(user1);
+    uint256 claimableUser1 = staticATokenLM.getClaimableRewards(user1);
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user1), user1, user1);
     staticATokenLM.claimRewardsToSelf();
-    assertEq(IERC20(REWARD_TOKEN).balanceOf(user1), claimambleUser1);
-    assertGt(claimambleUser1, 0);
+    assertEq(IERC20(REWARD_TOKEN).balanceOf(user1), claimableUser1);
+    assertGt(claimableUser1, 0);
 
     assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
