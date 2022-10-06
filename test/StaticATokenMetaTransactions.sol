@@ -3,9 +3,10 @@ pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
+import {IERC20WithPermit} from 'solidity-utils/contracts/oz-common/interfaces/IERC20WithPermit.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
-import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
+import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
 import {SigUtils} from './SigUtils.sol';
 import {BaseTest} from './TestBase.sol';
@@ -37,13 +38,13 @@ contract StaticATokenMetaTransactions is BaseTest {
       owner: user,
       spender: address(staticATokenLM),
       value: 1 ether,
-      nonce: ERC20(UNDERLYING).nonces(user),
+      nonce: IERC20WithPermit(UNDERLYING).nonces(user),
       deadline: block.timestamp + 1 days
     });
 
     bytes32 permitDigest = SigUtils.getTypedDataHash(
       permit,
-      ERC20(UNDERLYING).DOMAIN_SEPARATOR()
+      IERC20WithPermit(UNDERLYING).DOMAIN_SEPARATOR()
     );
 
     (uint8 pV, bytes32 pR, bytes32 pS) = vm.sign(userPrivateKey, permitDigest);
@@ -105,13 +106,13 @@ contract StaticATokenMetaTransactions is BaseTest {
       owner: user,
       spender: address(staticATokenLM),
       value: 1 ether,
-      nonce: ERC20(A_TOKEN).nonces(user),
+      nonce: IERC20WithPermit(A_TOKEN).nonces(user),
       deadline: block.timestamp + 1 days
     });
 
     bytes32 permitDigest = SigUtils.getTypedDataHash(
       permit,
-      ERC20(A_TOKEN).DOMAIN_SEPARATOR()
+      IERC20WithPermit(A_TOKEN).DOMAIN_SEPARATOR()
     );
 
     (uint8 pV, bytes32 pR, bytes32 pS) = vm.sign(userPrivateKey, permitDigest);

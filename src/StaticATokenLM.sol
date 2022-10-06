@@ -10,6 +10,7 @@ import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initiali
 import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
 import {IERC20Metadata} from 'solidity-utils/contracts/oz-common/interfaces/IERC20Metadata.sol';
 import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
+import {IERC20WithPermit} from 'solidity-utils/contracts/oz-common/interfaces/IERC20WithPermit.sol';
 
 import {IStaticATokenLM} from './interfaces/IStaticATokenLM.sol';
 import {IAToken} from './interfaces/IAToken.sol';
@@ -155,9 +156,8 @@ contract StaticATokenLM is
       );
     }
     // TODO: not sure if it makes sense to handle "no permit case"
-    // TODO: replace ERC20 madness here once the interface is on the lib
     if (fromUnderlying) {
-      ERC20(address(_aTokenUnderlying)).permit(
+      IERC20WithPermit(address(_aTokenUnderlying)).permit(
         permit.owner,
         permit.spender,
         permit.value,
@@ -167,7 +167,7 @@ contract StaticATokenLM is
         permit.s
       );
     } else {
-      ERC20(address(_aToken)).permit(
+      IERC20WithPermit(address(_aToken)).permit(
         permit.owner,
         permit.spender,
         permit.value,
