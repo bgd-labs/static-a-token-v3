@@ -155,9 +155,9 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
-    // TODO: not sure if it makes sense to handle "no permit case"
-    if (fromUnderlying) {
-      IERC20WithPermit(address(_aTokenUnderlying)).permit(
+    IERC20WithPermit(
+      fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)
+    ).permit(
         permit.owner,
         permit.spender,
         permit.value,
@@ -166,17 +166,6 @@ contract StaticATokenLM is
         permit.r,
         permit.s
       );
-    } else {
-      IERC20WithPermit(address(_aToken)).permit(
-        permit.owner,
-        permit.spender,
-        permit.value,
-        permit.deadline,
-        permit.v,
-        permit.r,
-        permit.s
-      );
-    }
     return _deposit(depositor, recipient, value, referralCode, fromUnderlying);
   }
 
