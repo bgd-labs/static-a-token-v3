@@ -55,8 +55,8 @@ contract StaticATokenLMTest is Test {
     vm.startPrank(user);
   }
 
-  function _fundUser(uint128 amountToDeposit, address user) private {
-    deal(WETH, user, amountToDeposit);
+  function _fundUser(uint128 amountToDeposit, address targetUser) private {
+    deal(WETH, targetUser, amountToDeposit);
   }
 
   function _skipBlocks(uint128 blocks) private {
@@ -64,18 +64,18 @@ contract StaticATokenLMTest is Test {
     vm.warp(block.timestamp + blocks * 12); // assuming a block is around 12seconds
   }
 
-  function _wethToAWeth(uint256 amountToDeposit, address user) private {
+  function _wethToAWeth(uint256 amountToDeposit, address targetUser) private {
     IERC20(WETH).approve(address(pool), amountToDeposit);
-    pool.deposit(WETH, amountToDeposit, user, 0);
+    pool.deposit(WETH, amountToDeposit, targetUser, 0);
   }
 
-  function _depositAWeth(uint256 amountToDeposit, address user)
+  function _depositAWeth(uint256 amountToDeposit, address targetUser)
     private
     returns (uint256)
   {
-    _wethToAWeth(amountToDeposit, user);
+    _wethToAWeth(amountToDeposit, targetUser);
     IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
-    return staticATokenLM.deposit(amountToDeposit, user);
+    return staticATokenLM.deposit(amountToDeposit, targetUser);
   }
 
   function test_getters() public {
