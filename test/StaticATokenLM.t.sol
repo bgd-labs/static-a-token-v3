@@ -5,7 +5,7 @@ import 'forge-std/Test.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
-import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
+import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
 import {SigUtils} from './SigUtils.sol';
 
@@ -23,6 +23,9 @@ contract StaticATokenLMTest is Test {
   address constant REWARD_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
   address constant WETH = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
   address constant aWETH = 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
+
+  // frax is one of the only tokens on avalanche v3 supporting permit
+  address constant FRAX = 0xd24c2ad096400b6fbcd2ad8b24e7acbc21a1da64;
   IPool pool = IPool(AaveV3Avalanche.POOL);
   StaticATokenLM staticATokenLM;
 
@@ -57,6 +60,14 @@ contract StaticATokenLMTest is Test {
 
   function _fundUser(uint128 amountToDeposit, address targetUser) private {
     deal(WETH, targetUser, amountToDeposit);
+  }
+
+  function _fundUser(
+    uint128 amountToDeposit,
+    address targetUser,
+    address token
+  ) private {
+    deal(token, targetUser, amountToDeposit);
   }
 
   function _skipBlocks(uint128 blocks) private {
@@ -194,24 +205,50 @@ contract StaticATokenLMTest is Test {
     assertApproxEqAbs(IERC20(aWETH).balanceOf(user), amountToDeposit, 1);
   }
 
-  function test_metaDeposit() public {
+  function test_metaDepositATokenUnderlying() public {
     uint128 amountToDeposit = 5 ether;
-    _fundUser(amountToDeposit, user);
+    deal(FRAX, user, amountToDeposit);
 
-    _wethToAWeth(amountToDeposit, user);
-    IERC20(aWETH).approve(address(staticATokenLM), amountToDeposit);
-
-    SigUtils.DepositPermit memory permit = SigUtils.DepositPermit({
+    // permit for aToken deposit
+    SigUtils.Permit memory permit = SigUtils.Permit({
       owner: user,
-      spender: spender,
+      spender: address(staticATokenLM),
       value: 1 ether,
-      referralCode: 0,
-      fromUnderlying: false,
-      nonce: staticATokenLM.nonces(user),
+      nonce: ERC20(FRAX).nonces(user),
       deadline: block.timestamp + 1 days
     });
-    bytes32 digest = SigUtils.getTypedDepositHash(
+
+    bytes32 permitDigest = SigUtils.getTypedDataHash(
       permit,
+      ERC20(FRAX).DOMAIN_SEPARATOR()
+    );
+
+    (uint8 pV, bytes32 pR, bytes32 pS) = vm.sign(userPrivateKey, permitDigest);
+
+    IStaticATokenLM.PermitParams memory permitParams = IStaticATokenLM
+      .PermitParams(
+        permit.owner,
+        permit.spender,
+        permit.value,
+        permit.deadline,
+        pV,
+        pR,
+        pS
+      );
+
+    // generate combined permit
+    SigUtils.DepositPermit memory depositPermit = SigUtils.DepositPermit({
+      owner: user,
+      spender: spender,
+      value: permit.value,
+      referralCode: 0,
+      fromUnderlying: true,
+      nonce: staticATokenLM.nonces(user),
+      deadline: permit.deadline,
+      permit: permitParams
+    });
+    bytes32 digest = SigUtils.getTypedDepositHash(
+      depositPermit,
       staticATokenLM.METADEPOSIT_TYPEHASH(),
       staticATokenLM.DOMAIN_SEPARATOR()
     );
@@ -220,18 +257,87 @@ contract StaticATokenLMTest is Test {
     IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
       .SignatureParams(v, r, s);
 
-    uint256 previewDeposit = staticATokenLM.previewDeposit(permit.value);
+    uint256 previewDeposit = staticATokenLM.previewDeposit(depositPermit.value);
     staticATokenLM.metaDeposit(
-      permit.owner,
-      permit.spender,
-      permit.value,
-      permit.referralCode,
-      permit.fromUnderlying,
-      permit.deadline,
+      depositPermit.owner,
+      depositPermit.spender,
+      depositPermit.value,
+      depositPermit.referralCode,
+      depositPermit.fromUnderlying,
+      depositPermit.deadline,
+      permitParams,
       sigParams
     );
 
-    assertEq(staticATokenLM.balanceOf(permit.spender), previewDeposit);
+    assertEq(staticATokenLM.balanceOf(depositPermit.spender), previewDeposit);
+  }
+
+  function test_metaDepositAToken() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit, user);
+    _wethToAWeth(amountToDeposit, user);
+
+    // permit for aToken deposit
+    SigUtils.Permit memory permit = SigUtils.Permit({
+      owner: user,
+      spender: address(staticATokenLM),
+      value: 1 ether,
+      nonce: ERC20(aWETH).nonces(user),
+      deadline: block.timestamp + 1 days
+    });
+
+    bytes32 permitDigest = SigUtils.getTypedDataHash(
+      permit,
+      ERC20(aWETH).DOMAIN_SEPARATOR()
+    );
+
+    (uint8 pV, bytes32 pR, bytes32 pS) = vm.sign(userPrivateKey, permitDigest);
+
+    IStaticATokenLM.PermitParams memory permitParams = IStaticATokenLM
+      .PermitParams(
+        permit.owner,
+        permit.spender,
+        permit.value,
+        permit.deadline,
+        pV,
+        pR,
+        pS
+      );
+
+    // generate combined permit
+    SigUtils.DepositPermit memory depositPermit = SigUtils.DepositPermit({
+      owner: user,
+      spender: spender,
+      value: permit.value,
+      referralCode: 0,
+      fromUnderlying: false,
+      nonce: staticATokenLM.nonces(user),
+      deadline: permit.deadline,
+      permit: permitParams
+    });
+    bytes32 digest = SigUtils.getTypedDepositHash(
+      depositPermit,
+      staticATokenLM.METADEPOSIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
+
+    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
+      .SignatureParams(v, r, s);
+
+    uint256 previewDeposit = staticATokenLM.previewDeposit(depositPermit.value);
+    staticATokenLM.metaDeposit(
+      depositPermit.owner,
+      depositPermit.spender,
+      depositPermit.value,
+      depositPermit.referralCode,
+      depositPermit.fromUnderlying,
+      depositPermit.deadline,
+      permitParams,
+      sigParams
+    );
+
+    assertEq(staticATokenLM.balanceOf(depositPermit.spender), previewDeposit);
   }
 
   function test_metaWithdraw() public {

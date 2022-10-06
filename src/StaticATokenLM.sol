@@ -39,7 +39,7 @@ contract StaticATokenLM is
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
-      'Deposit(address depositor,address recipient,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline)'
+      'Deposit(address depositor,address recipient,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline,PermitParams permit)'
     );
   bytes32 public constant METAWITHDRAWAL_TYPEHASH =
     keccak256(
@@ -118,6 +118,7 @@ contract StaticATokenLM is
     uint16 referralCode,
     bool fromUnderlying,
     uint256 deadline,
+    PermitParams calldata permit,
     SignatureParams calldata sigParams
   ) external returns (uint256) {
     require(depositor != address(0), StaticATokenErrors.INVALID_DEPOSITOR);
@@ -141,7 +142,8 @@ contract StaticATokenLM is
               referralCode,
               fromUnderlying,
               nonce,
-              deadline
+              deadline,
+              permit
             )
           )
         )
@@ -150,6 +152,29 @@ contract StaticATokenLM is
       require(
         depositor == ecrecover(digest, sigParams.v, sigParams.r, sigParams.s),
         StaticATokenErrors.INVALID_SIGNATURE
+      );
+    }
+    // TODO: not sure if it makes sense to handle "no permit case"
+    // TODO: replace ERC20 madness here once the interface is on the lib
+    if (fromUnderlying) {
+      ERC20(address(_aTokenUnderlying)).permit(
+        permit.owner,
+        permit.spender,
+        permit.value,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
+      );
+    } else {
+      ERC20(address(_aToken)).permit(
+        permit.owner,
+        permit.spender,
+        permit.value,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
       );
     }
     return _deposit(depositor, recipient, value, referralCode, fromUnderlying);

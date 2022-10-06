@@ -13,6 +13,16 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     bytes32 s;
   }
 
+  struct PermitParams {
+    address owner;
+    address spender;
+    uint256 value;
+    uint256 deadline;
+    uint8 v;
+    bytes32 r;
+    bytes32 s;
+  }
+
   /**
    * @notice Burns `amount` of static aToken, with recipient receiving the corresponding amount of `ASSET`
    * @param shares The amount to withdraw, in static balance of StaticAToken
@@ -70,6 +80,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     uint16 referralCode,
     bool fromUnderlying,
     uint256 deadline,
+    PermitParams calldata permit,
     SignatureParams calldata sigParams
   ) external returns (uint256);
 
