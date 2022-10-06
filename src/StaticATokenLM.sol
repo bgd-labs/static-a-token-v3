@@ -158,8 +158,8 @@ contract StaticATokenLM is
     IERC20WithPermit(
       fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)
     ).permit(
-        permit.owner,
-        permit.spender,
+        depositor,
+        address(this),
         permit.value,
         permit.deadline,
         permit.v,

@@ -28,23 +28,37 @@ Please have a look at the [interface](./src/interfaces/IStaticATokenLM.sol) for 
 
 ```
 // read methods
+
+// claimable rewards by the static token
 getTotalClaimableRewards();
+// the claimable by a single depositor on the static token
 getClaimableRewards(address user);
+// the unclaimed by a single depositor (only relevant when the incentives are temporary depleted)
 getUnclaimedRewards(address user);
+// current reward index used for calculating the accrued rewards since the user deposited into the static token
 getCurrentRewardsIndex();
+// the incentives controller on the aToken
 incentivesController();
+// the reward token tracked and which you can claim on the static token
 rewardToken();
 
 // write methods
+
+// claim your own rewards
 claimRewardsToSelf();
+// claim your own rewards to a different address
 claimRewards(address receiver);
+// claim rewards on behalf of someone else
 claimRewardsOnBehalf(address onBehalfOf, address receiver);
+// pulls rewards to the static token to be distributed to respective static token holders
 collectAndUpdateRewards();
 ```
 
 #### Meta transactions
 
 The meta transactions expose a separate api which allow pre-signing and relaying transactions.
+
+`metaDeposit` requires an additional permit for the token you want to deposit. You can see a the full flow in the [tests](./test/StaticATokenMetaTransactions.sol).
 
 ```
 metaDeposit(
@@ -74,12 +88,20 @@ The ux additions consist of getters for underlying addresses of the aave protoco
 
 ```
 // read methods
+
+// the current exchange rate from static tokes to a tokens
 rate();
+// the underlying pool of the aToken used as base in the static token
 pool();
+// the a Token used inside the static a token (e.g. aDAI)
 aToken();
+// the underlying of the aToken used in the static token (e.g. DAI)
 aTokenUnderlying();
 
 // write methods
+
+// allows redeeming shares for the aToken or the underlying handling the unwrapping internally
 redeem(uint256 shares, address recipient, address owner, bool toUnderlying);
+// allows depositing assets from the aToken or the underlying handling the wrapping internally
 deposit(uint256 assets, address recipient, uint16 referralCode, bool fromUnderlying);
 ```
