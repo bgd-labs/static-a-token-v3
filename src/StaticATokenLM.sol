@@ -10,6 +10,7 @@ import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initiali
 import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
 import {IERC20Metadata} from 'solidity-utils/contracts/oz-common/interfaces/IERC20Metadata.sol';
 import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
+import {IERC20WithPermit} from 'solidity-utils/contracts/oz-common/interfaces/IERC20WithPermit.sol';
 
 import {IStaticATokenLM} from './interfaces/IStaticATokenLM.sol';
 import {IAToken} from './interfaces/IAToken.sol';
@@ -39,7 +40,7 @@ contract StaticATokenLM is
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
-      'Deposit(address depositor,address recipient,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline)'
+      'Deposit(address depositor,address recipient,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline,PermitParams permit)'
     );
   bytes32 public constant METAWITHDRAWAL_TYPEHASH =
     keccak256(
@@ -63,27 +64,27 @@ contract StaticATokenLM is
 
   ///@inheritdoc IInitializableStaticATokenLM
   function initialize(
-    IPool pool,
-    address aToken,
+    IPool newPool,
+    address newAToken,
     string calldata staticATokenName,
     string calldata staticATokenSymbol
   ) external initializer {
-    _pool = pool;
-    _aToken = IERC20(aToken);
+    _pool = newPool;
+    _aToken = IERC20(newAToken);
 
     name = staticATokenName;
     symbol = staticATokenSymbol;
-    decimals = IERC20Metadata(aToken).decimals();
+    decimals = IERC20Metadata(newAToken).decimals();
 
-    _aTokenUnderlying = IAToken(aToken).UNDERLYING_ASSET_ADDRESS();
-    IERC20(_aTokenUnderlying).safeApprove(address(pool), type(uint256).max);
+    _aTokenUnderlying = IAToken(newAToken).UNDERLYING_ASSET_ADDRESS();
+    IERC20(_aTokenUnderlying).safeApprove(address(newPool), type(uint256).max);
 
-    try IAToken(aToken).getIncentivesController() returns (
-      address incentivesController
+    try IAToken(newAToken).getIncentivesController() returns (
+      address newIncentivesController
     ) {
-      if (incentivesController != address(0)) {
-        _incentivesController = IRewardsController(incentivesController);
-        address[] memory rewards = IRewardsController(incentivesController)
+      if (newIncentivesController != address(0)) {
+        _incentivesController = IRewardsController(newIncentivesController);
+        address[] memory rewards = IRewardsController(newIncentivesController)
           .getRewardsList();
         if (rewards.length > 0) {
           _rewardToken = IERC20(rewards[0]);
@@ -92,8 +93,8 @@ contract StaticATokenLM is
     } catch {}
 
     emit Initialized(
-      address(pool),
-      aToken,
+      address(newPool),
+      newAToken,
       staticATokenName,
       staticATokenSymbol
     );
@@ -118,6 +119,7 @@ contract StaticATokenLM is
     uint16 referralCode,
     bool fromUnderlying,
     uint256 deadline,
+    PermitParams calldata permit,
     SignatureParams calldata sigParams
   ) external returns (uint256) {
     require(depositor != address(0), StaticATokenErrors.INVALID_DEPOSITOR);
@@ -141,7 +143,8 @@ contract StaticATokenLM is
               referralCode,
               fromUnderlying,
               nonce,
-              deadline
+              deadline,
+              permit
             )
           )
         )
@@ -152,6 +155,17 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
+    IERC20WithPermit(
+      fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)
+    ).permit(
+        depositor,
+        address(this),
+        permit.value,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
+      );
     return _deposit(depositor, recipient, value, referralCode, fromUnderlying);
   }
 
@@ -237,8 +251,8 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function collectAndUpdateRewards() public returns (uint256) {
-    address rewardToken = address(_rewardToken);
-    if (rewardToken == address(0)) {
+    address cachedRewardToken = address(_rewardToken);
+    if (cachedRewardToken == address(0)) {
       return 0;
     }
 
@@ -250,7 +264,7 @@ contract StaticATokenLM is
         assets,
         type(uint256).max,
         address(this),
-        rewardToken
+        cachedRewardToken
       );
   }
 
@@ -277,9 +291,9 @@ contract StaticATokenLM is
   ///@inheritdoc IStaticATokenLM
   // @dev This should be simplified once the _incentivesController is updated to expose index directly.
   function getCurrentRewardsIndex() public view returns (uint256) {
-    address rewardToken = address(_rewardToken);
-    address aToken = address(_aToken);
-    if (address(rewardToken) == address(0)) {
+    address cachedRewardToken = address(_rewardToken);
+    address cachedAToken = address(_aToken);
+    if (address(cachedRewardToken) == address(0)) {
       return 0;
     }
     (
@@ -288,10 +302,10 @@ contract StaticATokenLM is
       uint256 lastUpdateTimestamp,
       uint256 distributionEnd
     ) = _incentivesController.getRewardsData(
-        address(aToken),
-        address(rewardToken)
+        address(cachedAToken),
+        address(cachedRewardToken)
       );
-    uint256 totalSupply = IScaledBalanceToken(address(aToken))
+    uint256 totalSupply = IScaledBalanceToken(address(cachedAToken))
       .scaledTotalSupply();
 
     if (
@@ -314,8 +328,8 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function getTotalClaimableRewards() external view returns (uint256) {
-    address rewardToken = address(_rewardToken);
-    if (rewardToken == address(0)) {
+    address cachedATokenUnderlying = address(_rewardToken);
+    if (cachedATokenUnderlying == address(0)) {
       return 0;
     }
 
@@ -324,9 +338,10 @@ contract StaticATokenLM is
     uint256 freshRewards = _incentivesController.getUserRewards(
       assets,
       address(this),
-      rewardToken
+      cachedATokenUnderlying
     );
-    return IERC20(rewardToken).balanceOf(address(this)) + freshRewards;
+    return
+      IERC20(cachedATokenUnderlying).balanceOf(address(this)) + freshRewards;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -477,13 +492,18 @@ contract StaticATokenLM is
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
 
     if (fromUnderlying) {
-      address aTokenUnderlying = _aTokenUnderlying;
-      IERC20(aTokenUnderlying).safeTransferFrom(
+      address cachedATokenUnderlying = _aTokenUnderlying;
+      IERC20(cachedATokenUnderlying).safeTransferFrom(
         depositor,
         address(this),
         assets
       );
-      _pool.deposit(aTokenUnderlying, assets, address(this), referralCode);
+      _pool.deposit(
+        cachedATokenUnderlying,
+        assets,
+        address(this),
+        referralCode
+      );
     } else {
       _aToken.safeTransferFrom(depositor, address(this), assets);
     }
@@ -583,13 +603,13 @@ contract StaticATokenLM is
    * @param balance The balance of the user
    * @param rewardsIndexOnLastInteraction The index which was on the last interaction of the user
    * @param currentRewardsIndex The current rewards index in the system
-   * @return The amound of pending rewards in RAY
+   * @return The amount of pending rewards in RAY
    */
   function _getPendingRewards(
     uint256 balance,
     uint256 rewardsIndexOnLastInteraction,
     uint256 currentRewardsIndex
-  ) internal view returns (uint256) {
+  ) internal pure returns (uint256) {
     if (balance == 0) {
       return 0;
     }
@@ -630,8 +650,8 @@ contract StaticATokenLM is
   function _claimRewardsOnBehalf(address onBehalfOf, address receiver)
     internal
   {
-    IERC20 rewardToken = _rewardToken;
-    if (address(rewardToken) == address(0)) {
+    IERC20 cachedRewardToken = _rewardToken;
+    if (address(cachedRewardToken) == address(0)) {
       return;
     }
     uint256 currentRewardsIndex = getCurrentRewardsIndex();
@@ -641,7 +661,9 @@ contract StaticATokenLM is
       balance,
       currentRewardsIndex
     );
-    uint256 totalRewardTokenBalance = rewardToken.balanceOf(address(this));
+    uint256 totalRewardTokenBalance = cachedRewardToken.balanceOf(
+      address(this)
+    );
     uint256 unclaimedReward = 0;
 
     if (userReward > totalRewardTokenBalance) {
@@ -657,7 +679,7 @@ contract StaticATokenLM is
         .toUint128();
       _userRewardsData[onBehalfOf]
         .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
-      rewardToken.safeTransfer(receiver, userReward);
+      cachedRewardToken.safeTransfer(receiver, userReward);
     }
   }
 
