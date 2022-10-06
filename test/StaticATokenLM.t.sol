@@ -18,6 +18,8 @@ contract StaticATokenLMTest is BaseTest {
   address public constant override A_TOKEN =
     0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
 
+  IPool public override pool = IPool(AaveV3Avalanche.POOL);
+
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 20389332);
     super.setUp();

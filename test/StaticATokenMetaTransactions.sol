@@ -21,6 +21,8 @@ contract StaticATokenMetaTransactions is BaseTest {
   address public constant override A_TOKEN =
     0xc45A479877e1e9Dfe9FcD4056c699575a1045dAA;
 
+  IPool public override pool = IPool(AaveV3Avalanche.POOL);
+
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 20389332);
     super.setUp();

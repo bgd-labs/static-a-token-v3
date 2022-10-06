@@ -7,7 +7,7 @@ import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
 
-contract BaseTest is Test {
+abstract contract BaseTest is Test {
   address constant OWNER = address(1234);
   address constant ADMIN = address(2345);
 
@@ -20,21 +20,13 @@ contract BaseTest is Test {
 
   StaticATokenLM public staticATokenLM;
 
-  function REWARD_TOKEN() external virtual returns (address) {
-    return 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
-  }
+  function REWARD_TOKEN() external virtual returns (address);
 
-  function UNDERLYING() external virtual returns (address) {
-    return 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
-  }
+  function UNDERLYING() external virtual returns (address);
 
-  function A_TOKEN() external virtual returns (address) {
-    return 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
-  }
+  function A_TOKEN() external virtual returns (address);
 
-  function pool() external virtual returns (IPool) {
-    return IPool(AaveV3Avalanche.POOL);
-  }
+  function pool() external virtual returns (IPool);
 
   function setUp() public virtual {
     userPrivateKey = 0xA11CE;
