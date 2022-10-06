@@ -7,7 +7,11 @@ import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
 
-contract StaticATokenTest is Test {
+/**
+ * Testing the static token wrapper on a pool that never had LM enabled (polygon v3 pool at block 33718273)
+ * This is a slightly different assumption than a pool that doesn't have LM enabled any more as incentivesController.rewardTokens() will have length=0
+ */
+contract StaticATokenNoLMTest is Test {
   address constant OWNER = address(1234);
   address constant ADMIN = address(2345);
 
@@ -66,7 +70,7 @@ contract StaticATokenTest is Test {
   }
 
   // test rewards
-  function test_collectAndUpdateRewards() public {
+  function test_collectAndUpdateRewardsWithLMDisabled() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -79,7 +83,7 @@ contract StaticATokenTest is Test {
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
   }
 
-  function test_claimRewardsToSelf() public {
+  function test_claimRewardsToSelfWithLMDisabled() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
