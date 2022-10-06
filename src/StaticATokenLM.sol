@@ -603,7 +603,7 @@ contract StaticATokenLM is
    * @param balance The balance of the user
    * @param rewardsIndexOnLastInteraction The index which was on the last interaction of the user
    * @param currentRewardsIndex The current rewards index in the system
-   * @return The amound of pending rewards in RAY
+   * @return The amount of pending rewards in RAY
    */
   function _getPendingRewards(
     uint256 balance,
