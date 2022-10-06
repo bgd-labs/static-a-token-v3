@@ -24,11 +24,11 @@ contract BaseTest is Test {
     return 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
   }
 
-  function WETH() external virtual returns (address) {
+  function UNDERLYING() external virtual returns (address) {
     return 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
   }
 
-  function aWETH() external virtual returns (address) {
+  function A_TOKEN() external virtual returns (address) {
     return 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
   }
 
@@ -52,7 +52,7 @@ contract BaseTest is Test {
         abi.encodeWithSelector(
           StaticATokenLM.initialize.selector,
           this.pool(),
-          this.aWETH(),
+          this.A_TOKEN(),
           'Static Aave WETH',
           'stataWETH'
         )
@@ -62,7 +62,7 @@ contract BaseTest is Test {
   }
 
   function _fundUser(uint128 amountToDeposit, address targetUser) internal {
-    deal(this.WETH(), targetUser, amountToDeposit);
+    deal(this.UNDERLYING(), targetUser, amountToDeposit);
   }
 
   function _skipBlocks(uint128 blocks) internal {
@@ -70,17 +70,19 @@ contract BaseTest is Test {
     vm.warp(block.timestamp + blocks * 12); // assuming a block is around 12seconds
   }
 
-  function _wethToAWeth(uint256 amountToDeposit, address targetUser) internal {
-    IERC20(this.WETH()).approve(address(this.pool()), amountToDeposit);
-    this.pool().deposit(this.WETH(), amountToDeposit, targetUser, 0);
+  function _underlyingToAToken(uint256 amountToDeposit, address targetUser)
+    internal
+  {
+    IERC20(this.UNDERLYING()).approve(address(this.pool()), amountToDeposit);
+    this.pool().deposit(this.UNDERLYING(), amountToDeposit, targetUser, 0);
   }
 
-  function _depositAWeth(uint256 amountToDeposit, address targetUser)
+  function _depositAToken(uint256 amountToDeposit, address targetUser)
     internal
     returns (uint256)
   {
-    _wethToAWeth(amountToDeposit, targetUser);
-    IERC20(this.aWETH()).approve(address(staticATokenLM), amountToDeposit);
+    _underlyingToAToken(amountToDeposit, targetUser);
+    IERC20(this.A_TOKEN()).approve(address(staticATokenLM), amountToDeposit);
     return staticATokenLM.deposit(amountToDeposit, targetUser);
   }
 }

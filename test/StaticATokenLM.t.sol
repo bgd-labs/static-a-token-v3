@@ -11,6 +11,13 @@ import {SigUtils} from './SigUtils.sol';
 import {BaseTest} from './TestBase.sol';
 
 contract StaticATokenLMTest is BaseTest {
+  address public constant override REWARD_TOKEN =
+    0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+  address public constant override UNDERLYING =
+    0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
+  address public constant override A_TOKEN =
+    0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
+
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 20389332);
     super.setUp();
@@ -21,20 +28,20 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(staticATokenLM.symbol(), 'stataWETH');
 
     IERC20 aToken = staticATokenLM.aToken();
-    assertEq(address(aToken), this.aWETH());
+    assertEq(address(aToken), A_TOKEN);
 
     address aTokenAddress = staticATokenLM.asset();
-    assertEq(aTokenAddress, this.aWETH());
+    assertEq(aTokenAddress, A_TOKEN);
 
     address underlyingAddress = address(staticATokenLM.aTokenUnderlying());
-    assertEq(underlyingAddress, this.WETH());
+    assertEq(underlyingAddress, UNDERLYING);
 
     IERC20Metadata underlying = IERC20Metadata(underlyingAddress);
     assertEq(staticATokenLM.decimals(), underlying.decimals());
 
     assertEq(
       address(staticATokenLM.incentivesController()),
-      address(AToken(this.aWETH()).getIncentivesController())
+      address(AToken(A_TOKEN).getIncentivesController())
     );
   }
 
@@ -59,66 +66,62 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     assertEq(staticATokenLM.maxRedeem(user), staticATokenLM.balanceOf(user));
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertLe(IERC20(this.aWETH()).balanceOf(user), amountToDeposit);
-    assertApproxEqAbs(IERC20(this.aWETH()).balanceOf(user), amountToDeposit, 1);
+    assertLe(IERC20(A_TOKEN).balanceOf(user), amountToDeposit);
+    assertApproxEqAbs(IERC20(A_TOKEN).balanceOf(user), amountToDeposit, 1);
   }
 
   function test_redeemUnderlying() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     assertEq(staticATokenLM.maxRedeem(user), staticATokenLM.balanceOf(user));
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user, true);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertLe(IERC20(this.WETH()).balanceOf(user), amountToDeposit);
-    assertApproxEqAbs(IERC20(this.WETH()).balanceOf(user), amountToDeposit, 1);
+    assertLe(IERC20(UNDERLYING).balanceOf(user), amountToDeposit);
+    assertApproxEqAbs(IERC20(UNDERLYING).balanceOf(user), amountToDeposit, 1);
   }
 
   function test_redeemAllowance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     staticATokenLM.approve(user1, staticATokenLM.maxRedeem(user));
     vm.stopPrank();
     vm.startPrank(user1);
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user1, user);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertLe(IERC20(this.aWETH()).balanceOf(user1), amountToDeposit);
-    assertApproxEqAbs(
-      IERC20(this.aWETH()).balanceOf(user1),
-      amountToDeposit,
-      1
-    );
+    assertLe(IERC20(A_TOKEN).balanceOf(user1), amountToDeposit);
+    assertApproxEqAbs(IERC20(A_TOKEN).balanceOf(user1), amountToDeposit, 1);
   }
 
   function testFail_redeemOverflowAllowance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     staticATokenLM.approve(user1, staticATokenLM.maxRedeem(user) / 2);
     vm.stopPrank();
     vm.startPrank(user1);
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user1, user);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertEq(IERC20(this.aWETH()).balanceOf(user1), amountToDeposit);
+    assertEq(IERC20(A_TOKEN).balanceOf(user1), amountToDeposit);
   }
 
   function testFail_redeemAboveBalance() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user) + 1, user, user);
   }
 
@@ -127,13 +130,13 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     assertLe(staticATokenLM.maxWithdraw(user), amountToDeposit);
     staticATokenLM.withdraw(staticATokenLM.maxWithdraw(user), user, user);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertLe(IERC20(this.aWETH()).balanceOf(user), amountToDeposit);
-    assertApproxEqAbs(IERC20(this.aWETH()).balanceOf(user), amountToDeposit, 1);
+    assertLe(IERC20(A_TOKEN).balanceOf(user), amountToDeposit);
+    assertApproxEqAbs(IERC20(A_TOKEN).balanceOf(user), amountToDeposit, 1);
   }
 
   function testFail_withdrawAboveBalance() public {
@@ -141,8 +144,8 @@ contract StaticATokenLMTest is BaseTest {
     _fundUser(amountToDeposit, user);
     _fundUser(amountToDeposit, user1);
 
-    _depositAWeth(amountToDeposit, user);
-    _depositAWeth(amountToDeposit, user1);
+    _depositAToken(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user1);
 
     assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
     staticATokenLM.withdraw(staticATokenLM.maxWithdraw(user) + 1, user, user);
@@ -153,8 +156,8 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _wethToAWeth(amountToDeposit, user);
-    IERC20(this.aWETH()).approve(address(staticATokenLM), amountToDeposit);
+    _underlyingToAToken(amountToDeposit, user);
+    IERC20(A_TOKEN).approve(address(staticATokenLM), amountToDeposit);
     uint256 shares = 1 ether;
     staticATokenLM.mint(shares, user);
     assertEq(shares, staticATokenLM.balanceOf(user));
@@ -164,8 +167,8 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _wethToAWeth(amountToDeposit, user);
-    IERC20(this.aWETH()).approve(address(staticATokenLM), amountToDeposit);
+    _underlyingToAToken(amountToDeposit, user);
+    IERC20(A_TOKEN).approve(address(staticATokenLM), amountToDeposit);
     staticATokenLM.mint(amountToDeposit, user);
   }
 
@@ -174,7 +177,7 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     _skipBlocks(60);
     assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(address(staticATokenLM)), 0);
@@ -190,7 +193,7 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     _skipBlocks(60);
 
@@ -204,7 +207,7 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     _skipBlocks(60);
 
@@ -219,7 +222,7 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
     assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
 
     _skipBlocks(60);
@@ -233,12 +236,12 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
   }
 
-  function test_depositAWETHClaimWithdrawClaim() public {
+  function test_depositATokenClaimWithdrawClaim() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
     // deposit aweth
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     // forward time
     _skipBlocks(60);
@@ -269,14 +272,14 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(staticATokenLM.balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
     assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
-    assertGt(AToken(this.aWETH()).balanceOf(user), 5 ether);
+    assertGt(AToken(A_TOKEN).balanceOf(user), 5 ether);
   }
 
   function test_depositWETHClaimWithdrawClaim() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     // forward time
     _skipBlocks(60);
@@ -307,14 +310,14 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(staticATokenLM.balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user), 0);
     assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
-    assertGt(AToken(this.aWETH()).balanceOf(user), 5 ether);
+    assertGt(AToken(A_TOKEN).balanceOf(user), 5 ether);
   }
 
   function test_transfer() public {
     uint128 amountToDeposit = 10 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     // transfer to 2nd user
     staticATokenLM.transfer(user1, amountToDeposit / 2);
@@ -346,7 +349,7 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    uint256 shares = _depositAWeth(amountToDeposit, user);
+    uint256 shares = _depositAToken(amountToDeposit, user);
     assertEq(staticATokenLM.getUnclaimedRewards(user), 0);
     _skipBlocks(1000);
     staticATokenLM.redeem(shares, user, user);

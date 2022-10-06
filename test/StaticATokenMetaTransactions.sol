@@ -16,9 +16,9 @@ import {BaseTest} from './TestBase.sol';
 contract StaticATokenMetaTransactions is BaseTest {
   address public constant override REWARD_TOKEN =
     0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-  address public constant override WETH =
+  address public constant override UNDERLYING =
     0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64;
-  address public constant override aWETH =
+  address public constant override A_TOKEN =
     0xc45A479877e1e9Dfe9FcD4056c699575a1045dAA;
 
   function setUp() public override {
@@ -28,20 +28,20 @@ contract StaticATokenMetaTransactions is BaseTest {
 
   function test_metaDepositATokenUnderlying() public {
     uint128 amountToDeposit = 5 ether;
-    deal(WETH, user, amountToDeposit);
+    deal(UNDERLYING, user, amountToDeposit);
 
     // permit for aToken deposit
     SigUtils.Permit memory permit = SigUtils.Permit({
       owner: user,
       spender: address(staticATokenLM),
       value: 1 ether,
-      nonce: ERC20(WETH).nonces(user),
+      nonce: ERC20(UNDERLYING).nonces(user),
       deadline: block.timestamp + 1 days
     });
 
     bytes32 permitDigest = SigUtils.getTypedDataHash(
       permit,
-      ERC20(WETH).DOMAIN_SEPARATOR()
+      ERC20(UNDERLYING).DOMAIN_SEPARATOR()
     );
 
     (uint8 pV, bytes32 pR, bytes32 pS) = vm.sign(userPrivateKey, permitDigest);
@@ -96,20 +96,20 @@ contract StaticATokenMetaTransactions is BaseTest {
   function test_metaDepositAToken() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
-    _wethToAWeth(amountToDeposit, user);
+    _underlyingToAToken(amountToDeposit, user);
 
     // permit for aToken deposit
     SigUtils.Permit memory permit = SigUtils.Permit({
       owner: user,
       spender: address(staticATokenLM),
       value: 1 ether,
-      nonce: ERC20(this.aWETH()).nonces(user),
+      nonce: ERC20(A_TOKEN).nonces(user),
       deadline: block.timestamp + 1 days
     });
 
     bytes32 permitDigest = SigUtils.getTypedDataHash(
       permit,
-      ERC20(this.aWETH()).DOMAIN_SEPARATOR()
+      ERC20(A_TOKEN).DOMAIN_SEPARATOR()
     );
 
     (uint8 pV, bytes32 pR, bytes32 pS) = vm.sign(userPrivateKey, permitDigest);
@@ -165,7 +165,7 @@ contract StaticATokenMetaTransactions is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     SigUtils.WithdrawPermit memory permit = SigUtils.WithdrawPermit({
       owner: user,
@@ -196,9 +196,6 @@ contract StaticATokenMetaTransactions is BaseTest {
       sigParams
     );
 
-    assertEq(
-      IERC20(this.aWETH()).balanceOf(permit.spender),
-      permit.dynamicAmount
-    );
+    assertEq(IERC20(A_TOKEN).balanceOf(permit.spender), permit.dynamicAmount);
   }
 }

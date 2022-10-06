@@ -15,9 +15,9 @@ import {BaseTest} from './TestBase.sol';
 contract StaticATokenNoLMTest is BaseTest {
   address public constant override REWARD_TOKEN =
     0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-  address public constant override WETH =
+  address public constant override UNDERLYING =
     0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
-  address public constant override aWETH =
+  address public constant override A_TOKEN =
     0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
 
   IPool public override pool = IPool(AaveV3Polygon.POOL);
@@ -32,7 +32,7 @@ contract StaticATokenNoLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     _skipBlocks(60);
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
@@ -45,7 +45,7 @@ contract StaticATokenNoLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _depositAWeth(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
 
     _skipBlocks(60);
 
