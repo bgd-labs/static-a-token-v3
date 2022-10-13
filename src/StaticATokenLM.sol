@@ -22,9 +22,9 @@ import {IERC4626} from './interfaces/IERC4626.sol';
 
 /**
  * @title StaticATokenLM
- * @notice Wrapper token that allows to deposit tokens on the Aave protocol and receive
+ * @notice Wrapper smart contract that allows to deposit tokens on the Aave protocol and receive
  * a token which balance doesn't increase automatically, but uses an ever-increasing exchange rate.
- * The token support claiming liquidity mining rewards from the Aave system.
+ * It supports claiming liquidity mining rewards from the Aave system.
  * @author Aave
  **/
 contract StaticATokenLM is
@@ -289,7 +289,8 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  // @dev This should be simplified once the _incentivesController is updated to expose index directly.
+  // @dev TODO: This should be simplified once the _incentivesController is updated to expose index directly.
+  // https://github.com/aave/aave-v3-periphery/pull/101
   function getCurrentRewardsIndex() public view returns (uint256) {
     address cachedRewardToken = address(_rewardToken);
     address cachedAToken = address(_aToken);
@@ -355,7 +356,6 @@ contract StaticATokenLM is
     return uint256(_userRewardsData[user].unclaimedRewards).rayToWadRoundDown();
   }
 
-  // 4626 compatibility
   ///@inheritdoc IERC4626
   function asset() external view returns (address) {
     return address(_aToken);

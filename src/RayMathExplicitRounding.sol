@@ -6,6 +6,10 @@ enum Rounding {
   DOWN
 }
 
+/**
+ * Simplified version of RayMath that instead of half-up rounding does explicit rounding in a specified direction.
+ * This is needed to have a 4626 complient implementation, that always predictable rounds in favor of the vault / static a token.
+ */
 library RayMathExplicitRounding {
   uint256 internal constant RAY = 1e27;
   uint256 internal constant WAD_RAY_RATIO = 1e9;
