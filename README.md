@@ -1,4 +1,4 @@
-# Static aToken with liquidity mining
+# WIP: Static aToken with liquidity mining
 
 ## About
 
