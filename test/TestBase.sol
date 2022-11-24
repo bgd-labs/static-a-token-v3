@@ -3,7 +3,9 @@ pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
-import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
+import {UpgradeRewardsControllerPayload} from 'rewards-controller-update/contracts/UpgradeRewardsControllerPayload.sol';
+import {MockExecutor} from 'rewards-controller-update/../tests/MockExecutor.sol';
+import {AaveV3Avalanche, IPool, IPoolAddressesProvider} from 'aave-address-book/AaveV3Avalanche.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
 
@@ -76,5 +78,19 @@ abstract contract BaseTest is Test {
     _underlyingToAToken(amountToDeposit, targetUser);
     IERC20(this.A_TOKEN()).approve(address(staticATokenLM), amountToDeposit);
     return staticATokenLM.deposit(amountToDeposit, targetUser);
+  }
+
+  function _upgradeIncentivesController(
+    IPoolAddressesProvider poolAddressProvider,
+    address incentivesController,
+    address aclAdmin
+  ) internal {
+    UpgradeRewardsControllerPayload payload = new UpgradeRewardsControllerPayload(
+        poolAddressProvider,
+        incentivesController
+      );
+    MockExecutor mockExecutor = new MockExecutor();
+    vm.etch(aclAdmin, address(mockExecutor).code);
+    MockExecutor(aclAdmin).execute(address(payload));
   }
 }

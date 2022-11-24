@@ -26,6 +26,11 @@ contract StaticATokenMetaTransactions is BaseTest {
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 20389332);
+    super._upgradeIncentivesController(
+      AaveV3Avalanche.POOL_ADDRESSES_PROVIDER,
+      AaveV3Avalanche.DEFAULT_INCENTIVES_CONTROLLER,
+      AaveV3Avalanche.ACL_ADMIN
+    );
     super.setUp();
   }
 
