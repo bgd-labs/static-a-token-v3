@@ -155,17 +155,20 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
-    IERC20WithPermit(
-      fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)
-    ).permit(
-        depositor,
-        address(this),
-        permit.value,
-        permit.deadline,
-        permit.v,
-        permit.r,
-        permit.s
-      );
+    // assume if deadline 0 no permit was supplied
+    if (permit.deadline != 0) {
+      IERC20WithPermit(
+        fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)
+      ).permit(
+          depositor,
+          address(this),
+          permit.value,
+          permit.deadline,
+          permit.v,
+          permit.r,
+          permit.s
+        );
+    }
     return _deposit(depositor, recipient, value, referralCode, fromUnderlying);
   }
 

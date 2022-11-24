@@ -34,6 +34,48 @@ contract StaticATokenMetaTransactions is BaseTest {
     super.setUp();
   }
 
+  function test_metaDepositATokenUnderlyingNoPermit() public {
+    uint128 amountToDeposit = 5 ether;
+    deal(UNDERLYING, user, amountToDeposit);
+    IERC20(UNDERLYING).approve(address(staticATokenLM), 1 ether);
+    IStaticATokenLM.PermitParams memory permitParams;
+
+    // generate combined permit
+    SigUtils.DepositPermit memory depositPermit = SigUtils.DepositPermit({
+      owner: user,
+      spender: spender,
+      value: 1 ether,
+      referralCode: 0,
+      fromUnderlying: true,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp + 1 days,
+      permit: permitParams
+    });
+    bytes32 digest = SigUtils.getTypedDepositHash(
+      depositPermit,
+      staticATokenLM.METADEPOSIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
+
+    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
+      .SignatureParams(v, r, s);
+
+    uint256 previewDeposit = staticATokenLM.previewDeposit(depositPermit.value);
+    staticATokenLM.metaDeposit(
+      depositPermit.owner,
+      depositPermit.spender,
+      depositPermit.value,
+      depositPermit.referralCode,
+      depositPermit.fromUnderlying,
+      depositPermit.deadline,
+      permitParams,
+      sigParams
+    );
+
+    assertEq(staticATokenLM.balanceOf(depositPermit.spender), previewDeposit);
+  }
+
   function test_metaDepositATokenUnderlying() public {
     uint128 amountToDeposit = 5 ether;
     deal(UNDERLYING, user, amountToDeposit);
