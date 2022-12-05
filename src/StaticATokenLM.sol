@@ -155,17 +155,20 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
-    IERC20WithPermit(
-      fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)
-    ).permit(
-        depositor,
-        address(this),
-        permit.value,
-        permit.deadline,
-        permit.v,
-        permit.r,
-        permit.s
-      );
+    // assume if deadline 0 no permit was supplied
+    if (permit.deadline != 0) {
+      IERC20WithPermit(
+        fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)
+      ).permit(
+          depositor,
+          address(this),
+          permit.value,
+          permit.deadline,
+          permit.v,
+          permit.r,
+          permit.s
+        );
+    }
     return _deposit(depositor, recipient, value, referralCode, fromUnderlying);
   }
 
@@ -289,42 +292,16 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  // @dev TODO: This should be simplified once the _incentivesController is updated to expose index directly.
-  // https://github.com/aave/aave-v3-periphery/pull/101
   function getCurrentRewardsIndex() public view returns (uint256) {
     address cachedRewardToken = address(_rewardToken);
-    address cachedAToken = address(_aToken);
     if (address(cachedRewardToken) == address(0)) {
       return 0;
     }
-    (
-      uint256 index,
-      uint256 emissionPerSecond,
-      uint256 lastUpdateTimestamp,
-      uint256 distributionEnd
-    ) = _incentivesController.getRewardsData(
-        address(cachedAToken),
-        address(cachedRewardToken)
-      );
-    uint256 totalSupply = IScaledBalanceToken(address(cachedAToken))
-      .scaledTotalSupply();
-
-    if (
-      emissionPerSecond == 0 ||
-      totalSupply == 0 ||
-      lastUpdateTimestamp == block.timestamp ||
-      lastUpdateTimestamp >= distributionEnd
-    ) {
-      return index;
-    }
-
-    uint256 currentTimestamp = block.timestamp > distributionEnd
-      ? distributionEnd
-      : block.timestamp;
-    uint256 timeDelta = currentTimestamp - lastUpdateTimestamp;
-    return
-      ((emissionPerSecond * timeDelta * (10**uint256(decimals))) /
-        totalSupply) + index;
+    (, uint256 nextIndex) = _incentivesController.getAssetIndex(
+      address(_aToken),
+      cachedRewardToken
+    );
+    return nextIndex;
   }
 
   ///@inheritdoc IStaticATokenLM
