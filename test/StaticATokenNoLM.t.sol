@@ -23,12 +23,7 @@ contract StaticATokenNoLMTest is BaseTest {
   IPool public override pool = IPool(AaveV3Polygon.POOL);
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('polygon'), 33718273);
-    super._upgradeIncentivesController(
-      AaveV3Polygon.POOL_ADDRESSES_PROVIDER,
-      AaveV3Polygon.DEFAULT_INCENTIVES_CONTROLLER,
-      AaveV3Polygon.ACL_ADMIN
-    );
+    vm.createSelectFork(vm.rpcUrl('polygon'), 37747173);
     super.setUp();
   }
 
