@@ -25,7 +25,7 @@ contract StaticATokenMetaTransactions is BaseTest {
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('avalanche'), 24596892);
+    vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
     super.setUp();
   }
 
