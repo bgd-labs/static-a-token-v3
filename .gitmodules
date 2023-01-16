@@ -16,6 +16,3 @@
 [submodule "lib/aave-v3-periphery"]
 	path = lib/aave-v3-periphery
 	url = https://github.com/aave/aave-v3-periphery
-[submodule "lib/rewards-controller-update"]
-	path = lib/rewards-controller-update
-	url = https://github.com/bgd-labs/rewards-controller-update
