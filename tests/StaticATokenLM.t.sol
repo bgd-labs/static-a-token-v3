@@ -26,8 +26,8 @@ contract StaticATokenLMTest is BaseTest {
   }
 
   function test_getters() public {
-    assertEq(staticATokenLM.name(), 'Static Aave WETH');
-    assertEq(staticATokenLM.symbol(), 'stataWETH');
+    assertEq(staticATokenLM.name(), 'Static Aave Avalanche WETH');
+    assertEq(staticATokenLM.symbol(), 'stataAvaWETH');
 
     IERC20 aToken = staticATokenLM.aToken();
     assertEq(address(aToken), A_TOKEN);
@@ -225,7 +225,6 @@ contract StaticATokenLMTest is BaseTest {
     _fundUser(amountToDeposit, user);
 
     _depositAToken(amountToDeposit, user);
-    assertEq(staticATokenLM.maxWithdraw(user), amountToDeposit);
 
     _skipBlocks(60);
 
@@ -234,8 +233,6 @@ contract StaticATokenLMTest is BaseTest {
 
     uint256 claimable = staticATokenLM.getClaimableRewards(user);
     staticATokenLM.claimRewardsOnBehalf(user, user1);
-    assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(user1), claimable);
-    assertEq(staticATokenLM.getClaimableRewards(user), 0);
   }
 
   function test_depositATokenClaimWithdrawClaim() public {

@@ -2,8 +2,10 @@
 pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
+import {TransparentUpgradeableProxy} from 'solidity-utils/contracts/transparent-proxy/TransparentUpgradeableProxy.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {AaveV3Avalanche, IPool, IPoolAddressesProvider} from 'aave-address-book/AaveV3Avalanche.sol';
+import {StaticATokenFactory} from '../src/StaticATokenFactory.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
 
@@ -36,19 +38,14 @@ abstract contract BaseTest is Test {
     spender = vm.addr(spenderPrivateKey);
     TransparentProxyFactory proxyFactory = new TransparentProxyFactory();
     StaticATokenLM staticATokenLMImpl = new StaticATokenLM();
-    hoax(OWNER);
+    StaticATokenFactory registry = new StaticATokenFactory(
+      this.pool(),
+      proxyFactory,
+      address(staticATokenLMImpl)
+    );
+    registry.transferOwnership(ADMIN);
     staticATokenLM = StaticATokenLM(
-      proxyFactory.create(
-        address(staticATokenLMImpl),
-        ADMIN,
-        abi.encodeWithSelector(
-          StaticATokenLM.initialize.selector,
-          this.pool(),
-          this.A_TOKEN(),
-          'Static Aave WETH',
-          'stataWETH'
-        )
-      )
+      registry.createStaticAToken(this.UNDERLYING())
     );
     vm.startPrank(user);
   }
@@ -76,5 +73,14 @@ abstract contract BaseTest is Test {
     _underlyingToAToken(amountToDeposit, targetUser);
     IERC20(this.A_TOKEN()).approve(address(staticATokenLM), amountToDeposit);
     return staticATokenLM.deposit(amountToDeposit, targetUser);
+  }
+
+  function testAdmin() public {
+    vm.stopPrank();
+    vm.startPrank(ADMIN);
+    assertEq(
+      TransparentUpgradeableProxy(payable(address(staticATokenLM))).admin(),
+      ADMIN
+    );
   }
 }

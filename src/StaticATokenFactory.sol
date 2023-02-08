@@ -6,23 +6,28 @@ import {IERC20Metadata} from 'solidity-utils/contracts/oz-common/interfaces/IERC
 import {ITransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/interfaces/ITransparentProxyFactory.sol';
 import {Ownable} from 'solidity-utils/contracts/oz-common/Ownable.sol';
 import {StaticATokenLM} from './StaticATokenLM.sol';
+import {IStaticATokenFactory} from './interfaces/IStaticATokenFactory.sol';
 
-contract StaticATokenRegistry is Ownable {
+/**
+ * @title StaticATokenFactory
+ * @notice Factory contract that keeps track of all deployed static token wrappers for a specified pool.
+ * This registry also acts as a factory, allowing to deploy new static tokens on demand.
+ * There can only be one static token per underlying on the registry at a time.
+ * @author BGD labs
+ */
+contract StaticATokenFactory is Ownable, IStaticATokenFactory {
   IPool immutable POOL;
 
-  // changable by owner
   ITransparentProxyFactory private _transparentProxyFactory;
   address private _staticATokenImpl;
 
-  //
-  mapping(bytes32 => address) private _addresses;
+  mapping(address => address) private _addresses;
   address[] private _staticATokens;
 
   constructor(
     IPool pool,
     ITransparentProxyFactory transparentProxyFactory,
-    address staticATokenImpl,
-    address admin
+    address staticATokenImpl
   ) {
     POOL = pool;
 
@@ -30,17 +35,20 @@ contract StaticATokenRegistry is Ownable {
     _staticATokenImpl = staticATokenImpl;
   }
 
+  ///@inheritdoc IStaticATokenFactory
   function createStaticAToken(address underlying) public returns (address) {
+    require(
+      _addresses[underlying] == address(0),
+      'STATIC_TOKEN_ALREADY_EXISTS'
+    );
     DataTypes.ReserveData memory reserveData = POOL.getReserveData(underlying);
     bytes memory symbol = abi.encodePacked(
       'stat',
       IERC20Metadata(reserveData.aTokenAddress).symbol()
     );
-    bytes32 salt = keccak256(symbol);
-    require(_addresses[salt] == address(0), 'STATIC_TOKEN_ALREADY_EXISTS');
     address staticAToken = _transparentProxyFactory.createDeterministic(
       _staticATokenImpl,
-      _owner,
+      owner(),
       abi.encodeWithSelector(
         StaticATokenLM.initialize.selector,
         POOL,
@@ -53,16 +61,19 @@ contract StaticATokenRegistry is Ownable {
         ),
         string(symbol)
       ),
-      salt
+      bytes32(uint256(uint160(underlying)))
     );
-    _addresses[salt] = staticAToken;
+    _addresses[underlying] = staticAToken;
     _staticATokens.push(staticAToken);
+    return staticAToken;
   }
 
+  ///@inheritdoc IStaticATokenFactory
   function getStaticATokens() external returns (address[] memory) {
     return _staticATokens;
   }
 
+  ///@inheritdoc IStaticATokenFactory
   function setTransparentProxyFactor(ITransparentProxyFactory newProxyFactory)
     public
     onlyOwner
@@ -70,6 +81,7 @@ contract StaticATokenRegistry is Ownable {
     _transparentProxyFactory = newProxyFactory;
   }
 
+  ///@inheritdoc IStaticATokenFactory
   function getTransparentProxyFactory()
     external
     view
@@ -78,10 +90,12 @@ contract StaticATokenRegistry is Ownable {
     return _transparentProxyFactory;
   }
 
+  ///@inheritdoc IStaticATokenFactory
   function setStaticATokenImpl(address newStaticATokenImpl) public onlyOwner {
     _staticATokenImpl = newStaticATokenImpl;
   }
 
+  ///@inheritdoc IStaticATokenFactory
   function getStaticATokenImpl() external view returns (address) {
     return _staticATokenImpl;
   }
