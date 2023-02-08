@@ -25,7 +25,7 @@ import {IERC4626} from './interfaces/IERC4626.sol';
  * @notice Wrapper smart contract that allows to deposit tokens on the Aave protocol and receive
  * a token which balance doesn't increase automatically, but uses an ever-increasing exchange rate.
  * It supports claiming liquidity mining rewards from the Aave system.
- * @author Aave
+ * @author BGD labs
  **/
 contract StaticATokenLM is
   Initializable,
