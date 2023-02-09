@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import 'forge-std/Test.sol';
 import {Script} from 'forge-std/Script.sol';
 import {AaveV3Ethereum, IPool} from 'aave-address-book/AaveV3Ethereum.sol';
 import {AaveGovernanceV2} from 'aave-address-book/AaveGovernanceV2.sol';
@@ -41,7 +42,7 @@ library DeployATokenFactory {
 /**
  * This script will deploy the registry (which is also a factory) & transfer ownership to the aave short executor.
  */
-contract DeployMainnet is Script {
+contract DeployMainnet is Script, Test {
   ITransparentProxyFactory constant TRANSPARENT_PROXY_FACTORY =
     ITransparentProxyFactory(0xC354ce29aa85e864e55277eF47Fc6a92532Dd6Ca);
 
@@ -57,10 +58,17 @@ contract DeployMainnet is Script {
       proxyAdmin,
       AaveV3Ethereum.POOL
     );
+    emit log_named_address('factory', address(factory));
 
     // create static tokens for all reserves
-    factory.batchCreateStaticATokens(AaveV3Ethereum.POOL.getReservesList());
+    address[] memory reserves = AaveV3Ethereum.POOL.getReservesList();
+    address[] memory staticATokens = factory.batchCreateStaticATokens(reserves);
 
     vm.stopBroadcast();
+
+    for (uint256 i = 0; i < reserves.length; i++) {
+      emit log_named_address('underlying', reserves[i]);
+      emit log_named_address('staticAToken', staticATokens[i]);
+    }
   }
 }
