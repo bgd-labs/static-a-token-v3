@@ -26,34 +26,4 @@ interface IStaticATokenFactory {
    * @return address[] list of tokens
    */
   function getStaticATokens() external returns (address[] memory);
-
-  /**
-   * @notice Sets the transparentProxyFactory to be used for new token deployments.
-   * @param newProxyFactory address of the new factory
-   */
-  function setTransparentProxyFactor(ITransparentProxyFactory newProxyFactory)
-    external;
-
-  /**
-   * @notice Returns the transparentProxyFactory to be used for new token deployments.
-   * The transparentProxyFactory is mutable and can be updated by the owner (an aave governance controlled executor).
-   * @return ITransparentProxyFactory transparentProxyFactory
-   */
-  function getTransparentProxyFactory()
-    external
-    view
-    returns (ITransparentProxyFactory);
-
-  /**
-   * @notice Sets the staticATokenImplementation to be used for new token deployments.
-   * @param newStaticATokenImpl address of the new implementation
-   */
-  function setStaticATokenImpl(address newStaticATokenImpl) external;
-
-  /**
-   * @notice Returns the staticATokenImplementation used for new tokens.
-   * The implementation is mutable and can be updated by the owner (an aave governance controlled executor).
-   * @return address staticATokenImplementation
-   */
-  function getStaticATokenImpl() external view returns (address);
 }

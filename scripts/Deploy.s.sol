@@ -12,22 +12,42 @@ import {StaticATokenLM} from '../src/StaticATokenLM.sol';
  * This script will deploy the registry (which is also a factory) & transfer ownership to the aave short executor.
  */
 contract Deploy is Script {
+  ITransparentProxyFactory constant TRANSPARENT_PROXY_FACTORY =
+    ITransparentProxyFactory(0xC354ce29aa85e864e55277eF47Fc6a92532Dd6Ca);
+
   function run() external {
     vm.startBroadcast();
-    StaticATokenLM impl = new StaticATokenLM();
-    impl.initialize(
+    // deploy shared proxy admin
+    address proxyAdmin = TRANSPARENT_PROXY_FACTORY.createProxyAdmin(
+      AaveGovernanceV2.SHORT_EXECUTOR
+    );
+
+    // deploy and initialize static token impl
+    StaticATokenLM staticImpl = new StaticATokenLM();
+    staticImpl.initialize(
       AaveV3Ethereum.POOL,
       address(0), // TODO: it needs to be initialized with some token
       'STATIC_A_TOKEN_NAME',
       'STATIC_A_TOKEN_SYMBOL'
     );
-    StaticATokenFactory registry = new StaticATokenFactory(
+
+    // deploy staticATokenFactory
+    StaticATokenFactory factoryImpl = new StaticATokenFactory(
       AaveV3Ethereum.POOL,
-      ITransparentProxyFactory(0xC354ce29aa85e864e55277eF47Fc6a92532Dd6Ca),
-      address(impl)
+      proxyAdmin,
+      TRANSPARENT_PROXY_FACTORY,
+      address(staticImpl)
     );
-    registry.transferOwnership(AaveGovernanceV2.SHORT_EXECUTOR);
-    registry.batchCreateStaticATokens(AaveV3Ethereum.POOL.getReservesList());
+    StaticATokenFactory factory = StaticATokenFactory(
+      TRANSPARENT_PROXY_FACTORY.create(
+        address(factoryImpl),
+        proxyAdmin,
+        abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
+      )
+    );
+
+    // create static tokens for all reserves
+    factory.batchCreateStaticATokens(AaveV3Ethereum.POOL.getReservesList());
     vm.stopBroadcast();
   }
 }

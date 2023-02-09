@@ -21,6 +21,8 @@ abstract contract BaseTest is Test {
   uint256 internal spenderPrivateKey;
 
   StaticATokenLM public staticATokenLM;
+  address public proxyAdmin;
+  StaticATokenFactory public factory;
 
   function REWARD_TOKEN() external virtual returns (address);
 
@@ -36,16 +38,27 @@ abstract contract BaseTest is Test {
     user = address(vm.addr(userPrivateKey));
     user1 = address(vm.addr(2));
     spender = vm.addr(spenderPrivateKey);
+
     TransparentProxyFactory proxyFactory = new TransparentProxyFactory();
-    StaticATokenLM staticATokenLMImpl = new StaticATokenLM();
-    StaticATokenFactory registry = new StaticATokenFactory(
+    proxyAdmin = proxyFactory.createProxyAdmin(ADMIN);
+    StaticATokenLM staticImpl = new StaticATokenLM();
+    StaticATokenFactory factoryImpl = new StaticATokenFactory(
       this.pool(),
+      proxyAdmin,
       proxyFactory,
-      address(staticATokenLMImpl)
+      address(staticImpl)
     );
-    registry.transferOwnership(ADMIN);
+
+    factory = StaticATokenFactory(
+      proxyFactory.create(
+        address(factoryImpl),
+        proxyAdmin,
+        abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
+      )
+    );
+
     staticATokenLM = StaticATokenLM(
-      registry.createStaticAToken(this.UNDERLYING())
+      factory.createStaticAToken(this.UNDERLYING())
     );
     vm.startPrank(user);
   }
@@ -77,10 +90,14 @@ abstract contract BaseTest is Test {
 
   function testAdmin() public {
     vm.stopPrank();
-    vm.startPrank(ADMIN);
+    vm.startPrank(proxyAdmin);
     assertEq(
       TransparentUpgradeableProxy(payable(address(staticATokenLM))).admin(),
-      ADMIN
+      proxyAdmin
+    );
+    assertEq(
+      TransparentUpgradeableProxy(payable(address(factory))).admin(),
+      proxyAdmin
     );
   }
 }

@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import {IPool, DataTypes} from 'aave-address-book/AaveV3.sol';
 import {IERC20Metadata} from 'solidity-utils/contracts/oz-common/interfaces/IERC20Metadata.sol';
 import {ITransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/interfaces/ITransparentProxyFactory.sol';
-import {Ownable} from 'solidity-utils/contracts/oz-common/Ownable.sol';
+import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
 import {StaticATokenLM} from './StaticATokenLM.sol';
 import {IStaticATokenFactory} from './interfaces/IStaticATokenFactory.sol';
 
@@ -15,25 +15,31 @@ import {IStaticATokenFactory} from './interfaces/IStaticATokenFactory.sol';
  * There can only be one static token per underlying on the registry at a time.
  * @author BGD labs
  */
-contract StaticATokenFactory is Ownable, IStaticATokenFactory {
-  IPool immutable POOL;
-
-  ITransparentProxyFactory private _transparentProxyFactory;
-  address private _staticATokenImpl;
+contract StaticATokenFactory is Initializable, IStaticATokenFactory {
+  IPool public immutable POOL;
+  address public immutable ADMIN;
+  ITransparentProxyFactory public immutable TRANSPARENT_PROXY_FACTORY;
+  address public immutable STATIC_A_TOKEN_IMPL;
 
   mapping(address => address) private _addresses;
   address[] private _staticATokens;
 
+  event StaticTokenCreated(address staticToken, address underlying);
+
   constructor(
     IPool pool,
+    address proxyAdmin,
     ITransparentProxyFactory transparentProxyFactory,
     address staticATokenImpl
   ) {
     POOL = pool;
-
-    _transparentProxyFactory = transparentProxyFactory;
-    _staticATokenImpl = staticATokenImpl;
+    ADMIN = proxyAdmin;
+    TRANSPARENT_PROXY_FACTORY = transparentProxyFactory;
+    STATIC_A_TOKEN_IMPL = staticATokenImpl;
+    _disableInitializers();
   }
+
+  function initialize() external initializer {}
 
   ///@inheritdoc IStaticATokenFactory
   function createStaticAToken(address underlying) public returns (address) {
@@ -46,9 +52,9 @@ contract StaticATokenFactory is Ownable, IStaticATokenFactory {
       'stat',
       IERC20Metadata(reserveData.aTokenAddress).symbol()
     );
-    address staticAToken = _transparentProxyFactory.createDeterministic(
-      _staticATokenImpl,
-      owner(),
+    address staticAToken = TRANSPARENT_PROXY_FACTORY.createDeterministic(
+      STATIC_A_TOKEN_IMPL,
+      ADMIN,
       abi.encodeWithSelector(
         StaticATokenLM.initialize.selector,
         POOL,
@@ -65,6 +71,7 @@ contract StaticATokenFactory is Ownable, IStaticATokenFactory {
     );
     _addresses[underlying] = staticAToken;
     _staticATokens.push(staticAToken);
+    emit StaticTokenCreated(staticAToken, underlying);
     return staticAToken;
   }
 
@@ -83,32 +90,5 @@ contract StaticATokenFactory is Ownable, IStaticATokenFactory {
   ///@inheritdoc IStaticATokenFactory
   function getStaticATokens() external returns (address[] memory) {
     return _staticATokens;
-  }
-
-  ///@inheritdoc IStaticATokenFactory
-  function setTransparentProxyFactor(ITransparentProxyFactory newProxyFactory)
-    public
-    onlyOwner
-  {
-    _transparentProxyFactory = newProxyFactory;
-  }
-
-  ///@inheritdoc IStaticATokenFactory
-  function getTransparentProxyFactory()
-    external
-    view
-    returns (ITransparentProxyFactory)
-  {
-    return _transparentProxyFactory;
-  }
-
-  ///@inheritdoc IStaticATokenFactory
-  function setStaticATokenImpl(address newStaticATokenImpl) public onlyOwner {
-    _staticATokenImpl = newStaticATokenImpl;
-  }
-
-  ///@inheritdoc IStaticATokenFactory
-  function getStaticATokenImpl() external view returns (address) {
-    return _staticATokenImpl;
   }
 }
