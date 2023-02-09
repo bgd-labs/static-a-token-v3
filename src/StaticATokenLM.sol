@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: agpl-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
@@ -25,8 +25,8 @@ import {IERC4626} from './interfaces/IERC4626.sol';
  * @notice Wrapper smart contract that allows to deposit tokens on the Aave protocol and receive
  * a token which balance doesn't increase automatically, but uses an ever-increasing exchange rate.
  * It supports claiming liquidity mining rewards from the Aave system.
- * @author Aave
- **/
+ * @author BGD labs
+ */
 contract StaticATokenLM is
   Initializable,
   ERC20('STATIC__aToken_IMPL', 'STATIC__aToken_IMPL', 18),
