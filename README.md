@@ -105,3 +105,28 @@ redeem(uint256 shares, address recipient, address owner, bool toUnderlying);
 // allows depositing assets from the aToken or the underlying handling the wrapping internally
 deposit(uint256 assets, address recipient, uint16 referralCode, bool fromUnderlying);
 ```
+
+## Development
+
+### Deploy on a fork
+
+1. For deploying on a fork you need to add a random `PRIVATE_KEY` in `.env`.
+   It doesn't matter if the address has funds or not.
+
+2. For creating your own fork with USDT added, you can run the following command via `aave-tenderly-cli`.
+
+```sh
+aave-tenderly-cli --proposalId 152 --chainId 1 --keepAlive --userAddress <addressForPK> --forkLabel balancer-with-usdt
+```
+
+Check [here](https://github.com/bgd-labs/aave-tenderly-cli#installation) for setup instructions.
+This script will emit some text ending in:
+
+```sh
+--------------
+networkId: 1
+rpcUrl: <some rpc url>
+--------------
+```
+
+3. Copy the `rpcUrl` to your `RPC_MAINNET` in `.env` and run `make deploy-eth-v3-pk`
