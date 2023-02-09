@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: agpl-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';

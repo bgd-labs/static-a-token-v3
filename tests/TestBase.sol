@@ -8,6 +8,7 @@ import {AaveV3Avalanche, IPool, IPoolAddressesProvider} from 'aave-address-book/
 import {StaticATokenFactory} from '../src/StaticATokenFactory.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
+import {DeployATokenFactory} from '../scripts/Deploy.s.sol';
 
 abstract contract BaseTest is Test {
   address constant OWNER = address(1234);
@@ -41,20 +42,10 @@ abstract contract BaseTest is Test {
 
     TransparentProxyFactory proxyFactory = new TransparentProxyFactory();
     proxyAdmin = proxyFactory.createProxyAdmin(ADMIN);
-    StaticATokenLM staticImpl = new StaticATokenLM();
-    StaticATokenFactory factoryImpl = new StaticATokenFactory(
-      this.pool(),
-      proxyAdmin,
+    factory = DeployATokenFactory._deploy(
       proxyFactory,
-      address(staticImpl)
-    );
-
-    factory = StaticATokenFactory(
-      proxyFactory.create(
-        address(factoryImpl),
-        proxyAdmin,
-        abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
-      )
+      proxyAdmin,
+      this.pool()
     );
 
     staticATokenLM = StaticATokenLM(

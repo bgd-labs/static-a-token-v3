@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: agpl-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
 import {IPool, DataTypes} from 'aave-address-book/AaveV3.sol';
@@ -24,7 +24,10 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   mapping(address => address) public underlyingToStaticAToken;
   address[] private _staticATokens;
 
-  event StaticTokenCreated(address indexed staticAToken, address indexed underlying);
+  event StaticTokenCreated(
+    address indexed staticAToken,
+    address indexed underlying
+  );
 
   constructor(
     IPool pool,
