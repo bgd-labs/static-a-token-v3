@@ -62,10 +62,6 @@ contract StaticATokenLM is
 
   mapping(address => UserRewardsData) internal _userRewardsData;
 
-  constructor() {
-    _disableInitializers();
-  }
-
   ///@inheritdoc IInitializableStaticATokenLM
   function initialize(
     IPool newPool,

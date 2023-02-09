@@ -21,7 +21,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   ITransparentProxyFactory public immutable TRANSPARENT_PROXY_FACTORY;
   address public immutable STATIC_A_TOKEN_IMPL;
 
-  mapping(address => address) private _addresses;
+  mapping(address => address) public underlyingToStaticAToken;
   address[] private _staticATokens;
 
   event StaticTokenCreated(address staticToken, address underlying);
@@ -31,12 +31,11 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
     address proxyAdmin,
     ITransparentProxyFactory transparentProxyFactory,
     address staticATokenImpl
-  ) {
+  ) Initializable() {
     POOL = pool;
     ADMIN = proxyAdmin;
     TRANSPARENT_PROXY_FACTORY = transparentProxyFactory;
     STATIC_A_TOKEN_IMPL = staticATokenImpl;
-    _disableInitializers();
   }
 
   function initialize() external initializer {}
@@ -44,7 +43,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   ///@inheritdoc IStaticATokenFactory
   function createStaticAToken(address underlying) public returns (address) {
     require(
-      _addresses[underlying] == address(0),
+      underlyingToStaticAToken[underlying] == address(0),
       'STATIC_TOKEN_ALREADY_EXISTS'
     );
     DataTypes.ReserveData memory reserveData = POOL.getReserveData(underlying);
@@ -69,7 +68,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
       ),
       bytes32(uint256(uint160(underlying)))
     );
-    _addresses[underlying] = staticAToken;
+    underlyingToStaticAToken[underlying] = staticAToken;
     _staticATokens.push(staticAToken);
     emit StaticTokenCreated(staticAToken, underlying);
     return staticAToken;
