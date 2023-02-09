@@ -14,6 +14,14 @@ interface IStaticATokenFactory {
   function createStaticAToken(address underlying) external returns (address);
 
   /**
+   * @notice Creates multiple new staticATokens.
+   * @return address staticAToken
+   */
+  function batchCreateStaticATokens(address[] memory underlyings)
+    external
+    returns (address[] memory);
+
+  /**
    * @notice Returns all tokens deployed via this registry.
    * @return address[] list of tokens
    */

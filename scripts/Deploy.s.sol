@@ -27,6 +27,7 @@ contract Deploy is Script {
       address(impl)
     );
     registry.transferOwnership(AaveGovernanceV2.SHORT_EXECUTOR);
+    registry.batchCreateStaticATokens(AaveV3Ethereum.POOL.getReservesList());
     vm.stopBroadcast();
   }
 }

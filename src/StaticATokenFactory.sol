@@ -69,6 +69,18 @@ contract StaticATokenFactory is Ownable, IStaticATokenFactory {
   }
 
   ///@inheritdoc IStaticATokenFactory
+  function batchCreateStaticATokens(address[] memory underlyings)
+    public
+    returns (address[] memory)
+  {
+    address[] memory staticATokens = new address[](underlyings.length);
+    for (uint256 i = 0; i < underlyings.length; i++) {
+      staticATokens[i] = createStaticAToken(underlyings[i]);
+    }
+    return staticATokens;
+  }
+
+  ///@inheritdoc IStaticATokenFactory
   function getStaticATokens() external returns (address[] memory) {
     return _staticATokens;
   }
