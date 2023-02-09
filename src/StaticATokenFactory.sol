@@ -10,9 +10,9 @@ import {IStaticATokenFactory} from './interfaces/IStaticATokenFactory.sol';
 
 /**
  * @title StaticATokenFactory
- * @notice Factory contract that keeps track of all deployed static token wrappers for a specified pool.
- * This registry also acts as a factory, allowing to deploy new static tokens on demand.
- * There can only be one static token per underlying on the registry at a time.
+ * @notice Factory contract that keeps track of all deployed static aToken wrappers for a specified pool.
+ * This registry also acts as a factory, allowing to deploy new static aTokens on demand.
+ * There can only be one static aToken per underlying on the registry at a time.
  * @author BGD labs
  */
 contract StaticATokenFactory is Initializable, IStaticATokenFactory {
@@ -24,7 +24,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   mapping(address => address) public underlyingToStaticAToken;
   address[] private _staticATokens;
 
-  event StaticTokenCreated(address staticToken, address underlying);
+  event StaticTokenCreated(address indexed staticAToken, address indexed underlying);
 
   constructor(
     IPool pool,
@@ -76,7 +76,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
 
   ///@inheritdoc IStaticATokenFactory
   function batchCreateStaticATokens(address[] memory underlyings)
-    public
+    external
     returns (address[] memory)
   {
     address[] memory staticATokens = new address[](underlyings.length);
