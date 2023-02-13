@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import {Script} from 'forge-std/Script.sol';
+import {AaveMisc} from 'aave-address-book/AaveMisc.sol';
 import {AaveV3Ethereum, IPool} from 'aave-address-book/AaveV3Ethereum.sol';
 import {AaveV3Polygon} from 'aave-address-book/AaveV3Polygon.sol';
 import {AaveV3Avalanche} from 'aave-address-book/AaveV3Avalanche.sol';
@@ -19,7 +20,7 @@ library DeployATokenFactory {
     ITransparentProxyFactory proxyFactory,
     address sharedProxyAdmin,
     IPool pool
-  ) internal returns (StaticATokenFactory) {
+  ) internal {
     // deploy and initialize static token impl
     StaticATokenLM staticImpl = new StaticATokenLM();
 
@@ -39,74 +40,66 @@ library DeployATokenFactory {
         abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
       )
     );
-
-    return factory;
+    factory.batchCreateStaticATokens(POOL.getReservesList());
   }
 }
 
-contract FactoryDeployment is Script, Test {
-  IPool immutable POOL;
-  ITransparentProxyFactory immutable TRANSPARENT_PROXY_FACTORY;
-
-  constructor(IPool pool, ITransparentProxyFactory proxyFactory) {
-    POOL = pool;
-    TRANSPARENT_PROXY_FACTORY = proxyFactory;
-  }
-
-  /**
-   * Deployes the factory
-   */
-  function _deployFactory(address proxyAdmin)
-    internal
-    returns (StaticATokenFactory)
-  {
-    StaticATokenFactory factory = DeployATokenFactory._deploy(
-      TRANSPARENT_PROXY_FACTORY,
-      proxyAdmin,
-      POOL
-    );
-    emit log_named_address('factory', address(factory));
-    return factory;
-  }
-
-  /**
-   * Creates static tokens for all reserves.
-   */
-  function _deployAllTokens(StaticATokenFactory factory) internal {
-    address[] memory reserves = POOL.getReservesList();
-    address[] memory staticATokens = factory.batchCreateStaticATokens(reserves);
-
-    for (uint256 i = 0; i < reserves.length; i++) {
-      emit log_named_address('underlying', reserves[i]);
-      emit log_named_address('staticAToken', staticATokens[i]);
-    }
-  }
-}
-
-/**
- * This script will deploy the registry (which is also a factory) & transfer ownership to the aave short executor.
- */
-contract DeployMainnet is FactoryDeployment {
-  constructor()
-    FactoryDeployment(
-      AaveV3Ethereum.POOL,
-      // TODO: fetch from address book
-      ITransparentProxyFactory(0xC354ce29aa85e864e55277eF47Fc6a92532Dd6Ca)
-    )
-  {}
-
+contract DeployMainnet is Script {
   function run() external {
     vm.startBroadcast();
-    // deploy shared proxy admin
-    // TODO: should be pre-deployed and fetched from address book
-    address proxyAdmin = ITransparentProxyFactory(
-      0xC354ce29aa85e864e55277eF47Fc6a92532Dd6Ca
-    ).createProxyAdmin(AaveGovernanceV2.SHORT_EXECUTOR);
+    DeployATokenFactory._deploy(
+      AaveMisc.TRANSPARENT_PROXY_FACTORY_ETHEREUM,
+      AaveMisc.PROXY_ADMIN_ETHEREUM,
+      AaveV3Ethereum.POOL
+    );
+    vm.stopBroadcast();
+  }
+}
 
-    StaticATokenFactory factory = _deployFactory(proxyAdmin);
+contract DeployPolygon is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      AaveMisc.TRANSPARENT_PROXY_FACTORY_POLYGON,
+      AaveMisc.PROXY_ADMIN_POLYGON,
+      AaveV3Polygon.POOL
+    );
+    vm.stopBroadcast();
+  }
+}
 
-    _deployAllTokens(factory);
+contract DeployAvalanche is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      AaveMisc.TRANSPARENT_PROXY_FACTORY_AVALANCHE,
+      AaveMisc.PROXY_ADMIN_AVALANCHE,
+      AaveV3Avalanche.POOL
+    );
+    vm.stopBroadcast();
+  }
+}
 
+contract DeployOptimism is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      AaveMisc.TRANSPARENT_PROXY_FACTORY_OPTIMISM,
+      AaveMisc.PROXY_ADMIN_OPTIMISM,
+      AaveV3Optimism.POOL
+    );
+    vm.stopBroadcast();
+  }
+}
+
+contract DeployArbitrum is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      AaveMisc.TRANSPARENT_PROXY_FACTORY_ARBITRUM,
+      AaveMisc.PROXY_ADMIN_ARBITRUM,
+      AaveV3Arbitrum.POOL
+    );
     vm.stopBroadcast();
   }
 }
