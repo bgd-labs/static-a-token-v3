@@ -18,11 +18,3 @@ git-diff :
 
 deploy-eth-v3 :; forge script scripts/Deploy.s.sol:DeployMainnet --rpc-url mainnet --broadcast --legacy --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv
 deploy-eth-v3-pk :; forge script scripts/Deploy.s.sol:DeployMainnet --rpc-url mainnet --broadcast --legacy --private-key ${PRIVATE_KEY} --slow -vv
-
-
-deploy-proxy-mainnet :; forge script scripts/DeployFactory.s.sol:DeployMainnet --rpc-url mainnet --broadcast --legacy --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv
-deploy-proxy-polygon :; forge script scripts/DeployFactory.s.sol:DeployPolygon --rpc-url polygon --broadcast --legacy --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv
-deploy-proxy-optimism :; forge script scripts/DeployFactory.s.sol:DeployOptimism --rpc-url optimism --broadcast --legacy --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv
-deploy-proxy-arbitrum :; forge script scripts/DeployFactory.s.sol:DeployArbitrum --rpc-url arbitrum --broadcast --legacy --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv
-deploy-proxy-fantom :; forge script scripts/DeployFactory.s.sol:DeployFantom --rpc-url fantom --broadcast --legacy --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv
-deploy-proxy-harmony :; forge script scripts/DeployFactory.s.sol:DeployHarmony --rpc-url harmony --broadcast --legacy --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv
