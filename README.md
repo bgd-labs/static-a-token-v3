@@ -1,5 +1,9 @@
 # stataToken - Static aToken vault/wrapper
 
+## Disclaimer
+
+The certora audit is still in progress and therefore production use is not recommended.
+
 <p align="center">
 <img src="./wrapping.jpg" width="300">
 </p>
@@ -30,7 +34,7 @@ The `stataToken` is using transparent proxy pattern, so the token is potentially
 For this project, the security procedures applied/being finished are:
 
 - The test suite of the codebase itself.
-- Certora audit/property checking for all the dynamics of the `stataToken`, including respecting all the specs of [EIP-4626](https://eips.ethereum.org/EIPS/eip-4626).
+- **In progress**. Certora audit/property checking for all the dynamics of the `stataToken`, including respecting all the specs of [EIP-4626](https://eips.ethereum.org/EIPS/eip-4626).
 
 ## Development
 

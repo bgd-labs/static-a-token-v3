@@ -49,7 +49,7 @@ abstract contract BaseTest is Test {
     );
 
     staticATokenLM = StaticATokenLM(
-      factory.createStaticAToken(this.UNDERLYING())
+      factory.underlyingToStaticAToken(this.UNDERLYING())
     );
     vm.startPrank(user);
   }

@@ -20,7 +20,7 @@ library DeployATokenFactory {
     ITransparentProxyFactory proxyFactory,
     address sharedProxyAdmin,
     IPool pool
-  ) internal {
+  ) internal returns (StaticATokenFactory) {
     // deploy and initialize static token impl
     StaticATokenLM staticImpl = new StaticATokenLM();
 
@@ -40,7 +40,8 @@ library DeployATokenFactory {
         abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
       )
     );
-    factory.batchCreateStaticATokens(POOL.getReservesList());
+    factory.batchCreateStaticATokens(pool.getReservesList());
+    return factory;
   }
 }
 
@@ -48,7 +49,7 @@ contract DeployMainnet is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      AaveMisc.TRANSPARENT_PROXY_FACTORY_ETHEREUM,
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ETHEREUM),
       AaveMisc.PROXY_ADMIN_ETHEREUM,
       AaveV3Ethereum.POOL
     );
@@ -60,7 +61,7 @@ contract DeployPolygon is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      AaveMisc.TRANSPARENT_PROXY_FACTORY_POLYGON,
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_POLYGON),
       AaveMisc.PROXY_ADMIN_POLYGON,
       AaveV3Polygon.POOL
     );
@@ -72,7 +73,7 @@ contract DeployAvalanche is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      AaveMisc.TRANSPARENT_PROXY_FACTORY_AVALANCHE,
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_AVALANCHE),
       AaveMisc.PROXY_ADMIN_AVALANCHE,
       AaveV3Avalanche.POOL
     );
@@ -84,7 +85,7 @@ contract DeployOptimism is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      AaveMisc.TRANSPARENT_PROXY_FACTORY_OPTIMISM,
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_OPTIMISM),
       AaveMisc.PROXY_ADMIN_OPTIMISM,
       AaveV3Optimism.POOL
     );
@@ -96,7 +97,7 @@ contract DeployArbitrum is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      AaveMisc.TRANSPARENT_PROXY_FACTORY_ARBITRUM,
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ARBITRUM),
       AaveMisc.PROXY_ADMIN_ARBITRUM,
       AaveV3Arbitrum.POOL
     );
