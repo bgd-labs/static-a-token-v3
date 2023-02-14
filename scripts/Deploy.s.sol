@@ -3,8 +3,14 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import {Script} from 'forge-std/Script.sol';
+import {AaveMisc} from 'aave-address-book/AaveMisc.sol';
 import {AaveV3Ethereum, IPool} from 'aave-address-book/AaveV3Ethereum.sol';
+import {AaveV3Polygon} from 'aave-address-book/AaveV3Polygon.sol';
+import {AaveV3Avalanche} from 'aave-address-book/AaveV3Avalanche.sol';
+import {AaveV3Optimism} from 'aave-address-book/AaveV3Optimism.sol';
+import {AaveV3Arbitrum} from 'aave-address-book/AaveV3Arbitrum.sol';
 import {AaveGovernanceV2} from 'aave-address-book/AaveGovernanceV2.sol';
+import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {ITransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/interfaces/ITransparentProxyFactory.sol';
 import {StaticATokenFactory} from '../src/StaticATokenFactory.sol';
 import {StaticATokenLM} from '../src/StaticATokenLM.sol';
@@ -34,41 +40,67 @@ library DeployATokenFactory {
         abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
       )
     );
-
+    factory.batchCreateStaticATokens(pool.getReservesList());
     return factory;
   }
 }
 
-/**
- * This script will deploy the registry (which is also a factory) & transfer ownership to the aave short executor.
- */
-contract DeployMainnet is Script, Test {
-  ITransparentProxyFactory constant TRANSPARENT_PROXY_FACTORY =
-    ITransparentProxyFactory(0xC354ce29aa85e864e55277eF47Fc6a92532Dd6Ca);
-
+contract DeployMainnet is Script {
   function run() external {
     vm.startBroadcast();
-    // deploy shared proxy admin
-    address proxyAdmin = TRANSPARENT_PROXY_FACTORY.createProxyAdmin(
-      AaveGovernanceV2.SHORT_EXECUTOR
-    );
-
-    StaticATokenFactory factory = DeployATokenFactory._deploy(
-      TRANSPARENT_PROXY_FACTORY,
-      proxyAdmin,
+    DeployATokenFactory._deploy(
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ETHEREUM),
+      AaveMisc.PROXY_ADMIN_ETHEREUM,
       AaveV3Ethereum.POOL
     );
-    emit log_named_address('factory', address(factory));
-
-    // create static tokens for all reserves
-    address[] memory reserves = AaveV3Ethereum.POOL.getReservesList();
-    address[] memory staticATokens = factory.batchCreateStaticATokens(reserves);
-
     vm.stopBroadcast();
+  }
+}
 
-    for (uint256 i = 0; i < reserves.length; i++) {
-      emit log_named_address('underlying', reserves[i]);
-      emit log_named_address('staticAToken', staticATokens[i]);
-    }
+contract DeployPolygon is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_POLYGON),
+      AaveMisc.PROXY_ADMIN_POLYGON,
+      AaveV3Polygon.POOL
+    );
+    vm.stopBroadcast();
+  }
+}
+
+contract DeployAvalanche is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_AVALANCHE),
+      AaveMisc.PROXY_ADMIN_AVALANCHE,
+      AaveV3Avalanche.POOL
+    );
+    vm.stopBroadcast();
+  }
+}
+
+contract DeployOptimism is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_OPTIMISM),
+      AaveMisc.PROXY_ADMIN_OPTIMISM,
+      AaveV3Optimism.POOL
+    );
+    vm.stopBroadcast();
+  }
+}
+
+contract DeployArbitrum is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ARBITRUM),
+      AaveMisc.PROXY_ADMIN_ARBITRUM,
+      AaveV3Arbitrum.POOL
+    );
+    vm.stopBroadcast();
   }
 }
