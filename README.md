@@ -1,4 +1,4 @@
-# stataToken - Static aToken vault/wrapper
+# StaticAToken - Static aToken vault/wrapper
 
 ![banner](./wrapping_banner.jpg)
 
@@ -7,7 +7,7 @@
 This repository contains a [eip #4626](https://eips.ethereum.org/EIPS/eip-4626) compatible token vault implementation for Aave aTokens.
 The static token vault tokens are designed to increase in value instead of balance, which simplifies integration in certain applications.
 
-In addition to the `stataToken` itself the repository contains a `StaticATokenFactory` contract which allows permissionless creation of static aTokens while also acting as a registry.
+In addition to the `StaticAToken` itself the repository contains a `StaticATokenFactory` contract which allows permissionless creation of static aTokens while also acting as a registry.
 
 ## Features
 
