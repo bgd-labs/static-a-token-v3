@@ -14,7 +14,7 @@ In addition to the `StaticAToken` itself the repository contains a `StaticAToken
 - full [eip #4626](https://eips.ethereum.org/EIPS/eip-4626) compatibility
 - meta transaction support
 - permit support
-- upgradable stataToken contracts
+- upgradable contracts
 - accounting for potential liquidity mining with certain [limitations](#limitations)
 
 ## Limitations
