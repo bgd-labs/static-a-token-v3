@@ -1,9 +1,21 @@
-# WIP: Static aToken with liquidity mining
+# stataToken - Static aToken vault/wrapper
+
+![banner](./wrapping_banner.jpg)
 
 ## About
 
 This repository contains a [eip #4626](https://eips.ethereum.org/EIPS/eip-4626) compatible token vault implementation for Aave aTokens.
 The static token vault tokens are designed to increase in value instead of balance, which simplifies integration in certain applications.
+
+In addition to the `stataToken` itself the repository contains a `StaticATokenFactory` contract which allows permissionless creation of static aTokens while also acting as a registry.
+
+## Features
+
+- full [eip #4626](https://eips.ethereum.org/EIPS/eip-4626) compatibility
+- meta transaction support
+- permit support
+- upgradable stataToken contracts
+- accounting for potential liquidity mining with certain [limitations](#limitations)
 
 ## Limitations
 
@@ -22,11 +34,12 @@ In addition to that there are some extensions to:
 
 ### Additional methods
 
-Please have a look at the [interface](./src/interfaces/IStaticATokenLM.sol) for a precise documentation of all methods and parameters. The documentation here will only give a quick summary of additional available methods and the reasoning for their existence.
+Please have a look at the [interface](./src/interfaces/IStaticATokenLM.sol) for a precise documentation of all methods and parameters.
+The documentation here will only give a quick summary of additional available methods and the reasoning behind their existence.
 
 #### Methods for interacting with LM
 
-```
+```solidity
 // read methods
 
 // claimable rewards by the static token
@@ -60,7 +73,7 @@ The meta transactions expose a separate api which allow pre-signing and relaying
 
 `metaDeposit` requires an additional permit for the token you want to deposit. You can see a the full flow in the [tests](./test/StaticATokenMetaTransactions.sol).
 
-```
+```solidity
 metaDeposit(
     address depositor,
     address recipient,
@@ -86,7 +99,7 @@ metaWithdraw(
 
 The ux additions consist of getters for underlying addresses of the aave protocol. In addition there are overloaded redeem/deposit methods more in line with the aave protocol interfaces and thus allow depositing from underlying and redeeming the underlying in a single transaction.
 
-```
+```solidity
 // read methods
 
 // the current exchange rate from static tokes to a tokens
