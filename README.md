@@ -21,9 +21,9 @@ See [IStaticATokenLM.sol](./src/interfaces/IStaticATokenLM.sol) for detailed met
 
 ## Limitations
 
-The static aToken will keep track of LM rewards per user only for the first token listed on the incentives controller present on token initialization.
+The `stataToken` will keep track of LM rewards per user only for the first token listed on the incentives controller present on token initialization.
 
-The static aToken is using transparent proxy pattern, so the token is potentially upgradable to keep track of a new incentives controller or token down the line.
+The `stataToken` is using transparent proxy pattern, so the token is potentially upgradable to keep track of a new incentives controller or token down the line.
 
 ## Security procedures
 
