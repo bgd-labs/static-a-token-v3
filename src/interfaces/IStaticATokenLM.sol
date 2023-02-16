@@ -118,28 +118,36 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   /**
    * @notice Claims rewards from `INCENTIVES_CONTROLLER` and updates internal accounting of rewards.
+   * @param reward The reward to claim
    * @return uint256 Amount collected
    */
-  function collectAndUpdateRewards() external returns (uint256);
+  function collectAndUpdateRewards(address reward) external returns (uint256);
 
   /**
    * @notice Claim rewards on behalf of a user and send them to a receiver
    * @dev Only callable by if sender is onBehalfOf or sender is approved claimer
    * @param onBehalfOf The address to claim on behalf of
    * @param receiver The address to receive the rewards
+   * @param reward The reward to claim
    */
-  function claimRewardsOnBehalf(address onBehalfOf, address receiver) external;
+  function claimRewardsOnBehalf(
+    address onBehalfOf,
+    address receiver,
+    address reward
+  ) external;
 
   /**
    * @notice Claim rewards and send them to a receiver
    * @param receiver The address to receive the rewards
+   * @param reward The reward to claim
    */
-  function claimRewards(address receiver) external;
+  function claimRewards(address receiver, address reward) external;
 
   /**
    * @notice Claim rewards
+   * @param reward The reward to claim
    */
-  function claimRewardsToSelf() external;
+  function claimRewardsToSelf(address reward) external;
 
   /**
    * @notice Get the total claimable rewards of the contract.
@@ -150,16 +158,24 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   /**
    * @notice Get the total claimable rewards for a user in WAD
    * @param user The address of the user
+   * @param reward The reward to claim
    * @return uint256 The claimable amount of rewards in WAD
    */
-  function getClaimableRewards(address user) external view returns (uint256);
+  function getClaimableRewards(address user, address reward)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice The unclaimed rewards for a user in WAD
    * @param user The address of the user
+   * @param reward The reward to claim
    * @return uint256 The unclaimed amount of rewards in WAD
    */
-  function getUnclaimedRewards(address user) external view returns (uint256);
+  function getUnclaimedRewards(address user, address reward)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice The underlying asset reward index in RAY

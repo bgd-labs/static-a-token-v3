@@ -37,7 +37,7 @@ contract StaticATokenNoLMTest is BaseTest {
     _skipBlocks(60);
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
     assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
-    assertEq(staticATokenLM.collectAndUpdateRewards(), 0);
+    assertEq(staticATokenLM.collectAndUpdateRewards(REWARD_TOKEN), 0);
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
   }
 
@@ -49,10 +49,10 @@ contract StaticATokenNoLMTest is BaseTest {
 
     _skipBlocks(60);
 
-    uint256 claimable = staticATokenLM.getClaimableRewards(user);
-    staticATokenLM.claimRewardsToSelf();
+    uint256 claimable = staticATokenLM.getClaimableRewards(user, REWARD_TOKEN);
+    staticATokenLM.claimRewardsToSelf(REWARD_TOKEN);
     assertEq(claimable, 0);
     assertEq(IERC20(REWARD_TOKEN).balanceOf(user), 0);
-    assertEq(staticATokenLM.getClaimableRewards(user), 0);
+    assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN), 0);
   }
 }
