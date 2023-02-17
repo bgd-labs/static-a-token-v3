@@ -221,10 +221,16 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @notice The IERC20s that are currently rewarded to addresses of the vault via LM on incentivescontroller.
    * @return IERC20 The IERC20s of the rewards.
    */
-  function rewardTokens() external view returns (IERC20[] memory);
+  function rewardTokens() external view returns (address[] memory);
 
   /**
    * @notice Fetches all rewardTokens from the incentivecontroller and registes the missing ones.
    */
   function refreshRewardTokens() external;
+
+  /**
+   * @notice Checks if the passed token is a registered reward.
+   * @return bool signaling if token is a registered reward.
+   */
+  function isRegisteredRewardToken(address reward) external returns (bool);
 }

@@ -58,7 +58,7 @@ contract StaticATokenLM is
   IRewardsController internal _incentivesController;
   IERC20 internal _aToken;
   address internal _aTokenUnderlying;
-  IERC20[] internal _rewardTokens;
+  address[] internal _rewardTokens;
   mapping(address => uint256) internal _startIndex;
   mapping(address => mapping(address => UserRewardsData))
     internal _userRewardsData;
@@ -85,11 +85,7 @@ contract StaticATokenLM is
     ) {
       if (newIncentivesController != address(0)) {
         _incentivesController = IRewardsController(newIncentivesController);
-        address[] memory rewards = IRewardsController(newIncentivesController)
-          .getRewardsByAsset(newAToken);
-        for (uint256 i = 0; i < rewards.length; i++) {
-          _registerRewardToken(rewards[i]);
-        }
+        refreshRewardTokens();
       }
     } catch {}
 
@@ -104,13 +100,20 @@ contract StaticATokenLM is
   ///@inheritdoc IStaticATokenLM
   function refreshRewardTokens() public override {
     address[] memory rewards = _incentivesController.getRewardsByAsset(
-      _aTokenUnderlying
+      address(_aToken)
     );
     for (uint256 i = 0; i < rewards.length; i++) {
-      if (_startIndex[rewards[i]] == 0) {
-        _registerRewardToken(rewards[i]);
-      }
+      _registerRewardToken(rewards[i]);
     }
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function isRegisteredRewardToken(address reward)
+    public
+    override
+    returns (bool)
+  {
+    return _startIndex[reward] != 0;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -395,7 +398,7 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function rewardTokens() external view returns (IERC20[] memory) {
+  function rewardTokens() external view returns (address[] memory) {
     return _rewardTokens;
   }
 
@@ -734,10 +737,10 @@ contract StaticATokenLM is
    * @param reward The reward token to be registered
    */
   function _registerRewardToken(address reward) internal {
-    require(_startIndex[reward] == 0, 'REWARD_ALREADY_REGISTERED');
+    if (isRegisteredRewardToken(reward)) return;
     uint256 startIndex = getCurrentRewardsIndex(reward);
 
-    _rewardTokens.push(IERC20(reward));
+    _rewardTokens.push(reward);
     _startIndex[reward] = startIndex;
 
     emit RewardTokenRegistered(reward, startIndex);
