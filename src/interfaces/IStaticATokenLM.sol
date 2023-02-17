@@ -151,9 +151,13 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   /**
    * @notice Get the total claimable rewards of the contract.
+   * @param reward The reward to claim
    * @return uint256 The current balance + pending rewards from the `_incentivesController`
    */
-  function getTotalClaimableRewards() external view returns (uint256);
+  function getTotalClaimableRewards(address reward)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice Get the total claimable rewards for a user in WAD
@@ -179,9 +183,13 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   /**
    * @notice The underlying asset reward index in RAY
+   * @param reward The reward to claim
    * @return uint256 The underlying asset reward index in RAY
    */
-  function getCurrentRewardsIndex() external view returns (uint256);
+  function getCurrentRewardsIndex(address reward)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice The Pool where the underlying aToken is supplied and withdrawn.
@@ -208,8 +216,8 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   function aTokenUnderlying() external view returns (IERC20);
 
   /**
-   * @notice The IERC20 that is currently rewarded to addresses of the vault via LM on incentivescontroller.
-   * @return IERC20 The IERC20 of the reward.
+   * @notice The IERC20s that are currently rewarded to addresses of the vault via LM on incentivescontroller.
+   * @return IERC20 The IERC20s of the rewards.
    */
-  function rewardToken() external view returns (IERC20);
+  function rewardTokens() external view returns (IERC20[] memory);
 }

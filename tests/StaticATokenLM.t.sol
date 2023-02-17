@@ -183,7 +183,7 @@ contract StaticATokenLMTest is BaseTest {
 
     _skipBlocks(60);
     assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(address(staticATokenLM)), 0);
-    uint256 claimable = staticATokenLM.getTotalClaimableRewards();
+    uint256 claimable = staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN);
     staticATokenLM.collectAndUpdateRewards(REWARD_TOKEN);
     assertEq(
       IERC20(this.REWARD_TOKEN()).balanceOf(address(staticATokenLM)),
@@ -248,7 +248,7 @@ contract StaticATokenLMTest is BaseTest {
     // claim
     assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(user), 0);
     uint256 claimable0 = staticATokenLM.getClaimableRewards(user, REWARD_TOKEN);
-    assertEq(staticATokenLM.getTotalClaimableRewards(), claimable0);
+    assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN), claimable0);
     assertGt(claimable0, 0);
     staticATokenLM.claimRewardsToSelf(REWARD_TOKEN);
     assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(user), claimable0);
@@ -259,7 +259,7 @@ contract StaticATokenLMTest is BaseTest {
     // redeem
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
     uint256 claimable1 = staticATokenLM.getClaimableRewards(user, REWARD_TOKEN);
-    assertEq(staticATokenLM.getTotalClaimableRewards(), claimable1);
+    assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN), claimable1);
     assertGt(claimable1, 0);
 
     // claim on behalf of other user
@@ -270,7 +270,7 @@ contract StaticATokenLMTest is BaseTest {
     );
     assertEq(staticATokenLM.balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN), 0);
-    assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
+    assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN), 0);
     assertGt(AToken(A_TOKEN).balanceOf(user), 5 ether);
   }
 
@@ -286,7 +286,7 @@ contract StaticATokenLMTest is BaseTest {
     // claim
     assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(user), 0);
     uint256 claimable0 = staticATokenLM.getClaimableRewards(user, REWARD_TOKEN);
-    assertEq(staticATokenLM.getTotalClaimableRewards(), claimable0);
+    assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN), claimable0);
     assertGt(claimable0, 0);
     staticATokenLM.claimRewardsToSelf(REWARD_TOKEN);
     assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(user), claimable0);
@@ -297,7 +297,7 @@ contract StaticATokenLMTest is BaseTest {
     // redeem
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
     uint256 claimable1 = staticATokenLM.getClaimableRewards(user, REWARD_TOKEN);
-    assertEq(staticATokenLM.getTotalClaimableRewards(), claimable1);
+    assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN), claimable1);
     assertGt(claimable1, 0);
 
     // claim on behalf of other user
@@ -308,7 +308,7 @@ contract StaticATokenLMTest is BaseTest {
     );
     assertEq(staticATokenLM.balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN), 0);
-    assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
+    assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN), 0);
     assertGt(AToken(A_TOKEN).balanceOf(user), 5 ether);
   }
 
@@ -344,7 +344,7 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(user1), claimableUser1);
     assertGt(claimableUser1, 0);
 
-    assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
+    assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN), 0);
     assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN), 0);
     assertEq(staticATokenLM.getClaimableRewards(user1, REWARD_TOKEN), 0);
   }

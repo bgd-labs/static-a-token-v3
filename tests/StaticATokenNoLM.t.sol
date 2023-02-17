@@ -36,7 +36,7 @@ contract StaticATokenNoLMTest is BaseTest {
 
     _skipBlocks(60);
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
-    assertEq(staticATokenLM.getTotalClaimableRewards(), 0);
+    assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN), 0);
     assertEq(staticATokenLM.collectAndUpdateRewards(REWARD_TOKEN), 0);
     assertEq(IERC20(REWARD_TOKEN).balanceOf(address(staticATokenLM)), 0);
   }

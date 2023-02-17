@@ -296,22 +296,28 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getCurrentRewardsIndex() public view returns (uint256) {
-    address cachedRewardToken = address(_rewardToken);
-    if (address(cachedRewardToken) == address(0)) {
+  function getCurrentRewardsIndex(address reward)
+    public
+    view
+    returns (uint256)
+  {
+    if (address(reward) == address(0)) {
       return 0;
     }
     (, uint256 nextIndex) = _incentivesController.getAssetIndex(
       address(_aToken),
-      cachedRewardToken
+      reward
     );
     return nextIndex;
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getTotalClaimableRewards() external view returns (uint256) {
-    address cachedATokenUnderlying = address(_rewardToken);
-    if (cachedATokenUnderlying == address(0)) {
+  function getTotalClaimableRewards(address reward)
+    external
+    view
+    returns (uint256)
+  {
+    if (reward == address(0)) {
       return 0;
     }
 
@@ -320,10 +326,9 @@ contract StaticATokenLM is
     uint256 freshRewards = _incentivesController.getUserRewards(
       assets,
       address(this),
-      cachedATokenUnderlying
+      reward
     );
-    return
-      IERC20(cachedATokenUnderlying).balanceOf(address(this)) + freshRewards;
+    return IERC20(reward).balanceOf(address(this)) + freshRewards;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -337,7 +342,7 @@ contract StaticATokenLM is
         user,
         reward,
         balanceOf[user],
-        getCurrentRewardsIndex()
+        getCurrentRewardsIndex(reward)
       );
   }
 
@@ -378,8 +383,10 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function rewardToken() external view returns (IERC20) {
-    return _rewardToken;
+  function rewardTokens() external view returns (IERC20[] memory) {
+    IERC20[] memory rewardTokens = new IERC20[](1);
+    rewardTokens[0] = _rewardToken;
+    return rewardTokens;
   }
 
   ///@inheritdoc IERC4626
@@ -565,10 +572,11 @@ contract StaticATokenLM is
     address to,
     uint256 amount
   ) internal override {
-    if (address(_rewardToken) == address(0)) {
+    address rewardToken = address(_rewardToken);
+    if (address(rewardToken) == address(0)) {
       return;
     }
-    uint256 rewardsIndex = getCurrentRewardsIndex();
+    uint256 rewardsIndex = getCurrentRewardsIndex(rewardToken);
     if (from != address(0)) {
       _updateUser(from, rewardsIndex);
     }
@@ -660,7 +668,7 @@ contract StaticATokenLM is
     if (address(cachedRewardToken) == address(0)) {
       return;
     }
-    uint256 currentRewardsIndex = getCurrentRewardsIndex();
+    uint256 currentRewardsIndex = getCurrentRewardsIndex(reward);
     uint256 balance = balanceOf[onBehalfOf];
     uint256 userReward = _getClaimableRewards(
       onBehalfOf,
