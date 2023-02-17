@@ -86,10 +86,9 @@ contract StaticATokenLM is
       if (newIncentivesController != address(0)) {
         _incentivesController = IRewardsController(newIncentivesController);
         address[] memory rewards = IRewardsController(newIncentivesController)
-          .getRewardsList();
+          .getRewardsByAsset(newAToken);
         for (uint256 i = 0; i < rewards.length; i++) {
-          _rewardTokens.push(IERC20(rewards[i]));
-          _startIndex[rewards[i]] = getCurrentRewardsIndex(rewards[i]);
+          _registerRewardToken(rewards[i]);
         }
       }
     } catch {}
@@ -100,6 +99,18 @@ contract StaticATokenLM is
       staticATokenName,
       staticATokenSymbol
     );
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function refreshRewardTokens() public override {
+    address[] memory rewards = _incentivesController.getRewardsByAsset(
+      _aTokenUnderlying
+    );
+    for (uint256 i = 0; i < rewards.length; i++) {
+      if (_startIndex[rewards[i]] == 0) {
+        _registerRewardToken(rewards[i]);
+      }
+    }
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -716,5 +727,19 @@ contract StaticATokenLM is
   {
     if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
     return shares.rayMulRoundDown(rate());
+  }
+
+  /**
+   * @notice Initializes a new rewardToken
+   * @param reward The reward token to be registered
+   */
+  function _registerRewardToken(address reward) internal {
+    require(_startIndex[reward] == 0, 'REWARD_ALREADY_REGISTERED');
+    uint256 startIndex = getCurrentRewardsIndex(reward);
+
+    _rewardTokens.push(IERC20(reward));
+    _startIndex[reward] = startIndex;
+
+    emit RewardTokenRegistered(reward, startIndex);
   }
 }

@@ -23,6 +23,8 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     bytes32 s;
   }
 
+  event RewardTokenRegistered(address indexed reward, uint256 startIndex);
+
   /**
    * @notice Burns `amount` of static aToken, with recipient receiving the corresponding amount of `ASSET`
    * @param shares The amount to withdraw, in static balance of StaticAToken
@@ -220,4 +222,9 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @return IERC20 The IERC20s of the rewards.
    */
   function rewardTokens() external view returns (IERC20[] memory);
+
+  /**
+   * @notice Fetches all rewardTokens from the incentivecontroller and registes the missing ones.
+   */
+  function refreshRewardTokens() external;
 }
