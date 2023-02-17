@@ -58,8 +58,8 @@ contract StaticATokenLM is
   IRewardsController internal _incentivesController;
   IERC20 internal _aToken;
   address internal _aTokenUnderlying;
-  IERC20 internal _rewardToken;
-
+  IERC20[] internal _rewardTokens;
+  mapping(address => uint256) internal _startIndex;
   mapping(address => mapping(address => UserRewardsData))
     internal _userRewardsData;
 
@@ -87,8 +87,9 @@ contract StaticATokenLM is
         _incentivesController = IRewardsController(newIncentivesController);
         address[] memory rewards = IRewardsController(newIncentivesController)
           .getRewardsList();
-        if (rewards.length > 0) {
-          _rewardToken = IERC20(rewards[0]);
+        for (uint256 i = 0; i < rewards.length; i++) {
+          _rewardTokens.push(IERC20(rewards[i]));
+          _startIndex[rewards[i]] = getCurrentRewardsIndex(rewards[i]);
         }
       }
     } catch {}
@@ -384,9 +385,7 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function rewardTokens() external view returns (IERC20[] memory) {
-    IERC20[] memory rewardTokens = new IERC20[](1);
-    rewardTokens[0] = _rewardToken;
-    return rewardTokens;
+    return _rewardTokens;
   }
 
   ///@inheritdoc IERC4626
@@ -572,26 +571,30 @@ contract StaticATokenLM is
     address to,
     uint256 amount
   ) internal override {
-    address rewardToken = address(_rewardToken);
-    if (address(rewardToken) == address(0)) {
-      return;
-    }
-    uint256 rewardsIndex = getCurrentRewardsIndex(rewardToken);
-    if (from != address(0)) {
-      _updateUser(from, rewardsIndex);
-    }
-    if (to != address(0) && from != to) {
-      _updateUser(to, rewardsIndex);
+    for (uint256 i = 0; i < _rewardTokens.length; i++) {
+      address rewardToken = address(_rewardTokens[i]);
+      uint256 rewardsIndex = getCurrentRewardsIndex(rewardToken);
+      if (from != address(0)) {
+        _updateUser(from, rewardsIndex, rewardToken);
+      }
+      if (to != address(0) && from != to) {
+        _updateUser(to, rewardsIndex, rewardToken);
+      }
     }
   }
 
   /**
    * @notice Adding the pending rewards to the unclaimed for specific user and updating user index
    * @param user The address of the user to update
+   * @param currentRewardsIndex The current rewardIndex
+   * @param rewardToken The address of the reward token
    */
-  function _updateUser(address user, uint256 currentRewardsIndex) internal {
+  function _updateUser(
+    address user,
+    uint256 currentRewardsIndex,
+    address rewardToken
+  ) internal {
     uint256 balance = balanceOf[user];
-    address rewardToken = address(_rewardToken);
     if (balance > 0) {
       _userRewardsData[user][rewardToken]
         .unclaimedRewards = _getClaimableRewards(
@@ -648,7 +651,9 @@ contract StaticATokenLM is
       currentUserRewardsData.unclaimedRewards +
       _getPendingRewards(
         balance,
-        currentUserRewardsData.rewardsIndexOnLastInteraction,
+        currentUserRewardsData.rewardsIndexOnLastInteraction == 0
+          ? _startIndex[reward]
+          : currentUserRewardsData.rewardsIndexOnLastInteraction,
         currentRewardsIndex
       );
   }
@@ -664,8 +669,7 @@ contract StaticATokenLM is
     address receiver,
     address reward
   ) internal {
-    IERC20 cachedRewardToken = _rewardToken;
-    if (address(cachedRewardToken) == address(0)) {
+    if (address(reward) == address(0)) {
       return;
     }
     uint256 currentRewardsIndex = getCurrentRewardsIndex(reward);
@@ -676,15 +680,11 @@ contract StaticATokenLM is
       balance,
       currentRewardsIndex
     );
-    uint256 totalRewardTokenBalance = cachedRewardToken.balanceOf(
-      address(this)
-    );
+    uint256 totalRewardTokenBalance = IERC20(reward).balanceOf(address(this));
     uint256 unclaimedReward = 0;
 
     if (userReward > totalRewardTokenBalance) {
-      totalRewardTokenBalance += collectAndUpdateRewards(
-        address(cachedRewardToken)
-      );
+      totalRewardTokenBalance += collectAndUpdateRewards(address(reward));
     }
 
     if (userReward > totalRewardTokenBalance) {
@@ -696,7 +696,7 @@ contract StaticATokenLM is
         .toUint128();
       _userRewardsData[onBehalfOf][reward]
         .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
-      cachedRewardToken.safeTransfer(receiver, userReward);
+      IERC20(reward).safeTransfer(receiver, userReward);
     }
   }
 
