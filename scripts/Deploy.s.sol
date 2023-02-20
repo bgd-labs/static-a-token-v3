@@ -24,7 +24,7 @@ library DeployATokenFactory {
     IRewardsController rewardsController
   ) internal returns (StaticATokenFactory) {
     // deploy and initialize static token impl
-    StaticATokenLM staticImpl = new StaticATokenLM(rewardsController);
+    StaticATokenLM staticImpl = new StaticATokenLM(pool, rewardsController);
 
     // deploy staticATokenFactory impl
     StaticATokenFactory factoryImpl = new StaticATokenFactory(

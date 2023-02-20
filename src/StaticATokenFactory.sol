@@ -59,7 +59,6 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
       ADMIN,
       abi.encodeWithSelector(
         StaticATokenLM.initialize.selector,
-        POOL,
         reserveData.aTokenAddress,
         string(
           abi.encodePacked(

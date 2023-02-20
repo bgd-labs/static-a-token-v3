@@ -54,7 +54,7 @@ contract StaticATokenLM is
     uint128 unclaimedRewards; // (in RAYs)
   }
 
-  IPool internal _pool;
+  IPool internal immutable _pool;
   IRewardsController internal immutable _incentivesController;
   IERC20 internal _aToken;
   address internal _aTokenUnderlying;
@@ -63,18 +63,17 @@ contract StaticATokenLM is
   mapping(address => mapping(address => UserRewardsData))
     internal _userRewardsData;
 
-  constructor(IRewardsController rewardsController) {
+  constructor(IPool pool, IRewardsController rewardsController) {
+    _pool = pool;
     _incentivesController = rewardsController;
   }
 
   ///@inheritdoc IInitializableStaticATokenLM
   function initialize(
-    IPool newPool,
     address newAToken,
     string calldata staticATokenName,
     string calldata staticATokenSymbol
   ) external initializer {
-    _pool = newPool;
     _aToken = IERC20(newAToken);
 
     name = staticATokenName;
@@ -82,18 +81,13 @@ contract StaticATokenLM is
     decimals = IERC20Metadata(newAToken).decimals();
 
     _aTokenUnderlying = IAToken(newAToken).UNDERLYING_ASSET_ADDRESS();
-    IERC20(_aTokenUnderlying).safeApprove(address(newPool), type(uint256).max);
+    IERC20(_aTokenUnderlying).safeApprove(address(_pool), type(uint256).max);
 
     if (_incentivesController != IRewardsController(address(0))) {
       refreshRewardTokens();
     }
 
-    emit Initialized(
-      address(newPool),
-      newAToken,
-      staticATokenName,
-      staticATokenSymbol
-    );
+    emit Initialized(newAToken, staticATokenName, staticATokenSymbol);
   }
 
   ///@inheritdoc IStaticATokenLM
