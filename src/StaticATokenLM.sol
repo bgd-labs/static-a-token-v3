@@ -55,13 +55,17 @@ contract StaticATokenLM is
   }
 
   IPool internal _pool;
-  IRewardsController internal _incentivesController;
+  IRewardsController internal immutable _incentivesController;
   IERC20 internal _aToken;
   address internal _aTokenUnderlying;
   address[] internal _rewardTokens;
   mapping(address => uint256) internal _startIndex;
   mapping(address => mapping(address => UserRewardsData))
     internal _userRewardsData;
+
+  constructor(IRewardsController rewardsController) {
+    _incentivesController = rewardsController;
+  }
 
   ///@inheritdoc IInitializableStaticATokenLM
   function initialize(
@@ -80,14 +84,9 @@ contract StaticATokenLM is
     _aTokenUnderlying = IAToken(newAToken).UNDERLYING_ASSET_ADDRESS();
     IERC20(_aTokenUnderlying).safeApprove(address(newPool), type(uint256).max);
 
-    try IAToken(newAToken).getIncentivesController() returns (
-      address newIncentivesController
-    ) {
-      if (newIncentivesController != address(0)) {
-        _incentivesController = IRewardsController(newIncentivesController);
-        refreshRewardTokens();
-      }
-    } catch {}
+    if (_incentivesController != IRewardsController(address(0))) {
+      refreshRewardTokens();
+    }
 
     emit Initialized(
       address(newPool),
