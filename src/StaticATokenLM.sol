@@ -49,13 +49,9 @@ contract StaticATokenLM is
 
   uint256 public constant STATIC__ATOKEN_LM_REVISION = 1;
 
-  struct UserRewardsData {
-    uint128 rewardsIndexOnLastInteraction; // (in RAYs)
-    uint128 unclaimedRewards; // (in RAYs)
-  }
+  IPool internal immutable POOL;
+  IRewardsController internal immutable INCENTIVES_CONTROLLER;
 
-  IPool internal immutable _pool;
-  IRewardsController internal immutable _incentivesController;
   IERC20 internal _aToken;
   address internal _aTokenUnderlying;
   address[] internal _rewardTokens;
@@ -64,8 +60,8 @@ contract StaticATokenLM is
     internal _userRewardsData;
 
   constructor(IPool pool, IRewardsController rewardsController) {
-    _pool = pool;
-    _incentivesController = rewardsController;
+    POOL = pool;
+    INCENTIVES_CONTROLLER = rewardsController;
   }
 
   ///@inheritdoc IInitializableStaticATokenLM
@@ -81,9 +77,9 @@ contract StaticATokenLM is
     decimals = IERC20Metadata(newAToken).decimals();
 
     _aTokenUnderlying = IAToken(newAToken).UNDERLYING_ASSET_ADDRESS();
-    IERC20(_aTokenUnderlying).safeApprove(address(_pool), type(uint256).max);
+    IERC20(_aTokenUnderlying).safeApprove(address(POOL), type(uint256).max);
 
-    if (_incentivesController != IRewardsController(address(0))) {
+    if (INCENTIVES_CONTROLLER != IRewardsController(address(0))) {
       refreshRewardTokens();
     }
 
@@ -92,7 +88,7 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function refreshRewardTokens() public override {
-    address[] memory rewards = _incentivesController.getRewardsByAsset(
+    address[] memory rewards = INCENTIVES_CONTROLLER.getRewardsByAsset(
       address(_aToken)
     );
     for (uint256 i = 0; i < rewards.length; i++) {
@@ -258,7 +254,7 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function rate() public view returns (uint256) {
-    return _pool.getReserveNormalizedIncome(_aTokenUnderlying);
+    return POOL.getReserveNormalizedIncome(_aTokenUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -271,7 +267,7 @@ contract StaticATokenLM is
     assets[0] = address(_aToken);
 
     return
-      _incentivesController.claimRewards(
+      INCENTIVES_CONTROLLER.claimRewards(
         assets,
         type(uint256).max,
         address(this),
@@ -287,7 +283,7 @@ contract StaticATokenLM is
   ) external {
     require(
       msg.sender == onBehalfOf ||
-        msg.sender == _incentivesController.getClaimer(onBehalfOf),
+        msg.sender == INCENTIVES_CONTROLLER.getClaimer(onBehalfOf),
       StaticATokenErrors.INVALID_CLAIMER
     );
     _claimRewardsOnBehalf(onBehalfOf, receiver, reward);
@@ -312,7 +308,7 @@ contract StaticATokenLM is
     if (address(reward) == address(0)) {
       return 0;
     }
-    (, uint256 nextIndex) = _incentivesController.getAssetIndex(
+    (, uint256 nextIndex) = INCENTIVES_CONTROLLER.getAssetIndex(
       address(_aToken),
       reward
     );
@@ -331,7 +327,7 @@ contract StaticATokenLM is
 
     address[] memory assets = new address[](1);
     assets[0] = address(_aToken);
-    uint256 freshRewards = _incentivesController.getUserRewards(
+    uint256 freshRewards = INCENTIVES_CONTROLLER.getUserRewards(
       assets,
       address(this),
       reward
@@ -372,12 +368,12 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function incentivesController() external view returns (address) {
-    return address(_incentivesController);
+    return address(INCENTIVES_CONTROLLER);
   }
 
   ///@inheritdoc IStaticATokenLM
   function pool() external view returns (IPool) {
-    return _pool;
+    return POOL;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -507,12 +503,7 @@ contract StaticATokenLM is
         address(this),
         assets
       );
-      _pool.deposit(
-        cachedATokenUnderlying,
-        assets,
-        address(this),
-        referralCode
-      );
+      POOL.deposit(cachedATokenUnderlying, assets, address(this), referralCode);
     } else {
       _aToken.safeTransferFrom(depositor, address(this), assets);
     }
@@ -559,7 +550,7 @@ contract StaticATokenLM is
     emit Withdraw(msg.sender, recipient, owner, amountToWithdraw, shares);
 
     if (toUnderlying) {
-      _pool.withdraw(_aTokenUnderlying, amountToWithdraw, recipient);
+      POOL.withdraw(_aTokenUnderlying, amountToWithdraw, recipient);
     } else {
       _aToken.safeTransfer(recipient, amountToWithdraw);
     }
