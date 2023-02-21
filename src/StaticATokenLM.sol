@@ -278,7 +278,7 @@ contract StaticATokenLM is
   ///@inheritdoc IStaticATokenLM
   function claimRewardsOnBehalf(
     address onBehalfOf,
-    address reward,
+    address[] memory rewards,
     address receiver
   ) external {
     require(
@@ -286,17 +286,17 @@ contract StaticATokenLM is
         msg.sender == INCENTIVES_CONTROLLER.getClaimer(onBehalfOf),
       StaticATokenErrors.INVALID_CLAIMER
     );
-    _claimRewardsOnBehalf(onBehalfOf, receiver, reward);
+    _claimRewardsOnBehalf(onBehalfOf, receiver, rewards);
   }
 
   ///@inheritdoc IStaticATokenLM
-  function claimRewards(address receiver, address reward) external {
-    _claimRewardsOnBehalf(msg.sender, receiver, reward);
+  function claimRewards(address receiver, address[] memory rewards) external {
+    _claimRewardsOnBehalf(msg.sender, receiver, rewards);
   }
 
   ///@inheritdoc IStaticATokenLM
-  function claimRewardsToSelf(address reward) external {
-    _claimRewardsOnBehalf(msg.sender, msg.sender, reward);
+  function claimRewardsToSelf(address[] memory rewards) external {
+    _claimRewardsOnBehalf(msg.sender, msg.sender, rewards);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -659,42 +659,46 @@ contract StaticATokenLM is
   /**
    * @notice Claim rewards on behalf of a user and send them to a receiver
    * @param onBehalfOf The address to claim on behalf of
-   * @param reward The address of the reward
+   * @param rewards The addresses of the rewards
    * @param receiver The address to receive the rewards
    */
   function _claimRewardsOnBehalf(
     address onBehalfOf,
     address receiver,
-    address reward
+    address[] memory rewards
   ) internal {
-    if (address(reward) == address(0)) {
-      return;
-    }
-    uint256 currentRewardsIndex = getCurrentRewardsIndex(reward);
-    uint256 balance = balanceOf[onBehalfOf];
-    uint256 userReward = _getClaimableRewards(
-      onBehalfOf,
-      reward,
-      balance,
-      currentRewardsIndex
-    );
-    uint256 totalRewardTokenBalance = IERC20(reward).balanceOf(address(this));
-    uint256 unclaimedReward = 0;
+    for (uint256 i = 0; i < rewards.length; i++) {
+      if (address(rewards[i]) == address(0)) {
+        return;
+      }
+      uint256 currentRewardsIndex = getCurrentRewardsIndex(rewards[i]);
+      uint256 balance = balanceOf[onBehalfOf];
+      uint256 userReward = _getClaimableRewards(
+        onBehalfOf,
+        rewards[i],
+        balance,
+        currentRewardsIndex
+      );
+      uint256 totalRewardTokenBalance = IERC20(rewards[i]).balanceOf(
+        address(this)
+      );
+      uint256 unclaimedReward = 0;
 
-    if (userReward > totalRewardTokenBalance) {
-      totalRewardTokenBalance += collectAndUpdateRewards(address(reward));
-    }
+      if (userReward > totalRewardTokenBalance) {
+        totalRewardTokenBalance += collectAndUpdateRewards(address(rewards[i]));
+      }
 
-    if (userReward > totalRewardTokenBalance) {
-      unclaimedReward = userReward - totalRewardTokenBalance;
-      userReward = totalRewardTokenBalance;
-    }
-    if (userReward > 0) {
-      _userRewardsData[onBehalfOf][reward].unclaimedRewards = unclaimedReward
-        .toUint128();
-      _userRewardsData[onBehalfOf][reward]
-        .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
-      IERC20(reward).safeTransfer(receiver, userReward);
+      if (userReward > totalRewardTokenBalance) {
+        unclaimedReward = userReward - totalRewardTokenBalance;
+        userReward = totalRewardTokenBalance;
+      }
+      if (userReward > 0) {
+        _userRewardsData[onBehalfOf][rewards[i]]
+          .unclaimedRewards = unclaimedReward.toUint128();
+        _userRewardsData[onBehalfOf][rewards[i]]
+          .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
+        IERC20(rewards[i]).safeTransfer(receiver, userReward);
+      }
     }
   }
 

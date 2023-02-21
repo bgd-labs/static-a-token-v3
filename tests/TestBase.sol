@@ -28,7 +28,7 @@ abstract contract BaseTest is Test {
   address public proxyAdmin;
   StaticATokenFactory public factory;
 
-  function REWARD_TOKEN() external virtual returns (address);
+  function REWARD_TOKEN() external virtual returns (address[] memory);
 
   function UNDERLYING() external virtual returns (address);
 

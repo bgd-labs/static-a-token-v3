@@ -15,14 +15,18 @@ import {BaseTest} from './TestBase.sol';
  * Testing meta transactions with frax as WETH does not support permit
  */
 contract StaticATokenMetaTransactions is BaseTest {
-  address public constant override REWARD_TOKEN =
-    0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
   address public constant override UNDERLYING =
     0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64;
   address public constant override A_TOKEN =
     0xc45A479877e1e9Dfe9FcD4056c699575a1045dAA;
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
+
+  function REWARD_TOKEN() public override returns (address[] memory) {
+    address[] memory tokens = new address[](1);
+    tokens[0] = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    return tokens;
+  }
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);

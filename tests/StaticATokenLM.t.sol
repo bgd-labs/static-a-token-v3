@@ -11,14 +11,18 @@ import {SigUtils} from './SigUtils.sol';
 import {BaseTest} from './TestBase.sol';
 
 contract StaticATokenLMTest is BaseTest {
-  address public constant override REWARD_TOKEN =
-    0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
   address public constant override UNDERLYING =
     0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
   address public constant override A_TOKEN =
     0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
+
+  function REWARD_TOKEN() public override returns (address[] memory) {
+    address[] memory tokens = new address[](1);
+    tokens[0] = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+    return tokens;
+  }
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
@@ -182,11 +186,11 @@ contract StaticATokenLMTest is BaseTest {
     _depositAToken(amountToDeposit, user);
 
     _skipBlocks(60);
-    assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(address(staticATokenLM)), 0);
-    uint256 claimable = staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN);
-    staticATokenLM.collectAndUpdateRewards(REWARD_TOKEN);
+    assertEq(IERC20(REWARD_TOKEN()[0]).balanceOf(address(staticATokenLM)), 0);
+    uint256 claimable = staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN());
+    staticATokenLM.collectAndUpdateRewards(REWARD_TOKEN[0]);
     assertEq(
-      IERC20(this.REWARD_TOKEN()).balanceOf(address(staticATokenLM)),
+      IERC20(REWARD_TOKEN()[0]).balanceOf(address(staticATokenLM)),
       claimable
     );
   }
@@ -199,8 +203,11 @@ contract StaticATokenLMTest is BaseTest {
 
     _skipBlocks(60);
 
-    uint256 claimable = staticATokenLM.getClaimableRewards(user, REWARD_TOKEN);
-    staticATokenLM.claimRewardsToSelf(REWARD_TOKEN);
+    uint256 claimable = staticATokenLM.getClaimableRewards(
+      user,
+      REWARD_TOKEN()[0]
+    );
+    staticATokenLM.claimRewardsToSelf(REWARD_TOKEN());
     assertEq(IERC20(this.REWARD_TOKEN()).balanceOf(user), claimable);
     assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN), 0);
   }

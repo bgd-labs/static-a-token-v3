@@ -13,14 +13,18 @@ import {BaseTest} from './TestBase.sol';
  * This is a slightly different assumption than a pool that doesn't have LM enabled any more as incentivesController.rewardTokens() will have length=0
  */
 contract StaticATokenNoLMTest is BaseTest {
-  address public constant override REWARD_TOKEN =
-    0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
   address public constant override UNDERLYING =
     0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
   address public constant override A_TOKEN =
     0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
 
   IPool public override pool = IPool(AaveV3Polygon.POOL);
+
+  function REWARD_TOKEN() public override returns (address[] memory) {
+    address[] memory tokens = new address[](1);
+    tokens[0] = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    return tokens;
+  }
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('polygon'), 37747173);

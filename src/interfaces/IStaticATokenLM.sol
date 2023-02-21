@@ -134,27 +134,27 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @notice Claim rewards on behalf of a user and send them to a receiver
    * @dev Only callable by if sender is onBehalfOf or sender is approved claimer
    * @param onBehalfOf The address to claim on behalf of
+   * @param rewards The rewards to claim
    * @param receiver The address to receive the rewards
-   * @param reward The reward to claim
    */
   function claimRewardsOnBehalf(
     address onBehalfOf,
-    address receiver,
-    address reward
+    address[] memory rewards,
+    address receiver
   ) external;
 
   /**
    * @notice Claim rewards and send them to a receiver
    * @param receiver The address to receive the rewards
-   * @param reward The reward to claim
+   * @param rewards The rewards to claim
    */
-  function claimRewards(address receiver, address reward) external;
+  function claimRewards(address receiver, address[] memory rewards) external;
 
   /**
    * @notice Claim rewards
-   * @param reward The reward to claim
+   * @param rewards The rewards to claim
    */
-  function claimRewardsToSelf(address reward) external;
+  function claimRewardsToSelf(address[] memory rewards) external;
 
   /**
    * @notice Get the total claimable rewards of the contract.
