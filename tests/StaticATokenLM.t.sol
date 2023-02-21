@@ -48,7 +48,7 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(staticATokenLM.decimals(), underlying.decimals());
 
     assertEq(
-      address(staticATokenLM.incentivesController()),
+      address(staticATokenLM.INCENTIVES_CONTROLLER()),
       address(AToken(A_TOKEN).getIncentivesController())
     );
   }

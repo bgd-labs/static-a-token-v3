@@ -199,18 +199,6 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     returns (uint256);
 
   /**
-   * @notice The Pool where the underlying aToken is supplied and withdrawn.
-   * @return IPool The Pool address.
-   */
-  function pool() external view returns (IPool);
-
-  /**
-   * @notice The incentives controller required for claiming rewards on behalf of the users.
-   * @return IAaveIncentivesController The incentives controller address.
-   */
-  function incentivesController() external view returns (address);
-
-  /**
    * @notice The aToken used inside the 4626 vault.
    * @return IERC20 The aToken IERC20.
    */

@@ -49,8 +49,8 @@ contract StaticATokenLM is
 
   uint256 public constant STATIC__ATOKEN_LM_REVISION = 1;
 
-  IPool internal immutable POOL;
-  IRewardsController internal immutable INCENTIVES_CONTROLLER;
+  IPool public immutable POOL;
+  IRewardsController public immutable INCENTIVES_CONTROLLER;
 
   IERC20 internal _aToken;
   address internal _aTokenUnderlying;
@@ -365,16 +365,6 @@ contract StaticATokenLM is
   ///@inheritdoc IERC4626
   function asset() external view returns (address) {
     return address(_aToken);
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function incentivesController() external view returns (address) {
-    return address(INCENTIVES_CONTROLLER);
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function pool() external view returns (IPool) {
-    return POOL;
   }
 
   ///@inheritdoc IStaticATokenLM
