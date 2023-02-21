@@ -55,6 +55,10 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
         DataTypes.ReserveData memory reserveData = POOL.getReserveData(
           underlyings[i]
         );
+        require(
+          reserveData.aTokenAddress != address(0),
+          'UNDERLYING_NOT_LISTED'
+        );
         bytes memory symbol = abi.encodePacked(
           'stat',
           IERC20Metadata(reserveData.aTokenAddress).symbol()
@@ -93,8 +97,6 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
 
   ///@inheritdoc IStaticATokenFactory
   function getStaticAToken(address underlying) external returns (address) {
-    address staticAToken = _underlyingToStaticAToken[underlying];
-    require(staticAToken != address(0), 'NO_STATIC_TOKEN_FOUND');
-    return staticAToken;
+    return _underlyingToStaticAToken[underlying];
   }
 }
