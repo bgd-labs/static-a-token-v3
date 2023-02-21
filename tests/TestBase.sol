@@ -2,12 +2,15 @@
 pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
+import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {TransparentUpgradeableProxy} from 'solidity-utils/contracts/transparent-proxy/TransparentUpgradeableProxy.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {AaveV3Avalanche, IPool, IPoolAddressesProvider} from 'aave-address-book/AaveV3Avalanche.sol';
 import {StaticATokenFactory} from '../src/StaticATokenFactory.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
+import {IAToken} from '../src/interfaces/IAToken.sol';
+
 import {DeployATokenFactory} from '../scripts/Deploy.s.sol';
 
 abstract contract BaseTest is Test {
@@ -45,7 +48,8 @@ abstract contract BaseTest is Test {
     factory = DeployATokenFactory._deploy(
       proxyFactory,
       proxyAdmin,
-      this.pool()
+      this.pool(),
+      IRewardsController(IAToken(this.A_TOKEN()).getIncentivesController())
     );
 
     staticATokenLM = StaticATokenLM(
