@@ -21,8 +21,8 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   ITransparentProxyFactory public immutable TRANSPARENT_PROXY_FACTORY;
   address public immutable STATIC_A_TOKEN_IMPL;
 
-  mapping(address => address) public underlyingToStaticAToken;
-  address[] private _staticATokens;
+  mapping(address => address) internal _underlyingToStaticAToken;
+  address[] internal _staticATokens;
 
   event StaticTokenCreated(
     address indexed staticAToken,
@@ -44,46 +44,44 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   function initialize() external initializer {}
 
   ///@inheritdoc IStaticATokenFactory
-  function createStaticAToken(address underlying) public returns (address) {
-    require(
-      underlyingToStaticAToken[underlying] == address(0),
-      'STATIC_TOKEN_ALREADY_EXISTS'
-    );
-    DataTypes.ReserveData memory reserveData = POOL.getReserveData(underlying);
-    bytes memory symbol = abi.encodePacked(
-      'stat',
-      IERC20Metadata(reserveData.aTokenAddress).symbol()
-    );
-    address staticAToken = TRANSPARENT_PROXY_FACTORY.createDeterministic(
-      STATIC_A_TOKEN_IMPL,
-      ADMIN,
-      abi.encodeWithSelector(
-        StaticATokenLM.initialize.selector,
-        reserveData.aTokenAddress,
-        string(
-          abi.encodePacked(
-            'Static ',
-            IERC20Metadata(reserveData.aTokenAddress).name()
-          )
-        ),
-        string(symbol)
-      ),
-      bytes32(uint256(uint160(underlying)))
-    );
-    underlyingToStaticAToken[underlying] = staticAToken;
-    _staticATokens.push(staticAToken);
-    emit StaticTokenCreated(staticAToken, underlying);
-    return staticAToken;
-  }
-
-  ///@inheritdoc IStaticATokenFactory
-  function batchCreateStaticATokens(address[] memory underlyings)
-    external
+  function createStaticATokens(address[] memory underlyings)
+    public
     returns (address[] memory)
   {
     address[] memory staticATokens = new address[](underlyings.length);
     for (uint256 i = 0; i < underlyings.length; i++) {
-      staticATokens[i] = createStaticAToken(underlyings[i]);
+      address cachedStaticAToken = _underlyingToStaticAToken[underlyings[i]];
+      if (cachedStaticAToken == address(0)) {
+        DataTypes.ReserveData memory reserveData = POOL.getReserveData(
+          underlyings[i]
+        );
+        bytes memory symbol = abi.encodePacked(
+          'stat',
+          IERC20Metadata(reserveData.aTokenAddress).symbol()
+        );
+        address staticAToken = TRANSPARENT_PROXY_FACTORY.createDeterministic(
+          STATIC_A_TOKEN_IMPL,
+          ADMIN,
+          abi.encodeWithSelector(
+            StaticATokenLM.initialize.selector,
+            reserveData.aTokenAddress,
+            string(
+              abi.encodePacked(
+                'Static ',
+                IERC20Metadata(reserveData.aTokenAddress).name()
+              )
+            ),
+            string(symbol)
+          ),
+          bytes32(uint256(uint160(underlyings[i])))
+        );
+        _underlyingToStaticAToken[underlyings[i]] = staticAToken;
+        staticATokens[i] = staticAToken;
+        _staticATokens.push(staticAToken);
+        emit StaticTokenCreated(staticAToken, underlyings[i]);
+      } else {
+        staticATokens[i] = cachedStaticAToken;
+      }
     }
     return staticATokens;
   }
@@ -91,5 +89,12 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   ///@inheritdoc IStaticATokenFactory
   function getStaticATokens() external returns (address[] memory) {
     return _staticATokens;
+  }
+
+  ///@inheritdoc IStaticATokenFactory
+  function getStaticAToken(address underlying) external returns (address) {
+    address staticAToken = _underlyingToStaticAToken[underlying];
+    require(staticAToken != address(0), 'NO_STATIC_TOKEN_FOUND');
+    return staticAToken;
   }
 }

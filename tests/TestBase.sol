@@ -52,9 +52,7 @@ abstract contract BaseTest is Test {
       IRewardsController(IAToken(this.A_TOKEN()).getIncentivesController())
     );
 
-    staticATokenLM = StaticATokenLM(
-      factory.underlyingToStaticAToken(this.UNDERLYING())
-    );
+    staticATokenLM = StaticATokenLM(factory.getStaticAToken(this.UNDERLYING()));
     vm.startPrank(user);
   }
 

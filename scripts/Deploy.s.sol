@@ -42,7 +42,7 @@ library DeployATokenFactory {
         abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
       )
     );
-    factory.batchCreateStaticATokens(pool.getReservesList());
+    factory.createStaticATokens(pool.getReservesList());
     return factory;
   }
 }
