@@ -23,6 +23,13 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     bytes32 s;
   }
 
+  struct UserRewardsData {
+    uint128 rewardsIndexOnLastInteraction; // (in RAYs)
+    uint128 unclaimedRewards; // (in RAYs)
+  }
+
+  event RewardTokenRegistered(address indexed reward, uint256 startIndex);
+
   /**
    * @notice Burns `amount` of static aToken, with recipient receiving the corresponding amount of `ASSET`
    * @param shares The amount to withdraw, in static balance of StaticAToken
@@ -118,66 +125,78 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
 
   /**
    * @notice Claims rewards from `INCENTIVES_CONTROLLER` and updates internal accounting of rewards.
+   * @param reward The reward to claim
    * @return uint256 Amount collected
    */
-  function collectAndUpdateRewards() external returns (uint256);
+  function collectAndUpdateRewards(address reward) external returns (uint256);
 
   /**
    * @notice Claim rewards on behalf of a user and send them to a receiver
    * @dev Only callable by if sender is onBehalfOf or sender is approved claimer
    * @param onBehalfOf The address to claim on behalf of
    * @param receiver The address to receive the rewards
+   * @param rewards The rewards to claim
    */
-  function claimRewardsOnBehalf(address onBehalfOf, address receiver) external;
+  function claimRewardsOnBehalf(
+    address onBehalfOf,
+    address receiver,
+    address[] memory rewards
+  ) external;
 
   /**
    * @notice Claim rewards and send them to a receiver
    * @param receiver The address to receive the rewards
+   * @param rewards The rewards to claim
    */
-  function claimRewards(address receiver) external;
+  function claimRewards(address receiver, address[] memory rewards) external;
 
   /**
    * @notice Claim rewards
+   * @param rewards The rewards to claim
    */
-  function claimRewardsToSelf() external;
+  function claimRewardsToSelf(address[] memory rewards) external;
 
   /**
    * @notice Get the total claimable rewards of the contract.
+   * @param reward The reward to claim
    * @return uint256 The current balance + pending rewards from the `_incentivesController`
    */
-  function getTotalClaimableRewards() external view returns (uint256);
+  function getTotalClaimableRewards(address reward)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice Get the total claimable rewards for a user in WAD
    * @param user The address of the user
+   * @param reward The reward to claim
    * @return uint256 The claimable amount of rewards in WAD
    */
-  function getClaimableRewards(address user) external view returns (uint256);
+  function getClaimableRewards(address user, address reward)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice The unclaimed rewards for a user in WAD
    * @param user The address of the user
+   * @param reward The reward to claim
    * @return uint256 The unclaimed amount of rewards in WAD
    */
-  function getUnclaimedRewards(address user) external view returns (uint256);
+  function getUnclaimedRewards(address user, address reward)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice The underlying asset reward index in RAY
+   * @param reward The reward to claim
    * @return uint256 The underlying asset reward index in RAY
    */
-  function getCurrentRewardsIndex() external view returns (uint256);
-
-  /**
-   * @notice The Pool where the underlying aToken is supplied and withdrawn.
-   * @return IPool The Pool address.
-   */
-  function pool() external view returns (IPool);
-
-  /**
-   * @notice The incentives controller required for claiming rewards on behalf of the users.
-   * @return IAaveIncentivesController The incentives controller address.
-   */
-  function incentivesController() external view returns (address);
+  function getCurrentRewardsIndex(address reward)
+    external
+    view
+    returns (uint256);
 
   /**
    * @notice The aToken used inside the 4626 vault.
@@ -192,8 +211,19 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   function aTokenUnderlying() external view returns (IERC20);
 
   /**
-   * @notice The IERC20 that is currently rewarded to addresses of the vault via LM on incentivescontroller.
-   * @return IERC20 The IERC20 of the reward.
+   * @notice The IERC20s that are currently rewarded to addresses of the vault via LM on incentivescontroller.
+   * @return IERC20 The IERC20s of the rewards.
    */
-  function rewardToken() external view returns (IERC20);
+  function rewardTokens() external view returns (address[] memory);
+
+  /**
+   * @notice Fetches all rewardTokens from the incentivecontroller and registes the missing ones.
+   */
+  function refreshRewardTokens() external;
+
+  /**
+   * @notice Checks if the passed token is a registered reward.
+   * @return bool signaling if token is a registered reward.
+   */
+  function isRegisteredRewardToken(address reward) external view returns (bool);
 }

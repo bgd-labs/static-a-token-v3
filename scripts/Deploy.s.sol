@@ -14,15 +14,17 @@ import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-prox
 import {ITransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/interfaces/ITransparentProxyFactory.sol';
 import {StaticATokenFactory} from '../src/StaticATokenFactory.sol';
 import {StaticATokenLM} from '../src/StaticATokenLM.sol';
+import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 
 library DeployATokenFactory {
   function _deploy(
     ITransparentProxyFactory proxyFactory,
     address sharedProxyAdmin,
-    IPool pool
+    IPool pool,
+    IRewardsController rewardsController
   ) internal returns (StaticATokenFactory) {
     // deploy and initialize static token impl
-    StaticATokenLM staticImpl = new StaticATokenLM();
+    StaticATokenLM staticImpl = new StaticATokenLM(pool, rewardsController);
 
     // deploy staticATokenFactory impl
     StaticATokenFactory factoryImpl = new StaticATokenFactory(
@@ -40,7 +42,7 @@ library DeployATokenFactory {
         abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
       )
     );
-    factory.batchCreateStaticATokens(pool.getReservesList());
+    factory.createStaticATokens(pool.getReservesList());
     return factory;
   }
 }
@@ -51,7 +53,8 @@ contract DeployMainnet is Script {
     DeployATokenFactory._deploy(
       ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ETHEREUM),
       AaveMisc.PROXY_ADMIN_ETHEREUM,
-      AaveV3Ethereum.POOL
+      AaveV3Ethereum.POOL,
+      IRewardsController(AaveV3Ethereum.DEFAULT_INCENTIVES_CONTROLLER)
     );
     vm.stopBroadcast();
   }
@@ -63,7 +66,8 @@ contract DeployPolygon is Script {
     DeployATokenFactory._deploy(
       ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_POLYGON),
       AaveMisc.PROXY_ADMIN_POLYGON,
-      AaveV3Polygon.POOL
+      AaveV3Polygon.POOL,
+      IRewardsController(AaveV3Polygon.DEFAULT_INCENTIVES_CONTROLLER)
     );
     vm.stopBroadcast();
   }
@@ -75,7 +79,8 @@ contract DeployAvalanche is Script {
     DeployATokenFactory._deploy(
       ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_AVALANCHE),
       AaveMisc.PROXY_ADMIN_AVALANCHE,
-      AaveV3Avalanche.POOL
+      AaveV3Avalanche.POOL,
+      IRewardsController(AaveV3Avalanche.DEFAULT_INCENTIVES_CONTROLLER)
     );
     vm.stopBroadcast();
   }
@@ -87,7 +92,8 @@ contract DeployOptimism is Script {
     DeployATokenFactory._deploy(
       ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_OPTIMISM),
       AaveMisc.PROXY_ADMIN_OPTIMISM,
-      AaveV3Optimism.POOL
+      AaveV3Optimism.POOL,
+      IRewardsController(AaveV3Optimism.DEFAULT_INCENTIVES_CONTROLLER)
     );
     vm.stopBroadcast();
   }
@@ -99,7 +105,8 @@ contract DeployArbitrum is Script {
     DeployATokenFactory._deploy(
       ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ARBITRUM),
       AaveMisc.PROXY_ADMIN_ARBITRUM,
-      AaveV3Arbitrum.POOL
+      AaveV3Arbitrum.POOL,
+      IRewardsController(AaveV3Arbitrum.DEFAULT_INCENTIVES_CONTROLLER)
     );
     vm.stopBroadcast();
   }

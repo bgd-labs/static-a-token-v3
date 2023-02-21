@@ -12,27 +12,23 @@ import {IAaveIncentivesController} from 'aave-v3-core/contracts/interfaces/IAave
 interface IInitializableStaticATokenLM {
   /**
    * @dev Emitted when a StaticATokenLM is initialized
-   * @param pool The address of the lending pool where the underlying aToken is used
    * @param aToken The address of the underlying aToken (aWETH)
    * @param staticATokenName The name of the Static aToken
    * @param staticATokenSymbol The symbol of the Static aToken
    **/
   event Initialized(
-    address indexed pool,
-    address aToken,
+    address indexed aToken,
     string staticATokenName,
     string staticATokenSymbol
   );
 
   /**
    * @dev Initializes the StaticATokenLM
-   * @param pool The address of the lending pool where the underlying aToken is used
    * @param aToken The address of the underlying aToken (aWETH)
    * @param staticATokenName The name of the Static aToken
    * @param staticATokenSymbol The symbol of the Static aToken
    */
   function initialize(
-    IPool pool,
     address aToken,
     string calldata staticATokenName,
     string calldata staticATokenSymbol
