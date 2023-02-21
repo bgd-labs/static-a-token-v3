@@ -22,14 +22,16 @@ contract StaticATokenMetaTransactions is BaseTest {
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
 
-  function REWARD_TOKEN() public override returns (address[] memory) {
-    address[] memory tokens = new address[](1);
-    tokens[0] = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-    return tokens;
+  address[] rewardTokens;
+
+  function REWARD_TOKEN() public returns (address) {
+    return rewardTokens[0];
   }
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
+    rewardTokens.push(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
+
     super.setUp();
   }
 
