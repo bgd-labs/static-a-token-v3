@@ -99,6 +99,7 @@ contract StaticATokenLM is
   ///@inheritdoc IStaticATokenLM
   function isRegisteredRewardToken(address reward)
     public
+    view
     override
     returns (bool)
   {

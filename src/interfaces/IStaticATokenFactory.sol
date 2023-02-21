@@ -20,12 +20,12 @@ interface IStaticATokenFactory {
    * @notice Returns all tokens deployed via this registry.
    * @return address[] list of tokens
    */
-  function getStaticATokens() external returns (address[] memory);
+  function getStaticATokens() external view returns (address[] memory);
 
   /**
    * @notice Returns the staticAToken for a given underlying.
    * @param underlying the address of the underlying.
    * @return address the staticAToken address.
    */
-  function getStaticAToken(address underlying) external returns (address);
+  function getStaticAToken(address underlying) external view returns (address);
 }

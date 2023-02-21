@@ -237,5 +237,5 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @notice Checks if the passed token is a registered reward.
    * @return bool signaling if token is a registered reward.
    */
-  function isRegisteredRewardToken(address reward) external returns (bool);
+  function isRegisteredRewardToken(address reward) external view returns (bool);
 }

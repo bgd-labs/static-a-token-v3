@@ -91,12 +91,12 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   }
 
   ///@inheritdoc IStaticATokenFactory
-  function getStaticATokens() external returns (address[] memory) {
+  function getStaticATokens() external view returns (address[] memory) {
     return _staticATokens;
   }
 
   ///@inheritdoc IStaticATokenFactory
-  function getStaticAToken(address underlying) external returns (address) {
+  function getStaticAToken(address underlying) external view returns (address) {
     return _underlyingToStaticAToken[underlying];
   }
 }
