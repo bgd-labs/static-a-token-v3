@@ -278,8 +278,8 @@ contract StaticATokenLM is
   ///@inheritdoc IStaticATokenLM
   function claimRewardsOnBehalf(
     address onBehalfOf,
-    address[] memory rewards,
-    address receiver
+    address receiver,
+    address[] memory rewards
   ) external {
     require(
       msg.sender == onBehalfOf ||

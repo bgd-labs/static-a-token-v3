@@ -247,7 +247,7 @@ contract StaticATokenLMTest is BaseTest {
       user,
       REWARD_TOKEN()
     );
-    staticATokenLM.claimRewardsOnBehalf(user, rewardTokens, user1);
+    staticATokenLM.claimRewardsOnBehalf(user, user1, rewardTokens);
   }
 
   function test_depositATokenClaimWithdrawClaim() public {

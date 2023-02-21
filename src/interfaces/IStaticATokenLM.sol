@@ -134,13 +134,13 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @notice Claim rewards on behalf of a user and send them to a receiver
    * @dev Only callable by if sender is onBehalfOf or sender is approved claimer
    * @param onBehalfOf The address to claim on behalf of
-   * @param rewards The rewards to claim
    * @param receiver The address to receive the rewards
+   * @param rewards The rewards to claim
    */
   function claimRewardsOnBehalf(
     address onBehalfOf,
-    address[] memory rewards,
-    address receiver
+    address receiver,
+    address[] memory rewards
   ) external;
 
   /**
