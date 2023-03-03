@@ -605,14 +605,15 @@ contract StaticATokenLM is
   function _getPendingRewards(
     uint256 balance,
     uint256 rewardsIndexOnLastInteraction,
-    uint256 currentRewardsIndex
+    uint256 currentRewardsIndex,
+    uint256 assetUnit
   ) internal pure returns (uint256) {
     if (balance == 0) {
       return 0;
     }
     return
       (balance * (currentRewardsIndex - rewardsIndexOnLastInteraction)) /
-      10**decimals;
+      assetUnit;
   }
 
   /**
@@ -631,6 +632,7 @@ contract StaticATokenLM is
     UserRewardsData memory currentUserRewardsData = _userRewardsData[user][
       reward
     ];
+    uint256 assetUnit = 10**decimals;
     return
       currentUserRewardsData.unclaimedRewards +
       _getPendingRewards(
@@ -638,7 +640,8 @@ contract StaticATokenLM is
         currentUserRewardsData.rewardsIndexOnLastInteraction == 0
           ? _startIndex[reward]
           : currentUserRewardsData.rewardsIndexOnLastInteraction,
-        currentRewardsIndex
+        currentRewardsIndex,
+        assetUnit
       );
   }
 
