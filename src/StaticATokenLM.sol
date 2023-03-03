@@ -357,9 +357,7 @@ contract StaticATokenLM is
     view
     returns (uint256)
   {
-    return
-      uint256(_userRewardsData[user][reward].unclaimedRewards)
-        .rayToWadRoundDown();
+    return _userRewardsData[user][reward].unclaimedRewards;
   }
 
   ///@inheritdoc IERC4626
@@ -598,7 +596,7 @@ contract StaticATokenLM is
   }
 
   /**
-   * @notice Compute the pending in RAY (rounded down). Pending is the amount to add (not yet unclaimed) rewards in RAY (rounded down).
+   * @notice Compute the pending in WAD. Pending is the amount to add (not yet unclaimed) rewards in WAD.
    * @param balance The balance of the user
    * @param rewardsIndexOnLastInteraction The index which was on the last interaction of the user
    * @param currentRewardsIndex The current rewards index in the system
@@ -612,12 +610,9 @@ contract StaticATokenLM is
     if (balance == 0) {
       return 0;
     }
-
-    uint256 rayBalance = balance.wadToRay();
     return
-      rayBalance.rayMulRoundDown(
-        currentRewardsIndex - rewardsIndexOnLastInteraction
-      );
+      (balance * (currentRewardsIndex - rewardsIndexOnLastInteraction)) /
+      10**decimals;
   }
 
   /**
