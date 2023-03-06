@@ -600,18 +600,18 @@ contract StaticATokenLM is
    * @param balance The balance of the user
    * @param rewardsIndexOnLastInteraction The index which was on the last interaction of the user
    * @param currentRewardsIndex The current rewards index in the system
-   * @return The amount of pending rewards in WAD
+   * @param assetUnit One unit of asset (10**decimals)
+   * @return The amount of pending rewards in RAY
    */
   function _getPendingRewards(
     uint256 balance,
     uint256 rewardsIndexOnLastInteraction,
-    uint256 currentRewardsIndex
+    uint256 currentRewardsIndex,
+    uint256 assetUnit
   ) internal pure returns (uint256) {
     if (balance == 0) {
       return 0;
     }
-    uint256 assetUnit = 10**decimals;
-
     return
       (balance * (currentRewardsIndex - rewardsIndexOnLastInteraction)) /
       assetUnit;
@@ -633,6 +633,7 @@ contract StaticATokenLM is
     UserRewardsData memory currentUserRewardsData = _userRewardsData[user][
       reward
     ];
+    uint256 assetUnit = 10**decimals;
     return
       currentUserRewardsData.unclaimedRewards +
       _getPendingRewards(
@@ -640,7 +641,8 @@ contract StaticATokenLM is
         currentUserRewardsData.rewardsIndexOnLastInteraction == 0
           ? _startIndex[reward]
           : currentUserRewardsData.rewardsIndexOnLastInteraction,
-        currentRewardsIndex
+        currentRewardsIndex,
+        assetUnit
       );
   }
 
