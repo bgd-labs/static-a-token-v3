@@ -523,7 +523,7 @@ contract StaticATokenLM is
       StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
     );
     require(
-      staticAmount != 0 || dynamicAmount != 0,
+      staticAmount != dynamicAmount,
       StaticATokenErrors.INVALID_ZERO_AMOUNT
     );
 
