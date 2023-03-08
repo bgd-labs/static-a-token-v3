@@ -432,8 +432,8 @@ contract StaticATokenLM is
     virtual
     returns (uint256)
   {
-    require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
+    require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
     uint256 assets = previewMint(shares);
     _deposit(msg.sender, receiver, assets, 0, false);
@@ -486,7 +486,6 @@ contract StaticATokenLM is
     uint16 referralCode,
     bool fromUnderlying
   ) internal returns (uint256) {
-    require(assets != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
     uint256 shares = previewDeposit(assets);
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
