@@ -430,6 +430,7 @@ contract StaticATokenLM is
     virtual
     returns (uint256)
   {
+    require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
     require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
     uint256 assets = previewMint(shares);
@@ -484,6 +485,8 @@ contract StaticATokenLM is
     bool fromUnderlying
   ) internal returns (uint256) {
     require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
+    uint256 shares = previewDeposit(assets);
+    require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
 
     if (fromUnderlying) {
       address cachedATokenUnderlying = _aTokenUnderlying;
@@ -496,7 +499,6 @@ contract StaticATokenLM is
     } else {
       _aToken.safeTransferFrom(depositor, address(this), assets);
     }
-    uint256 shares = previewDeposit(assets);
 
     _mint(recipient, shares);
 
@@ -516,6 +518,10 @@ contract StaticATokenLM is
     require(
       staticAmount == 0 || dynamicAmount == 0,
       StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
+    );
+    require(
+      staticAmount != dynamicAmount,
+      StaticATokenErrors.INVALID_ZERO_AMOUNT
     );
 
     uint256 amountToWithdraw = dynamicAmount;

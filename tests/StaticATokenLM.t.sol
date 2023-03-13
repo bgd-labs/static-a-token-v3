@@ -15,6 +15,8 @@ contract StaticATokenLMTest is BaseTest {
     0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
   address public constant override A_TOKEN =
     0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
+  address public constant EMISSION_ADMIN =
+    0xCba0B614f13eCdd98B8C0026fcAD11cec8Eb4343;
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
 
@@ -394,4 +396,39 @@ contract StaticATokenLMTest is BaseTest {
     staticATokenLM.redeem(shares, user, user);
     assertGt(staticATokenLM.getUnclaimedRewards(user, REWARD_TOKEN()), 0);
   }
+
+  /**
+   * This test is a bit artificial and tests, what would happen if for some reason `_claimRewards` would no longer revert on insufficient funds.
+   * Therefore we reduce the claimable amount for the staticAtoken itself.
+   */
+  // function test_claimMoreThanAvailable() public {
+  //   uint128 amountToDeposit = 5 ether;
+  //   _fundUser(amountToDeposit, user);
+
+  //   _depositAToken(amountToDeposit, user);
+
+  //   _skipBlocks(60);
+
+  //   uint256 claimable = staticATokenLM.getClaimableRewards(
+  //     user,
+  //     REWARD_TOKEN()
+  //   );
+
+  //   // transfer out funds
+  //   vm.stopPrank();
+  //   uint256 emissionAdminBalance = IERC20(REWARD_TOKEN()).balanceOf(
+  //     EMISSION_ADMIN
+  //   );
+  //   uint256 transferOut = emissionAdminBalance - (claimable / 2);
+  //   vm.startPrank(EMISSION_ADMIN);
+  //   IERC20(REWARD_TOKEN()).approve(address(1234), transferOut);
+  //   IERC20(REWARD_TOKEN()).transfer(address(1234), transferOut);
+  //   vm.stopPrank();
+  //   vm.startPrank(user);
+  //   // claim
+  //   staticATokenLM.claimRewards(user, rewardTokens);
+  //   // assertEq(claimable, IERC20(REWARD_TOKEN()).balanceOf(user));
+  //   // assertEq(IERC20(REWARD_TOKEN()).balanceOf(address(staticATokenLM)), 0);
+  //   // assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN()), 0);
+  // }
 }
