@@ -357,9 +357,7 @@ contract StaticATokenLM is
     view
     returns (uint256)
   {
-    return
-      uint256(_userRewardsData[user][reward].unclaimedRewards)
-        .rayToWadRoundDown();
+    return _userRewardsData[user][reward].unclaimedRewards;
   }
 
   ///@inheritdoc IERC4626
@@ -598,26 +596,25 @@ contract StaticATokenLM is
   }
 
   /**
-   * @notice Compute the pending in RAY (rounded down). Pending is the amount to add (not yet unclaimed) rewards in RAY (rounded down).
+   * @notice Compute the pending in WAD. Pending is the amount to add (not yet unclaimed) rewards in WAD.
    * @param balance The balance of the user
    * @param rewardsIndexOnLastInteraction The index which was on the last interaction of the user
    * @param currentRewardsIndex The current rewards index in the system
-   * @return The amount of pending rewards in RAY
+   * @param assetUnit One unit of asset (10**decimals)
+   * @return The amount of pending rewards in WAD
    */
   function _getPendingRewards(
     uint256 balance,
     uint256 rewardsIndexOnLastInteraction,
-    uint256 currentRewardsIndex
+    uint256 currentRewardsIndex,
+    uint256 assetUnit
   ) internal pure returns (uint256) {
     if (balance == 0) {
       return 0;
     }
-
-    uint256 rayBalance = balance.wadToRay();
     return
-      rayBalance.rayMulRoundDown(
-        currentRewardsIndex - rewardsIndexOnLastInteraction
-      );
+      (balance * (currentRewardsIndex - rewardsIndexOnLastInteraction)) /
+      assetUnit;
   }
 
   /**
@@ -636,6 +633,7 @@ contract StaticATokenLM is
     UserRewardsData memory currentUserRewardsData = _userRewardsData[user][
       reward
     ];
+    uint256 assetUnit = 10**decimals;
     return
       currentUserRewardsData.unclaimedRewards +
       _getPendingRewards(
@@ -643,7 +641,8 @@ contract StaticATokenLM is
         currentUserRewardsData.rewardsIndexOnLastInteraction == 0
           ? _startIndex[reward]
           : currentUserRewardsData.rewardsIndexOnLastInteraction,
-        currentRewardsIndex
+        currentRewardsIndex,
+        assetUnit
       );
   }
 

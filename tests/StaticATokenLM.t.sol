@@ -226,8 +226,9 @@ contract StaticATokenLMTest is BaseTest {
       user,
       REWARD_TOKEN()
     );
-    staticATokenLM.claimRewards(user1, rewardTokens);
-    assertEq(IERC20(REWARD_TOKEN()).balanceOf(user1), claimable);
+    staticATokenLM.claimRewards(user, rewardTokens);
+    assertEq(claimable, IERC20(REWARD_TOKEN()).balanceOf(user));
+    assertEq(IERC20(REWARD_TOKEN()).balanceOf(address(staticATokenLM)), 0);
     assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN()), 0);
   }
 
