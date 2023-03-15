@@ -665,7 +665,7 @@ contract StaticATokenLM is
   ) internal {
     for (uint256 i = 0; i < rewards.length; i++) {
       if (address(rewards[i]) == address(0)) {
-        return;
+        continue;
       }
       uint256 currentRewardsIndex = getCurrentRewardsIndex(rewards[i]);
       uint256 balance = balanceOf[onBehalfOf];
