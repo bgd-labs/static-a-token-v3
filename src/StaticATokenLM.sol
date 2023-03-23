@@ -636,12 +636,12 @@ contract StaticATokenLM is
     uint256 balance,
     uint256 currentRewardsIndex
   ) internal view returns (uint256) {
+    uint256 startIndexCached = _startIndex[reward];
+    require(startIndexCached != 0, 'REWARD_NOT_INITIALIZED');
     UserRewardsData memory currentUserRewardsData = _userRewardsData[user][
       reward
     ];
     uint256 assetUnit = 10**decimals;
-    uint256 startIndexCached = _startIndex[reward];
-    require(startIndexCached != 0, 'REWARD_NOT_INITIALIZED');
     return
       currentUserRewardsData.unclaimedRewards +
       _getPendingRewards(
