@@ -640,12 +640,14 @@ contract StaticATokenLM is
       reward
     ];
     uint256 assetUnit = 10**decimals;
+    uint256 startIndexCached = _startIndex[reward];
+    require(startIndexCached != 0, 'REWARD_NOT_INITIALIZED');
     return
       currentUserRewardsData.unclaimedRewards +
       _getPendingRewards(
         balance,
         currentUserRewardsData.rewardsIndexOnLastInteraction == 0
-          ? _startIndex[reward]
+          ? startIndexCached
           : currentUserRewardsData.rewardsIndexOnLastInteraction,
         currentRewardsIndex,
         assetUnit
