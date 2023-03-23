@@ -637,7 +637,7 @@ contract StaticATokenLM is
     uint256 currentRewardsIndex
   ) internal view returns (uint256) {
     uint256 startIndexCached = _startIndex[reward];
-    require(startIndexCached != 0, 'REWARD_NOT_INITIALIZED');
+    require(startIndexCached != 0, StaticATokenErrors.REWARD_NOT_INITIALIZED);
     UserRewardsData memory currentUserRewardsData = _userRewardsData[user][
       reward
     ];
