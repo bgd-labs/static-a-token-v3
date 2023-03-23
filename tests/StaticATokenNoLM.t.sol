@@ -57,17 +57,13 @@ contract StaticATokenNoLMTest is BaseTest {
     try staticATokenLM.getClaimableRewards(user, REWARD_TOKEN()) {} catch Error(
       string memory reason
     ) {
-      require(
-        keccak256(bytes(reason)) == keccak256(bytes('REWARD_NOT_INITIALIZED'))
-      );
+      require(keccak256(bytes(reason)) == keccak256(bytes('9')));
     }
 
     try staticATokenLM.claimRewardsToSelf(rewardTokens) {} catch Error(
       string memory reason
     ) {
-      require(
-        keccak256(bytes(reason)) == keccak256(bytes('REWARD_NOT_INITIALIZED'))
-      );
+      require(keccak256(bytes(reason)) == keccak256(bytes('9')));
     }
     assertEq(IERC20(REWARD_TOKEN()).balanceOf(user), 0);
   }
