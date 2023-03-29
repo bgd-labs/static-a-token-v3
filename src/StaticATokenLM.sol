@@ -7,7 +7,6 @@ import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBala
 import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
-import {ReserveLogic} from 'aave-v3-core/contracts/protocol/libraries/logic/ReserveLogic.sol';
 import {MathUtils} from 'aave-v3-core/contracts/protocol/libraries/math/MathUtils.sol';
 import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
 import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
