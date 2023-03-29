@@ -10,4 +10,5 @@ library StaticATokenErrors {
   string public constant INVALID_CLAIMER = '6';
   string public constant ONLY_ONE_AMOUNT_FORMAT_ALLOWED = '7';
   string public constant INVALID_ZERO_AMOUNT = '8';
+  string public constant REWARD_NOT_INITIALIZED = '9';
 }

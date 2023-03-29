@@ -5,7 +5,7 @@ import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
 import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBalanceToken.sol';
 import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
-import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
+import {SafeCast} from 'openzeppelin-contracts/contracts/utils/math/SafeCast.sol';
 import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
 import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
 import {IERC20Metadata} from 'solidity-utils/contracts/oz-common/interfaces/IERC20Metadata.sol';
@@ -55,7 +55,7 @@ contract StaticATokenLM is
   IERC20 internal _aToken;
   address internal _aTokenUnderlying;
   address[] internal _rewardTokens;
-  mapping(address => uint256) internal _startIndex;
+  mapping(address => RewardIndexCache) internal _startIndex;
   mapping(address => mapping(address => UserRewardsData))
     internal _userRewardsData;
 
@@ -103,7 +103,7 @@ contract StaticATokenLM is
     override
     returns (bool)
   {
-    return _startIndex[reward] != 0;
+    return _startIndex[reward].isRegistered;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -636,6 +636,11 @@ contract StaticATokenLM is
     uint256 balance,
     uint256 currentRewardsIndex
   ) internal view returns (uint256) {
+    RewardIndexCache memory rewardsIndexCache = _startIndex[reward];
+    require(
+      rewardsIndexCache.isRegistered == true,
+      StaticATokenErrors.REWARD_NOT_INITIALIZED
+    );
     UserRewardsData memory currentUserRewardsData = _userRewardsData[user][
       reward
     ];
@@ -645,7 +650,7 @@ contract StaticATokenLM is
       _getPendingRewards(
         balance,
         currentUserRewardsData.rewardsIndexOnLastInteraction == 0
-          ? _startIndex[reward]
+          ? rewardsIndexCache.lastUpdatedIndex
           : currentUserRewardsData.rewardsIndexOnLastInteraction,
         currentRewardsIndex,
         assetUnit
@@ -725,7 +730,7 @@ contract StaticATokenLM is
     uint256 startIndex = getCurrentRewardsIndex(reward);
 
     _rewardTokens.push(reward);
-    _startIndex[reward] = startIndex;
+    _startIndex[reward] = RewardIndexCache(true, startIndex.toUint240());
 
     emit RewardTokenRegistered(reward, startIndex);
   }

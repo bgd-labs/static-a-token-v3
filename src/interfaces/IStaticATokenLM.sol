@@ -28,6 +28,11 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     uint128 unclaimedRewards; // (in RAYs)
   }
 
+  struct RewardIndexCache {
+    bool isRegistered;
+    uint248 lastUpdatedIndex;
+  }
+
   event RewardTokenRegistered(address indexed reward, uint256 startIndex);
 
   /**
