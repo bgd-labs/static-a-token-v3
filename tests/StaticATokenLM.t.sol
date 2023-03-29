@@ -484,16 +484,70 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(max, staticATokenLM.balanceOf(user));
   }
 
-  // function test_maxRedeemUnderlying_nonAvailable() public {
-  //   uint128 amountToDeposit = 5 ether;
-  //   _fundUser(amountToDeposit, user);
+  function test_maxRedeemUnderlying_partAvailable() public {
+    uint128 amountToDeposit = 50 ether;
+    _fundUser(amountToDeposit, user);
 
-  //   _depositAToken(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
+    vm.stopPrank();
 
-  //   uint256 max = staticATokenLM.maxRedeemUnderlying(address(user));
+    uint256 maxRedeemBefore = staticATokenLM.previewRedeem(
+      staticATokenLM.maxRedeemUnderlying(address(user))
+    );
+    uint256 underlyingBalanceBefore = IERC20Metadata(UNDERLYING).balanceOf(
+      A_TOKEN
+    );
+    // create rich user
+    address borrowUser = 0xAD69de0CE8aB50B729d3f798d7bC9ac7b4e79267;
+    address usdc = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
+    vm.startPrank(borrowUser);
+    deal(usdc, borrowUser, 200_000_000_000000);
+    AaveV3Avalanche.POOL.deposit(usdc, 200_000_000_000000, borrowUser, 0);
 
-  //   assertEq(max, 0);
-  // }
+    // borrow all available
+    AaveV3Avalanche.POOL.borrow(
+      UNDERLYING,
+      underlyingBalanceBefore - (maxRedeemBefore / 2),
+      2,
+      0,
+      borrowUser
+    );
+
+    uint256 maxRedeemAfter = staticATokenLM.previewRedeem(
+      staticATokenLM.maxRedeemUnderlying(address(user))
+    );
+    assertApproxEqAbs(maxRedeemAfter, (maxRedeemBefore / 2), 1);
+  }
+
+  function test_maxRedeemUnderlying_nonAvailable() public {
+    uint128 amountToDeposit = 50 ether;
+    _fundUser(amountToDeposit, user);
+
+    _depositAToken(amountToDeposit, user);
+    vm.stopPrank();
+
+    uint256 underlyingBalanceBefore = IERC20Metadata(UNDERLYING).balanceOf(
+      A_TOKEN
+    );
+    // create rich user
+    address borrowUser = 0xAD69de0CE8aB50B729d3f798d7bC9ac7b4e79267;
+    address usdc = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
+    vm.startPrank(borrowUser);
+    deal(usdc, borrowUser, 200_000_000_000000);
+    AaveV3Avalanche.POOL.deposit(usdc, 200_000_000_000000, borrowUser, 0);
+
+    // borrow all available
+    AaveV3Avalanche.POOL.borrow(
+      UNDERLYING,
+      underlyingBalanceBefore,
+      2,
+      0,
+      borrowUser
+    );
+
+    uint256 maxRedeemAfter = staticATokenLM.maxRedeemUnderlying(address(user));
+    assertEq(maxRedeemAfter, 0);
+  }
 
   /**
    * This test is a bit artificial and tests, what would happen if for some reason `_claimRewards` would no longer revert on insufficient funds.
