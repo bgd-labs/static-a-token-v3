@@ -417,6 +417,7 @@ contract StaticATokenLM is
     return balanceOf[owner];
   }
 
+  ///@inheritdoc IStaticATokenLM
   function maxRedeemUnderlying(address owner)
     external
     view
