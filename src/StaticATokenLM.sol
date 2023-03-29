@@ -418,7 +418,7 @@ contract StaticATokenLM is
   }
 
   function maxRedeemUnderlying(address owner)
-    public
+    external
     view
     virtual
     returns (uint256)
@@ -449,7 +449,12 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function maxDepositUnderlying(address) public view virtual returns (uint256) {
+  function maxDepositUnderlying(address)
+    external
+    view
+    virtual
+    returns (uint256)
+  {
     DataTypes.ReserveData memory reserveData = POOL.getReserveData(
       _aTokenUnderlying
     );
