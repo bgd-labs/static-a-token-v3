@@ -398,6 +398,93 @@ contract StaticATokenLMTest is BaseTest {
   }
 
   /**
+   * maxDepositUnderlying test
+   */
+  function test_maxDepositUnderlying_freeze() public {
+    vm.stopPrank();
+    vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
+    AaveV3Avalanche.POOL_CONFIGURATOR.setReserveFreeze(UNDERLYING, true);
+
+    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+
+    assertEq(max, 0);
+  }
+
+  function test_maxDepositUnderlying_paused() public {
+    vm.stopPrank();
+    vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
+    AaveV3Avalanche.POOL_CONFIGURATOR.setReservePause(UNDERLYING, true);
+
+    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+
+    assertEq(max, 0);
+  }
+
+  function test_maxDepositUnderlying_noCap() public {
+    vm.stopPrank();
+    vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
+    AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 0);
+
+    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+
+    assertEq(max, type(uint256).max);
+  }
+
+  // should be 0 as supply is ~24.7k in forked block
+  function test_maxDepositUnderlying_20kCap() public {
+    vm.stopPrank();
+    vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
+    AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 20_000);
+
+    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+    assertEq(max, 0);
+  }
+
+  function test_maxDepositUnderlying_50kCap() public {
+    vm.stopPrank();
+    vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
+    AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 50_000);
+
+    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+    assertApproxEqAbs(
+      max,
+      50_000 *
+        (10**IERC20Metadata(UNDERLYING).decimals()) -
+        IERC20Metadata(A_TOKEN).totalSupply(),
+      0.5 ether
+    );
+  }
+
+  /**
+   * maxRedeemUnderlying test
+   */
+  function test_maxRedeemUnderlying_paused() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit, user);
+
+    _depositAToken(amountToDeposit, user);
+
+    vm.stopPrank();
+    vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
+    AaveV3Avalanche.POOL_CONFIGURATOR.setReservePause(UNDERLYING, true);
+
+    uint256 max = staticATokenLM.maxRedeemUnderlying(address(user));
+
+    assertEq(max, 0);
+  }
+
+  function test_maxRedeemUnderlying_allAvailable() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit, user);
+
+    _depositAToken(amountToDeposit, user);
+
+    uint256 max = staticATokenLM.maxRedeemUnderlying(address(user));
+
+    assertEq(max, staticATokenLM.balanceOf(user));
+  }
+
+  /**
    * This test is a bit artificial and tests, what would happen if for some reason `_claimRewards` would no longer revert on insufficient funds.
    * Therefore we reduce the claimable amount for the staticAtoken itself.
    */
