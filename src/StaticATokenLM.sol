@@ -481,33 +481,6 @@ contract StaticATokenLM is
     return currentSupply > supplyCap ? 0 : supplyCap - currentSupply;
   }
 
-  /**
-   * Copy of https://github.com/aave/aave-v3-core/blob/29ff9b9f89af7cd8255231bc5faf26c3ce0fb7ce/contracts/protocol/libraries/logic/ReserveLogic.sol#L47 with memory instead of calldata
-   * @notice Returns the ongoing normalized income for the reserve.
-   * @dev A value of 1e27 means there is no income. As time passes, the income is accrued
-   * @dev A value of 2*1e27 means for each unit of asset one unit of income has been accrued
-   * @param reserve The reserve object
-   * @return The normalized income, expressed in ray
-   */
-  function _getNormalizedIncome(DataTypes.ReserveData memory reserve)
-    internal
-    view
-    returns (uint256)
-  {
-    uint40 timestamp = reserve.lastUpdateTimestamp;
-
-    //solium-disable-next-line
-    if (timestamp == block.timestamp) {
-      //if the index was updated in the same block, no need to perform any calculation
-      return reserve.liquidityIndex;
-    } else {
-      return
-        MathUtils
-          .calculateLinearInterest(reserve.currentLiquidityRate, timestamp)
-          .rayMul(reserve.liquidityIndex);
-    }
-  }
-
   ///@inheritdoc IERC4626
   function deposit(uint256 assets, address receiver)
     public
@@ -821,5 +794,32 @@ contract StaticATokenLM is
     _startIndex[reward] = startIndex;
 
     emit RewardTokenRegistered(reward, startIndex);
+  }
+
+  /**
+   * Copy of https://github.com/aave/aave-v3-core/blob/29ff9b9f89af7cd8255231bc5faf26c3ce0fb7ce/contracts/protocol/libraries/logic/ReserveLogic.sol#L47 with memory instead of calldata
+   * @notice Returns the ongoing normalized income for the reserve.
+   * @dev A value of 1e27 means there is no income. As time passes, the income is accrued
+   * @dev A value of 2*1e27 means for each unit of asset one unit of income has been accrued
+   * @param reserve The reserve object
+   * @return The normalized income, expressed in ray
+   */
+  function _getNormalizedIncome(DataTypes.ReserveData memory reserve)
+    internal
+    view
+    returns (uint256)
+  {
+    uint40 timestamp = reserve.lastUpdateTimestamp;
+
+    //solium-disable-next-line
+    if (timestamp == block.timestamp) {
+      //if the index was updated in the same block, no need to perform any calculation
+      return reserve.liquidityIndex;
+    } else {
+      return
+        MathUtils
+          .calculateLinearInterest(reserve.currentLiquidityRate, timestamp)
+          .rayMul(reserve.liquidityIndex);
+    }
   }
 }
