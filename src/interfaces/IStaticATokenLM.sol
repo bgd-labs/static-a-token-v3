@@ -233,7 +233,6 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * While deposit of aToken is not affected by aave pool configrations, deposit of the aTokenUnderlying will need to deposit to aave
    * so it is affected by current aave pool configuration.
    * Reference: https://github.com/aave/aave-v3-core/blob/29ff9b9f89af7cd8255231bc5faf26c3ce0fb7ce/contracts/protocol/libraries/logic/ValidationLogic.sol#L57
-   * @notice Following the IERC4626 standard.
    * - MUST return a limited value if receiver is subject to some deposit limit.
    * - MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of assets that may be deposited.
    * - MUST NOT revert.
@@ -248,7 +247,6 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * through a redeem call to the aToken underlying.
    * While redeem of aToken is not affected by aave pool configrations, redeeming of the aTokenUnderlying will need to redeem from aave
    * so it is affected by current aave pool configuration.
-   * @notice Following the IERC4626 standard.
    * - MUST return a limited value if owner is subject to some withdrawal limit or timelock.
    * - MUST return balanceOf(owner) if owner is not subject to any withdrawal limit or timelock.
    * - MUST NOT revert.
