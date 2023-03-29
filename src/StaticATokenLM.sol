@@ -2,6 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
+import {DataTypes, ReserveConfiguration} from 'aave-v3-core/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBalanceToken.sol';
 import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
@@ -413,6 +414,64 @@ contract StaticATokenLM is
   ///@inheritdoc IERC4626
   function maxRedeem(address owner) public view virtual returns (uint256) {
     return balanceOf[owner];
+  }
+
+  function maxRedeemUnderlying(address owner)
+    public
+    view
+    virtual
+    returns (uint256)
+  {
+    address cachedATokenUnderlying = _aTokenUnderlying;
+    DataTypes.ReserveData memory reserveData = POOL.getReserveData(
+      cachedATokenUnderlying
+    );
+
+    // if paused or inactive users cannot withraw underlying
+    if (
+      !ReserveConfiguration.getActive(reserveData.configuration) ||
+      ReserveConfiguration.getPaused(reserveData.configuration)
+    ) {
+      return 0;
+    }
+
+    // otherwise users can withdraw up to the available amount
+    uint256 aTokenBalance = IERC20(cachedATokenUnderlying).balanceOf(
+      reserveData.aTokenAddress
+    );
+    uint256 cachedUserBalance = balanceOf[owner];
+    return
+      aTokenBalance >= _convertToAssets(cachedUserBalance, Rounding.DOWN)
+        ? cachedUserBalance
+        : _convertToShares(aTokenBalance, Rounding.DOWN);
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function maxDepositUnderlying(address) public view virtual returns (uint256) {
+    DataTypes.ReserveData memory reserveData = POOL.getReserveData(
+      _aTokenUnderlying
+    );
+
+    // if inactive, paused or frozen users cannot deposit underlying
+    if (
+      !ReserveConfiguration.getActive(reserveData.configuration) ||
+      ReserveConfiguration.getPaused(reserveData.configuration) ||
+      ReserveConfiguration.getFrozen(reserveData.configuration)
+    ) {
+      return 0;
+    }
+
+    uint256 supplyCap = ReserveConfiguration.getSupplyCap(
+      reserveData.configuration
+    ) * (10**ReserveConfiguration.getDecimals(reserveData.configuration));
+    // if no supply cap deposit is unlimited
+    if (supplyCap == 0) return type(uint256).max;
+    // return remaining supply cap margin
+    uint256 currentSupply = (IAToken(reserveData.aTokenAddress)
+      .scaledTotalSupply() + reserveData.accruedToTreasury).rayMulRoundUp(
+        reserveData.liquidityIndex
+      );
+    return currentSupply > supplyCap ? 0 : supplyCap - currentSupply;
   }
 
   ///@inheritdoc IERC4626
