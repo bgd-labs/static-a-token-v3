@@ -7,6 +7,8 @@ import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBala
 import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {SafeCast} from 'aave-v3-core/contracts/dependencies/openzeppelin/contracts/SafeCast.sol';
+import {ReserveLogic} from 'aave-v3-core/contracts/protocol/libraries/logic/ReserveLogic.sol';
+import {MathUtils} from 'aave-v3-core/contracts/protocol/libraries/math/MathUtils.sol';
 import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
 import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
 import {IERC20Metadata} from 'solidity-utils/contracts/oz-common/interfaces/IERC20Metadata.sol';
@@ -436,14 +438,15 @@ contract StaticATokenLM is
     }
 
     // otherwise users can withdraw up to the available amount
-    uint256 aTokenBalance = IERC20(cachedATokenUnderlying).balanceOf(
-      reserveData.aTokenAddress
+    uint256 underlyingTokenBalanceInShares = _convertToShares(
+      IERC20(cachedATokenUnderlying).balanceOf(reserveData.aTokenAddress),
+      Rounding.DOWN
     );
     uint256 cachedUserBalance = balanceOf[owner];
     return
-      aTokenBalance >= _convertToAssets(cachedUserBalance, Rounding.DOWN)
+      underlyingTokenBalanceInShares >= cachedUserBalance
         ? cachedUserBalance
-        : _convertToShares(aTokenBalance, Rounding.DOWN);
+        : underlyingTokenBalanceInShares;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -469,9 +472,36 @@ contract StaticATokenLM is
     // return remaining supply cap margin
     uint256 currentSupply = (IAToken(reserveData.aTokenAddress)
       .scaledTotalSupply() + reserveData.accruedToTreasury).rayMulRoundUp(
-        reserveData.liquidityIndex
+        _getNormalizedIncome(reserveData)
       );
     return currentSupply > supplyCap ? 0 : supplyCap - currentSupply;
+  }
+
+  /**
+   * Copy of https://github.com/aave/aave-v3-core/blob/29ff9b9f89af7cd8255231bc5faf26c3ce0fb7ce/contracts/protocol/libraries/logic/ReserveLogic.sol#L47 with memory instead of calldata
+   * @notice Returns the ongoing normalized income for the reserve.
+   * @dev A value of 1e27 means there is no income. As time passes, the income is accrued
+   * @dev A value of 2*1e27 means for each unit of asset one unit of income has been accrued
+   * @param reserve The reserve object
+   * @return The normalized income, expressed in ray
+   */
+  function _getNormalizedIncome(DataTypes.ReserveData memory reserve)
+    internal
+    view
+    returns (uint256)
+  {
+    uint40 timestamp = reserve.lastUpdateTimestamp;
+
+    //solium-disable-next-line
+    if (timestamp == block.timestamp) {
+      //if the index was updated in the same block, no need to perform any calculation
+      return reserve.liquidityIndex;
+    } else {
+      return
+        MathUtils
+          .calculateLinearInterest(reserve.currentLiquidityRate, timestamp)
+          .rayMul(reserve.liquidityIndex);
+    }
   }
 
   ///@inheritdoc IERC4626

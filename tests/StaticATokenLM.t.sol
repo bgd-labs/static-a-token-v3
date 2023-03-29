@@ -484,6 +484,17 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(max, staticATokenLM.balanceOf(user));
   }
 
+  // function test_maxRedeemUnderlying_nonAvailable() public {
+  //   uint128 amountToDeposit = 5 ether;
+  //   _fundUser(amountToDeposit, user);
+
+  //   _depositAToken(amountToDeposit, user);
+
+  //   uint256 max = staticATokenLM.maxRedeemUnderlying(address(user));
+
+  //   assertEq(max, 0);
+  // }
+
   /**
    * This test is a bit artificial and tests, what would happen if for some reason `_claimRewards` would no longer revert on insufficient funds.
    * Therefore we reduce the claimable amount for the staticAtoken itself.
