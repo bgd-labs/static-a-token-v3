@@ -36,11 +36,7 @@ library SigUtils {
     0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
 
   // computes the hash of a permit
-  function getStructHash(Permit memory _permit)
-    internal
-    pure
-    returns (bytes32)
-  {
+  function getStructHash(Permit memory _permit) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -54,11 +50,10 @@ library SigUtils {
       );
   }
 
-  function getWithdrawHash(WithdrawPermit memory permit, bytes32 typehash)
-    internal
-    pure
-    returns (bytes32)
-  {
+  function getWithdrawHash(
+    WithdrawPermit memory permit,
+    bytes32 typehash
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -74,11 +69,10 @@ library SigUtils {
       );
   }
 
-  function getDepositHash(DepositPermit memory permit, bytes32 typehash)
-    internal
-    pure
-    returns (bytes32)
-  {
+  function getDepositHash(
+    DepositPermit memory permit,
+    bytes32 typehash
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -96,15 +90,11 @@ library SigUtils {
   }
 
   // computes the hash of the fully encoded EIP-712 message for the domain, which can be used to recover the signer
-  function getTypedDataHash(Permit memory permit, bytes32 domainSeperator)
-    public
-    pure
-    returns (bytes32)
-  {
-    return
-      keccak256(
-        abi.encodePacked('\x19\x01', domainSeperator, getStructHash(permit))
-      );
+  function getTypedDataHash(
+    Permit memory permit,
+    bytes32 domainSeperator
+  ) public pure returns (bytes32) {
+    return keccak256(abi.encodePacked('\x19\x01', domainSeperator, getStructHash(permit)));
   }
 
   function getTypedWithdrawHash(
@@ -113,13 +103,7 @@ library SigUtils {
     bytes32 domainSeperator
   ) public pure returns (bytes32) {
     return
-      keccak256(
-        abi.encodePacked(
-          '\x19\x01',
-          domainSeperator,
-          getWithdrawHash(permit, typehash)
-        )
-      );
+      keccak256(abi.encodePacked('\x19\x01', domainSeperator, getWithdrawHash(permit, typehash)));
   }
 
   function getTypedDepositHash(
@@ -128,12 +112,6 @@ library SigUtils {
     bytes32 domainSeperator
   ) public pure returns (bytes32) {
     return
-      keccak256(
-        abi.encodePacked(
-          '\x19\x01',
-          domainSeperator,
-          getDepositHash(permit, typehash)
-        )
-      );
+      keccak256(abi.encodePacked('\x19\x01', domainSeperator, getDepositHash(permit, typehash)));
   }
 }

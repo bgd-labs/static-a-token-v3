@@ -12,9 +12,7 @@ interface IStaticATokenFactory {
    * @param underlyings the addresses of the underlyings to create.
    * @return address[] addresses of the new staticATokens.
    */
-  function createStaticATokens(address[] memory underlyings)
-    external
-    returns (address[] memory);
+  function createStaticATokens(address[] memory underlyings) external returns (address[] memory);
 
   /**
    * @notice Returns all tokens deployed via this registry.

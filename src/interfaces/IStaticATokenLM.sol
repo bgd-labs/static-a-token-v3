@@ -166,10 +166,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param reward The reward to claim
    * @return uint256 The current balance + pending rewards from the `_incentivesController`
    */
-  function getTotalClaimableRewards(address reward)
-    external
-    view
-    returns (uint256);
+  function getTotalClaimableRewards(address reward) external view returns (uint256);
 
   /**
    * @notice Get the total claimable rewards for a user in WAD
@@ -177,10 +174,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param reward The reward to claim
    * @return uint256 The claimable amount of rewards in WAD
    */
-  function getClaimableRewards(address user, address reward)
-    external
-    view
-    returns (uint256);
+  function getClaimableRewards(address user, address reward) external view returns (uint256);
 
   /**
    * @notice The unclaimed rewards for a user in WAD
@@ -188,20 +182,14 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param reward The reward to claim
    * @return uint256 The unclaimed amount of rewards in WAD
    */
-  function getUnclaimedRewards(address user, address reward)
-    external
-    view
-    returns (uint256);
+  function getUnclaimedRewards(address user, address reward) external view returns (uint256);
 
   /**
    * @notice The underlying asset reward index in RAY
    * @param reward The reward to claim
    * @return uint256 The underlying asset reward index in RAY
    */
-  function getCurrentRewardsIndex(address reward)
-    external
-    view
-    returns (uint256);
+  function getCurrentRewardsIndex(address reward) external view returns (uint256);
 
   /**
    * @notice The aToken used inside the 4626 vault.
@@ -242,10 +230,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * - MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of assets that may be deposited.
    * - MUST NOT revert.
    */
-  function maxDepositUnderlying(address receiver)
-    external
-    view
-    returns (uint256 maxAssets);
+  function maxDepositUnderlying(address receiver) external view returns (uint256 maxAssets);
 
   /**
    * @dev Returns the maximum amount of Vault shares that can be redeemed from the owner balance in the Vault,
@@ -257,8 +242,5 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * - MUST return balanceOf(owner) if owner is not subject to any withdrawal limit or timelock.
    * - MUST NOT revert.
    */
-  function maxRedeemUnderlying(address owner)
-    external
-    view
-    returns (uint256 maxShares);
+  function maxRedeemUnderlying(address owner) external view returns (uint256 maxShares);
 }

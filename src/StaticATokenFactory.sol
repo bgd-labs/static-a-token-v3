@@ -24,10 +24,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   mapping(address => address) internal _underlyingToStaticAToken;
   address[] internal _staticATokens;
 
-  event StaticTokenCreated(
-    address indexed staticAToken,
-    address indexed underlying
-  );
+  event StaticTokenCreated(address indexed staticAToken, address indexed underlying);
 
   constructor(
     IPool pool,
@@ -44,21 +41,13 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   function initialize() external initializer {}
 
   ///@inheritdoc IStaticATokenFactory
-  function createStaticATokens(address[] memory underlyings)
-    public
-    returns (address[] memory)
-  {
+  function createStaticATokens(address[] memory underlyings) public returns (address[] memory) {
     address[] memory staticATokens = new address[](underlyings.length);
     for (uint256 i = 0; i < underlyings.length; i++) {
       address cachedStaticAToken = _underlyingToStaticAToken[underlyings[i]];
       if (cachedStaticAToken == address(0)) {
-        DataTypes.ReserveData memory reserveData = POOL.getReserveData(
-          underlyings[i]
-        );
-        require(
-          reserveData.aTokenAddress != address(0),
-          'UNDERLYING_NOT_LISTED'
-        );
+        DataTypes.ReserveData memory reserveData = POOL.getReserveData(underlyings[i]);
+        require(reserveData.aTokenAddress != address(0), 'UNDERLYING_NOT_LISTED');
         bytes memory symbol = abi.encodePacked(
           'stat',
           IERC20Metadata(reserveData.aTokenAddress).symbol()
@@ -69,12 +58,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
           abi.encodeWithSelector(
             StaticATokenLM.initialize.selector,
             reserveData.aTokenAddress,
-            string(
-              abi.encodePacked(
-                'Static ',
-                IERC20Metadata(reserveData.aTokenAddress).name()
-              )
-            ),
+            string(abi.encodePacked('Static ', IERC20Metadata(reserveData.aTokenAddress).name())),
             string(symbol)
           ),
           bytes32(uint256(uint160(underlyings[i])))

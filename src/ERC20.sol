@@ -12,11 +12,7 @@ abstract contract ERC20 {
 
   event Transfer(address indexed from, address indexed to, uint256 amount);
 
-  event Approval(
-    address indexed owner,
-    address indexed spender,
-    uint256 amount
-  );
+  event Approval(address indexed owner, address indexed spender, uint256 amount);
 
   /* //////////////////////////////////////////////////////////////
                         METADATA STORAGE
@@ -52,11 +48,7 @@ abstract contract ERC20 {
                         CONSTRUCTOR
   ////////////////////////////////////////////////////////////// */
 
-  constructor(
-    string memory _name,
-    string memory _symbol,
-    uint8 _decimals
-  ) {
+  constructor(string memory _name, string memory _symbol, uint8 _decimals) {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
@@ -69,11 +61,7 @@ abstract contract ERC20 {
                         ERC20 LOGIC
   ////////////////////////////////////////////////////////////// */
 
-  function approve(address spender, uint256 amount)
-    public
-    virtual
-    returns (bool)
-  {
+  function approve(address spender, uint256 amount) public virtual returns (bool) {
     allowance[msg.sender][spender] = amount;
 
     emit Approval(msg.sender, spender, amount);
@@ -96,16 +84,11 @@ abstract contract ERC20 {
     return true;
   }
 
-  function transferFrom(
-    address from,
-    address to,
-    uint256 amount
-  ) public virtual returns (bool) {
+  function transferFrom(address from, address to, uint256 amount) public virtual returns (bool) {
     _beforeTokenTransfer(from, to, amount);
     uint256 allowed = allowance[from][msg.sender]; // Saves gas for limited approvals.
 
-    if (allowed != type(uint256).max)
-      allowance[from][msg.sender] = allowed - amount;
+    if (allowed != type(uint256).max) allowance[from][msg.sender] = allowed - amount;
 
     balanceOf[from] -= amount;
 
@@ -162,10 +145,7 @@ abstract contract ERC20 {
         s
       );
 
-      require(
-        recoveredAddress != address(0) && recoveredAddress == owner,
-        'INVALID_SIGNER'
-      );
+      require(recoveredAddress != address(0) && recoveredAddress == owner, 'INVALID_SIGNER');
 
       allowance[recoveredAddress][spender] = value;
     }
@@ -174,10 +154,7 @@ abstract contract ERC20 {
   }
 
   function DOMAIN_SEPARATOR() public view virtual returns (bytes32) {
-    return
-      block.chainid == INITIAL_CHAIN_ID
-        ? INITIAL_DOMAIN_SEPARATOR
-        : computeDomainSeparator();
+    return block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : computeDomainSeparator();
   }
 
   function computeDomainSeparator() internal view virtual returns (bytes32) {
@@ -239,9 +216,5 @@ abstract contract ERC20 {
    *
    * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
    */
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal virtual {}
+  function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 }

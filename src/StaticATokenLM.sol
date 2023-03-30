@@ -58,8 +58,7 @@ contract StaticATokenLM is
   address internal _aTokenUnderlying;
   address[] internal _rewardTokens;
   mapping(address => RewardIndexCache) internal _startIndex;
-  mapping(address => mapping(address => UserRewardsData))
-    internal _userRewardsData;
+  mapping(address => mapping(address => UserRewardsData)) internal _userRewardsData;
 
   constructor(IPool pool, IRewardsController rewardsController) {
     POOL = pool;
@@ -90,21 +89,14 @@ contract StaticATokenLM is
 
   ///@inheritdoc IStaticATokenLM
   function refreshRewardTokens() public override {
-    address[] memory rewards = INCENTIVES_CONTROLLER.getRewardsByAsset(
-      address(_aToken)
-    );
+    address[] memory rewards = INCENTIVES_CONTROLLER.getRewardsByAsset(address(_aToken));
     for (uint256 i = 0; i < rewards.length; i++) {
       _registerRewardToken(rewards[i]);
     }
   }
 
   ///@inheritdoc IStaticATokenLM
-  function isRegisteredRewardToken(address reward)
-    public
-    view
-    override
-    returns (bool)
-  {
+  function isRegisteredRewardToken(address reward) public view override returns (bool) {
     return _startIndex[reward].isRegistered;
   }
 
@@ -115,8 +107,7 @@ contract StaticATokenLM is
     uint16 referralCode,
     bool fromUnderlying
   ) external returns (uint256) {
-    return
-      _deposit(msg.sender, recipient, assets, referralCode, fromUnderlying);
+    return _deposit(msg.sender, recipient, assets, referralCode, fromUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -165,17 +156,15 @@ contract StaticATokenLM is
     }
     // assume if deadline 0 no permit was supplied
     if (permit.deadline != 0) {
-      IERC20WithPermit(
-        fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)
-      ).permit(
-          depositor,
-          address(this),
-          permit.value,
-          permit.deadline,
-          permit.v,
-          permit.r,
-          permit.s
-        );
+      IERC20WithPermit(fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)).permit(
+        depositor,
+        address(this),
+        permit.value,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
+      );
     }
     return _deposit(depositor, recipient, value, referralCode, fromUnderlying);
   }
@@ -221,8 +210,7 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
-    return
-      _withdraw(owner, recipient, staticAmount, dynamicAmount, toUnderlying);
+    return _withdraw(owner, recipient, staticAmount, dynamicAmount, toUnderlying);
   }
 
   ///@inheritdoc IERC4626
@@ -236,22 +224,12 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function previewWithdraw(uint256 assets)
-    public
-    view
-    virtual
-    returns (uint256)
-  {
+  function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
     return _convertToShares(assets, Rounding.UP);
   }
 
   ///@inheritdoc IERC4626
-  function previewDeposit(uint256 assets)
-    public
-    view
-    virtual
-    returns (uint256)
-  {
+  function previewDeposit(uint256 assets) public view virtual returns (uint256) {
     return _convertToShares(assets, Rounding.DOWN);
   }
 
@@ -269,13 +247,7 @@ contract StaticATokenLM is
     address[] memory assets = new address[](1);
     assets[0] = address(_aToken);
 
-    return
-      INCENTIVES_CONTROLLER.claimRewards(
-        assets,
-        type(uint256).max,
-        address(this),
-        reward
-      );
+    return INCENTIVES_CONTROLLER.claimRewards(assets, type(uint256).max, address(this), reward);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -285,8 +257,7 @@ contract StaticATokenLM is
     address[] memory rewards
   ) external {
     require(
-      msg.sender == onBehalfOf ||
-        msg.sender == INCENTIVES_CONTROLLER.getClaimer(onBehalfOf),
+      msg.sender == onBehalfOf || msg.sender == INCENTIVES_CONTROLLER.getClaimer(onBehalfOf),
       StaticATokenErrors.INVALID_CLAIMER
     );
     _claimRewardsOnBehalf(onBehalfOf, receiver, rewards);
@@ -303,62 +274,33 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getCurrentRewardsIndex(address reward)
-    public
-    view
-    returns (uint256)
-  {
+  function getCurrentRewardsIndex(address reward) public view returns (uint256) {
     if (address(reward) == address(0)) {
       return 0;
     }
-    (, uint256 nextIndex) = INCENTIVES_CONTROLLER.getAssetIndex(
-      address(_aToken),
-      reward
-    );
+    (, uint256 nextIndex) = INCENTIVES_CONTROLLER.getAssetIndex(address(_aToken), reward);
     return nextIndex;
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getTotalClaimableRewards(address reward)
-    external
-    view
-    returns (uint256)
-  {
+  function getTotalClaimableRewards(address reward) external view returns (uint256) {
     if (reward == address(0)) {
       return 0;
     }
 
     address[] memory assets = new address[](1);
     assets[0] = address(_aToken);
-    uint256 freshRewards = INCENTIVES_CONTROLLER.getUserRewards(
-      assets,
-      address(this),
-      reward
-    );
+    uint256 freshRewards = INCENTIVES_CONTROLLER.getUserRewards(assets, address(this), reward);
     return IERC20(reward).balanceOf(address(this)) + freshRewards;
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getClaimableRewards(address user, address reward)
-    external
-    view
-    returns (uint256)
-  {
-    return
-      _getClaimableRewards(
-        user,
-        reward,
-        balanceOf[user],
-        getCurrentRewardsIndex(reward)
-      );
+  function getClaimableRewards(address user, address reward) external view returns (uint256) {
+    return _getClaimableRewards(user, reward, balanceOf[user], getCurrentRewardsIndex(reward));
   }
 
   ///@inheritdoc IStaticATokenLM
-  function getUnclaimedRewards(address user, address reward)
-    external
-    view
-    returns (uint256)
-  {
+  function getUnclaimedRewards(address user, address reward) external view returns (uint256) {
     return _userRewardsData[user][reward].unclaimedRewards;
   }
 
@@ -418,16 +360,9 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function maxRedeemUnderlying(address owner)
-    external
-    view
-    virtual
-    returns (uint256)
-  {
+  function maxRedeemUnderlying(address owner) external view virtual returns (uint256) {
     address cachedATokenUnderlying = _aTokenUnderlying;
-    DataTypes.ReserveData memory reserveData = POOL.getReserveData(
-      cachedATokenUnderlying
-    );
+    DataTypes.ReserveData memory reserveData = POOL.getReserveData(cachedATokenUnderlying);
 
     // if paused or inactive users cannot withraw underlying
     if (
@@ -450,15 +385,8 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IStaticATokenLM
-  function maxDepositUnderlying(address)
-    external
-    view
-    virtual
-    returns (uint256)
-  {
-    DataTypes.ReserveData memory reserveData = POOL.getReserveData(
-      _aTokenUnderlying
-    );
+  function maxDepositUnderlying(address) external view virtual returns (uint256) {
+    DataTypes.ReserveData memory reserveData = POOL.getReserveData(_aTokenUnderlying);
 
     // if inactive, paused or frozen users cannot deposit underlying
     if (
@@ -469,34 +397,23 @@ contract StaticATokenLM is
       return 0;
     }
 
-    uint256 supplyCap = ReserveConfiguration.getSupplyCap(
-      reserveData.configuration
-    ) * (10**ReserveConfiguration.getDecimals(reserveData.configuration));
+    uint256 supplyCap = ReserveConfiguration.getSupplyCap(reserveData.configuration) *
+      (10 ** ReserveConfiguration.getDecimals(reserveData.configuration));
     // if no supply cap deposit is unlimited
     if (supplyCap == 0) return type(uint256).max;
     // return remaining supply cap margin
-    uint256 currentSupply = (IAToken(reserveData.aTokenAddress)
-      .scaledTotalSupply() + reserveData.accruedToTreasury).rayMulRoundUp(
-        _getNormalizedIncome(reserveData)
-      );
+    uint256 currentSupply = (IAToken(reserveData.aTokenAddress).scaledTotalSupply() +
+      reserveData.accruedToTreasury).rayMulRoundUp(_getNormalizedIncome(reserveData));
     return currentSupply > supplyCap ? 0 : supplyCap - currentSupply;
   }
 
   ///@inheritdoc IERC4626
-  function deposit(uint256 assets, address receiver)
-    public
-    virtual
-    returns (uint256)
-  {
+  function deposit(uint256 assets, address receiver) public virtual returns (uint256) {
     return _deposit(msg.sender, receiver, assets, 0, false);
   }
 
   ///@inheritdoc IERC4626
-  function mint(uint256 shares, address receiver)
-    public
-    virtual
-    returns (uint256)
-  {
+  function mint(uint256 shares, address receiver) public virtual returns (uint256) {
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
     require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
@@ -557,11 +474,7 @@ contract StaticATokenLM is
 
     if (fromUnderlying) {
       address cachedATokenUnderlying = _aTokenUnderlying;
-      IERC20(cachedATokenUnderlying).safeTransferFrom(
-        depositor,
-        address(this),
-        assets
-      );
+      IERC20(cachedATokenUnderlying).safeTransferFrom(depositor, address(this), assets);
       POOL.deposit(cachedATokenUnderlying, assets, address(this), referralCode);
     } else {
       _aToken.safeTransferFrom(depositor, address(this), assets);
@@ -586,10 +499,7 @@ contract StaticATokenLM is
       staticAmount == 0 || dynamicAmount == 0,
       StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
     );
-    require(
-      staticAmount != dynamicAmount,
-      StaticATokenErrors.INVALID_ZERO_AMOUNT
-    );
+    require(staticAmount != dynamicAmount, StaticATokenErrors.INVALID_ZERO_AMOUNT);
 
     uint256 amountToWithdraw = dynamicAmount;
     uint256 shares = staticAmount;
@@ -603,8 +513,7 @@ contract StaticATokenLM is
     if (msg.sender != owner) {
       uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
 
-      if (allowed != type(uint256).max)
-        allowance[owner][msg.sender] = allowed - shares;
+      if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
     }
 
     _burn(owner, shares);
@@ -626,11 +535,7 @@ contract StaticATokenLM is
    * @param to The address of the receiver of tokens
    * @param amount The amount of tokens to transfer in WAD
    */
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal override {
+  function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       address rewardToken = address(_rewardTokens[i]);
       uint256 rewardsIndex = getCurrentRewardsIndex(rewardToken);
@@ -649,23 +554,18 @@ contract StaticATokenLM is
    * @param currentRewardsIndex The current rewardIndex
    * @param rewardToken The address of the reward token
    */
-  function _updateUser(
-    address user,
-    uint256 currentRewardsIndex,
-    address rewardToken
-  ) internal {
+  function _updateUser(address user, uint256 currentRewardsIndex, address rewardToken) internal {
     uint256 balance = balanceOf[user];
     if (balance > 0) {
-      _userRewardsData[user][rewardToken]
-        .unclaimedRewards = _getClaimableRewards(
+      _userRewardsData[user][rewardToken].unclaimedRewards = _getClaimableRewards(
         user,
         rewardToken,
         balance,
         currentRewardsIndex
       ).toUint128();
     }
-    _userRewardsData[user][rewardToken]
-      .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
+    _userRewardsData[user][rewardToken].rewardsIndexOnLastInteraction = currentRewardsIndex
+      .toUint128();
   }
 
   /**
@@ -685,9 +585,7 @@ contract StaticATokenLM is
     if (balance == 0) {
       return 0;
     }
-    return
-      (balance * (currentRewardsIndex - rewardsIndexOnLastInteraction)) /
-      assetUnit;
+    return (balance * (currentRewardsIndex - rewardsIndexOnLastInteraction)) / assetUnit;
   }
 
   /**
@@ -704,14 +602,9 @@ contract StaticATokenLM is
     uint256 currentRewardsIndex
   ) internal view returns (uint256) {
     RewardIndexCache memory rewardsIndexCache = _startIndex[reward];
-    require(
-      rewardsIndexCache.isRegistered == true,
-      StaticATokenErrors.REWARD_NOT_INITIALIZED
-    );
-    UserRewardsData memory currentUserRewardsData = _userRewardsData[user][
-      reward
-    ];
-    uint256 assetUnit = 10**decimals;
+    require(rewardsIndexCache.isRegistered == true, StaticATokenErrors.REWARD_NOT_INITIALIZED);
+    UserRewardsData memory currentUserRewardsData = _userRewardsData[user][reward];
+    uint256 assetUnit = 10 ** decimals;
     return
       currentUserRewardsData.unclaimedRewards +
       _getPendingRewards(
@@ -747,9 +640,7 @@ contract StaticATokenLM is
         balance,
         currentRewardsIndex
       );
-      uint256 totalRewardTokenBalance = IERC20(rewards[i]).balanceOf(
-        address(this)
-      );
+      uint256 totalRewardTokenBalance = IERC20(rewards[i]).balanceOf(address(this));
       uint256 unclaimedReward = 0;
 
       if (userReward > totalRewardTokenBalance) {
@@ -761,29 +652,20 @@ contract StaticATokenLM is
         userReward = totalRewardTokenBalance;
       }
       if (userReward > 0) {
-        _userRewardsData[onBehalfOf][rewards[i]]
-          .unclaimedRewards = unclaimedReward.toUint128();
-        _userRewardsData[onBehalfOf][rewards[i]]
-          .rewardsIndexOnLastInteraction = currentRewardsIndex.toUint128();
+        _userRewardsData[onBehalfOf][rewards[i]].unclaimedRewards = unclaimedReward.toUint128();
+        _userRewardsData[onBehalfOf][rewards[i]].rewardsIndexOnLastInteraction = currentRewardsIndex
+          .toUint128();
         IERC20(rewards[i]).safeTransfer(receiver, userReward);
       }
     }
   }
 
-  function _convertToShares(uint256 amount, Rounding rounding)
-    internal
-    view
-    returns (uint256)
-  {
+  function _convertToShares(uint256 amount, Rounding rounding) internal view returns (uint256) {
     if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
     return amount.rayDivRoundDown(rate());
   }
 
-  function _convertToAssets(uint256 shares, Rounding rounding)
-    internal
-    view
-    returns (uint256)
-  {
+  function _convertToAssets(uint256 shares, Rounding rounding) internal view returns (uint256) {
     if (rounding == Rounding.UP) return shares.rayMulRoundUp(rate());
     return shares.rayMulRoundDown(rate());
   }
@@ -810,11 +692,9 @@ contract StaticATokenLM is
    * @param reserve The reserve object
    * @return The normalized income, expressed in ray
    */
-  function _getNormalizedIncome(DataTypes.ReserveData memory reserve)
-    internal
-    view
-    returns (uint256)
-  {
+  function _getNormalizedIncome(
+    DataTypes.ReserveData memory reserve
+  ) internal view returns (uint256) {
     uint40 timestamp = reserve.lastUpdateTimestamp;
 
     //solium-disable-next-line
@@ -823,9 +703,9 @@ contract StaticATokenLM is
       return reserve.liquidityIndex;
     } else {
       return
-        MathUtils
-          .calculateLinearInterest(reserve.currentLiquidityRate, timestamp)
-          .rayMul(reserve.liquidityIndex);
+        MathUtils.calculateLinearInterest(reserve.currentLiquidityRate, timestamp).rayMul(
+          reserve.liquidityIndex
+        );
     }
   }
 }
