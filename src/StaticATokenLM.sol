@@ -2,9 +2,11 @@
 pragma solidity ^0.8.10;
 
 import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
+import {DataTypes, ReserveConfiguration} from 'aave-v3-core/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBalanceToken.sol';
 import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
+import {MathUtils} from 'aave-v3-core/contracts/protocol/libraries/math/MathUtils.sol';
 import {SafeCast} from 'openzeppelin-contracts/contracts/utils/math/SafeCast.sol';
 import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
 import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
@@ -415,6 +417,71 @@ contract StaticATokenLM is
     return balanceOf[owner];
   }
 
+  ///@inheritdoc IStaticATokenLM
+  function maxRedeemUnderlying(address owner)
+    external
+    view
+    virtual
+    returns (uint256)
+  {
+    address cachedATokenUnderlying = _aTokenUnderlying;
+    DataTypes.ReserveData memory reserveData = POOL.getReserveData(
+      cachedATokenUnderlying
+    );
+
+    // if paused or inactive users cannot withraw underlying
+    if (
+      !ReserveConfiguration.getActive(reserveData.configuration) ||
+      ReserveConfiguration.getPaused(reserveData.configuration)
+    ) {
+      return 0;
+    }
+
+    // otherwise users can withdraw up to the available amount
+    uint256 underlyingTokenBalanceInShares = _convertToShares(
+      IERC20(cachedATokenUnderlying).balanceOf(reserveData.aTokenAddress),
+      Rounding.DOWN
+    );
+    uint256 cachedUserBalance = balanceOf[owner];
+    return
+      underlyingTokenBalanceInShares >= cachedUserBalance
+        ? cachedUserBalance
+        : underlyingTokenBalanceInShares;
+  }
+
+  ///@inheritdoc IStaticATokenLM
+  function maxDepositUnderlying(address)
+    external
+    view
+    virtual
+    returns (uint256)
+  {
+    DataTypes.ReserveData memory reserveData = POOL.getReserveData(
+      _aTokenUnderlying
+    );
+
+    // if inactive, paused or frozen users cannot deposit underlying
+    if (
+      !ReserveConfiguration.getActive(reserveData.configuration) ||
+      ReserveConfiguration.getPaused(reserveData.configuration) ||
+      ReserveConfiguration.getFrozen(reserveData.configuration)
+    ) {
+      return 0;
+    }
+
+    uint256 supplyCap = ReserveConfiguration.getSupplyCap(
+      reserveData.configuration
+    ) * (10**ReserveConfiguration.getDecimals(reserveData.configuration));
+    // if no supply cap deposit is unlimited
+    if (supplyCap == 0) return type(uint256).max;
+    // return remaining supply cap margin
+    uint256 currentSupply = (IAToken(reserveData.aTokenAddress)
+      .scaledTotalSupply() + reserveData.accruedToTreasury).rayMulRoundUp(
+        _getNormalizedIncome(reserveData)
+      );
+    return currentSupply > supplyCap ? 0 : supplyCap - currentSupply;
+  }
+
   ///@inheritdoc IERC4626
   function deposit(uint256 assets, address receiver)
     public
@@ -733,5 +800,32 @@ contract StaticATokenLM is
     _startIndex[reward] = RewardIndexCache(true, startIndex.toUint240());
 
     emit RewardTokenRegistered(reward, startIndex);
+  }
+
+  /**
+   * Copy of https://github.com/aave/aave-v3-core/blob/29ff9b9f89af7cd8255231bc5faf26c3ce0fb7ce/contracts/protocol/libraries/logic/ReserveLogic.sol#L47 with memory instead of calldata
+   * @notice Returns the ongoing normalized income for the reserve.
+   * @dev A value of 1e27 means there is no income. As time passes, the income is accrued
+   * @dev A value of 2*1e27 means for each unit of asset one unit of income has been accrued
+   * @param reserve The reserve object
+   * @return The normalized income, expressed in ray
+   */
+  function _getNormalizedIncome(DataTypes.ReserveData memory reserve)
+    internal
+    view
+    returns (uint256)
+  {
+    uint40 timestamp = reserve.lastUpdateTimestamp;
+
+    //solium-disable-next-line
+    if (timestamp == block.timestamp) {
+      //if the index was updated in the same block, no need to perform any calculation
+      return reserve.liquidityIndex;
+    } else {
+      return
+        MathUtils
+          .calculateLinearInterest(reserve.currentLiquidityRate, timestamp)
+          .rayMul(reserve.liquidityIndex);
+    }
   }
 }

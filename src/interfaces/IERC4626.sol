@@ -67,7 +67,7 @@ interface IERC4626 {
    * - MUST NOT be inclusive of any fees that are charged against assets in the Vault.
    * - MUST NOT show any variations depending on the caller.
    * - MUST NOT reflect slippage or other on-chain conditions, when performing the actual exchange.
-   * - MUST NOT revert.
+   * - MUST NOT revert unless due to integer overflow caused by an unreasonably large input.
    *
    * NOTE: This calculation MAY NOT reflect the “per-user” price-per-share, and instead should reflect the
    * “average-user’s” price-per-share, meaning what the average user should expect to see when exchanging to and
@@ -84,7 +84,7 @@ interface IERC4626 {
    *
    * - MUST return a limited value if receiver is subject to some deposit limit.
    * - MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of assets that may be deposited.
-   * - MUST NOT revert.
+   * - MUST NOT revert unless due to integer overflow caused by an unreasonably large input.
    */
   function maxDeposit(address receiver)
     external
