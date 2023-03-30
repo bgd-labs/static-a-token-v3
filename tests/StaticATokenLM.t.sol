@@ -5,12 +5,16 @@ import 'forge-std/Test.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
 import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
+import {DataTypes, ReserveConfiguration} from 'aave-v3-core/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
+import {RayMathExplicitRounding, Rounding} from '../src/RayMathExplicitRounding.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
 import {SigUtils} from './SigUtils.sol';
 import {BaseTest} from './TestBase.sol';
 
 contract StaticATokenLMTest is BaseTest {
+  using RayMathExplicitRounding for uint256;
+
   address public constant override UNDERLYING =
     0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
   address public constant override A_TOKEN =
@@ -446,12 +450,17 @@ contract StaticATokenLMTest is BaseTest {
     AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 50_000);
 
     uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
-    assertApproxEqAbs(
+    DataTypes.ReserveData memory reserveData = this.pool().getReserveData(
+      UNDERLYING
+    );
+    assertEq(
       max,
       50_000 *
         (10**IERC20Metadata(UNDERLYING).decimals()) -
-        IERC20Metadata(A_TOKEN).totalSupply(),
-      0.5 ether
+        (IERC20Metadata(A_TOKEN).totalSupply() +
+          uint256(reserveData.accruedToTreasury).rayMulRoundUp(
+            staticATokenLM.rate()
+          ))
     );
   }
 
