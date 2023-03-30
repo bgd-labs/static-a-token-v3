@@ -13,10 +13,8 @@ import {BaseTest} from './TestBase.sol';
  * This is a slightly different assumption than a pool that doesn't have LM enabled any more as incentivesController.rewardTokens() will have length=0
  */
 contract StaticATokenNoLMTest is BaseTest {
-  address public constant override UNDERLYING =
-    0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
-  address public constant override A_TOKEN =
-    0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
+  address public constant override UNDERLYING = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
+  address public constant override A_TOKEN = 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
 
   IPool public override pool = IPool(AaveV3Polygon.POOL);
 
@@ -60,9 +58,7 @@ contract StaticATokenNoLMTest is BaseTest {
       require(keccak256(bytes(reason)) == keccak256(bytes('9')));
     }
 
-    try staticATokenLM.claimRewardsToSelf(rewardTokens) {} catch Error(
-      string memory reason
-    ) {
+    try staticATokenLM.claimRewardsToSelf(rewardTokens) {} catch Error(string memory reason) {
       require(keccak256(bytes(reason)) == keccak256(bytes('9')));
     }
     assertEq(IERC20(REWARD_TOKEN()).balanceOf(user), 0);

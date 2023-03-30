@@ -15,10 +15,8 @@ import {BaseTest} from './TestBase.sol';
  * Testing meta transactions with frax as WETH does not support permit
  */
 contract StaticATokenMetaTransactions is BaseTest {
-  address public constant override UNDERLYING =
-    0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64;
-  address public constant override A_TOKEN =
-    0xc45A479877e1e9Dfe9FcD4056c699575a1045dAA;
+  address public constant override UNDERLYING = 0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64;
+  address public constant override A_TOKEN = 0xc45A479877e1e9Dfe9FcD4056c699575a1045dAA;
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
 
@@ -59,8 +57,7 @@ contract StaticATokenMetaTransactions is BaseTest {
     );
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
 
-    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
-      .SignatureParams(v, r, s);
+    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM.SignatureParams(v, r, s);
 
     uint256 previewDeposit = staticATokenLM.previewDeposit(depositPermit.value);
     staticATokenLM.metaDeposit(
@@ -97,16 +94,15 @@ contract StaticATokenMetaTransactions is BaseTest {
 
     (uint8 pV, bytes32 pR, bytes32 pS) = vm.sign(userPrivateKey, permitDigest);
 
-    IStaticATokenLM.PermitParams memory permitParams = IStaticATokenLM
-      .PermitParams(
-        permit.owner,
-        permit.spender,
-        permit.value,
-        permit.deadline,
-        pV,
-        pR,
-        pS
-      );
+    IStaticATokenLM.PermitParams memory permitParams = IStaticATokenLM.PermitParams(
+      permit.owner,
+      permit.spender,
+      permit.value,
+      permit.deadline,
+      pV,
+      pR,
+      pS
+    );
 
     // generate combined permit
     SigUtils.DepositPermit memory depositPermit = SigUtils.DepositPermit({
@@ -126,8 +122,7 @@ contract StaticATokenMetaTransactions is BaseTest {
     );
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
 
-    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
-      .SignatureParams(v, r, s);
+    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM.SignatureParams(v, r, s);
 
     uint256 previewDeposit = staticATokenLM.previewDeposit(depositPermit.value);
     staticATokenLM.metaDeposit(
@@ -165,16 +160,15 @@ contract StaticATokenMetaTransactions is BaseTest {
 
     (uint8 pV, bytes32 pR, bytes32 pS) = vm.sign(userPrivateKey, permitDigest);
 
-    IStaticATokenLM.PermitParams memory permitParams = IStaticATokenLM
-      .PermitParams(
-        permit.owner,
-        permit.spender,
-        permit.value,
-        permit.deadline,
-        pV,
-        pR,
-        pS
-      );
+    IStaticATokenLM.PermitParams memory permitParams = IStaticATokenLM.PermitParams(
+      permit.owner,
+      permit.spender,
+      permit.value,
+      permit.deadline,
+      pV,
+      pR,
+      pS
+    );
 
     // generate combined permit
     SigUtils.DepositPermit memory depositPermit = SigUtils.DepositPermit({
@@ -194,8 +188,7 @@ contract StaticATokenMetaTransactions is BaseTest {
     );
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
 
-    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
-      .SignatureParams(v, r, s);
+    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM.SignatureParams(v, r, s);
 
     uint256 previewDeposit = staticATokenLM.previewDeposit(depositPermit.value);
     staticATokenLM.metaDeposit(
@@ -234,8 +227,7 @@ contract StaticATokenMetaTransactions is BaseTest {
     );
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
 
-    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM
-      .SignatureParams(v, r, s);
+    IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM.SignatureParams(v, r, s);
 
     staticATokenLM.metaWithdraw(
       permit.owner,

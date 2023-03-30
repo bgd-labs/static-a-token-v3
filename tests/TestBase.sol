@@ -63,17 +63,12 @@ abstract contract BaseTest is Test {
     vm.warp(block.timestamp + blocks * 12); // assuming a block is around 12seconds
   }
 
-  function _underlyingToAToken(uint256 amountToDeposit, address targetUser)
-    internal
-  {
+  function _underlyingToAToken(uint256 amountToDeposit, address targetUser) internal {
     IERC20(this.UNDERLYING()).approve(address(this.pool()), amountToDeposit);
     this.pool().deposit(this.UNDERLYING(), amountToDeposit, targetUser, 0);
   }
 
-  function _depositAToken(uint256 amountToDeposit, address targetUser)
-    internal
-    returns (uint256)
-  {
+  function _depositAToken(uint256 amountToDeposit, address targetUser) internal returns (uint256) {
     _underlyingToAToken(amountToDeposit, targetUser);
     IERC20(this.A_TOKEN()).approve(address(staticATokenLM), amountToDeposit);
     return staticATokenLM.deposit(amountToDeposit, targetUser);
@@ -82,13 +77,7 @@ abstract contract BaseTest is Test {
   function testAdmin() public {
     vm.stopPrank();
     vm.startPrank(proxyAdmin);
-    assertEq(
-      TransparentUpgradeableProxy(payable(address(staticATokenLM))).admin(),
-      proxyAdmin
-    );
-    assertEq(
-      TransparentUpgradeableProxy(payable(address(factory))).admin(),
-      proxyAdmin
-    );
+    assertEq(TransparentUpgradeableProxy(payable(address(staticATokenLM))).admin(), proxyAdmin);
+    assertEq(TransparentUpgradeableProxy(payable(address(factory))).admin(), proxyAdmin);
   }
 }
