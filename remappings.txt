@@ -5,3 +5,4 @@ aave-v3-core/=lib/aave-v3-core/
 aave-v3-periphery/=lib/aave-v3-periphery/
 solidity-utils/=lib/solidity-utils/src/
 aave-address-book/=lib/aave-address-book/src/
+chainlink/=lib/chainlink/contracts/
