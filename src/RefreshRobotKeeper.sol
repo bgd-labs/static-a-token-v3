@@ -20,7 +20,7 @@ contract RefreshRobotKeeper is Ownable, IRefreshRobotKeeper {
   IRewardsController public immutable REWARDS_CONTROLLER;
 
   uint256 public constant MAX_ACTIONS = 10;
-  error NoActionCanBePerformed();
+  error NoRefreshCanBePerformed();
 
   constructor(StaticATokenFactory staticATokenFactory, IRewardsController rewardsController) {
     STATIC_A_TOKEN_FACTORY = staticATokenFactory;
@@ -65,19 +65,23 @@ contract RefreshRobotKeeper is Ownable, IRefreshRobotKeeper {
     return (false, '');
   }
 
+  /**
+   * @dev executes refreshRewardTokens() on the staticAToken to register the missing rewards
+   * @param performData array of staticATokens for which refresh needs to be performed
+   */
   function performUpkeep(bytes calldata performData) external override {
     address[] memory staticATokensToRefresh = abi.decode(performData, (address[]));
-    bool isActionPerformed;
+    bool isRefreshPerformed;
 
     for (uint256 i = 0; i < staticATokensToRefresh.length; i++) {
       try IStaticATokenLM(staticATokensToRefresh[i]).refreshRewardTokens() {
-        isActionPerformed = true;
+        isRefreshPerformed = true;
       } catch Error(string memory reason) {
-        emit ActionFailed(staticATokensToRefresh[i], reason);
+        emit RefreshFailed(staticATokensToRefresh[i], reason);
       }
     }
 
-    if (!isActionPerformed) revert NoActionCanBePerformed();
+    if (!isRefreshPerformed) revert NoRefreshCanBePerformed();
   }
 
   /// @inheritdoc IRefreshRobotKeeper

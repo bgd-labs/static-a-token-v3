@@ -9,7 +9,7 @@ import {AutomationCompatibleInterface} from 'chainlink/src/v0.8/interfaces/autom
  * @notice Defines the interface for the contract to automate refresh rewards for staticATokens.
  **/
 interface IRefreshRobotKeeper is AutomationCompatibleInterface {
-  event ActionFailed(address staticAToken, string reason);
+  event RefreshFailed(address staticAToken, string reason);
 
   /**
    * @notice method to check if the staticAToken is disabled for automation.
