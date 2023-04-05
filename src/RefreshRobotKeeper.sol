@@ -37,9 +37,7 @@ contract RefreshRobotKeeper is Ownable, IRefreshRobotKeeper {
 
     for (uint i = 0; i < staticATokens.length; i++) {
       address aTokenAddress = address(IStaticATokenLM(staticATokens[i]).aToken());
-      address[] memory rewards = REWARDS_CONTROLLER.getRewardsByAsset(
-        aTokenAddress
-      );
+      address[] memory rewards = REWARDS_CONTROLLER.getRewardsByAsset(aTokenAddress);
 
       for (uint256 j = 0; j < rewards.length; j++) {
         bool isRegisteredReward = IStaticATokenLM(staticATokens[i]).isRegisteredRewardToken(

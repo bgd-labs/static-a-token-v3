@@ -16,8 +16,7 @@ contract RefreshRobotKeeperTest is BaseTest {
     uint256 emission;
   }
 
-  IEACAggregatorProxy REWARD_ORACLE =
-    IEACAggregatorProxy(AaveV3AvalancheAssets.AAVEe_ORACLE);
+  IEACAggregatorProxy REWARD_ORACLE = IEACAggregatorProxy(AaveV3AvalancheAssets.AAVEe_ORACLE);
 
   ITransferStrategyBase TRANSFER_STRATEGY =
     ITransferStrategyBase(0x190110114Eff8B111123BEa9b517Fc86b677D94A);
@@ -48,57 +47,17 @@ contract RefreshRobotKeeperTest is BaseTest {
 
     _createNewLM();
 
-    assertEq(
-      IStaticATokenLM(wethStaticAToken).isRegisteredRewardToken(
-        REWARD_TOKEN
-      ),
-      false
-    );
-    assertEq(
-      IStaticATokenLM(wbtcStaticAToken).isRegisteredRewardToken(
-        REWARD_TOKEN
-      ),
-      false
-    );
-    assertEq(
-      IStaticATokenLM(maiStaticAToken).isRegisteredRewardToken(
-        REWARD_TOKEN
-      ),
-      false
-    );
-    assertEq(
-      IStaticATokenLM(fraxStaticAToken).isRegisteredRewardToken(
-        REWARD_TOKEN
-      ),
-      false
-    );
+    assertEq(IStaticATokenLM(wethStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(wbtcStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(maiStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(fraxStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
 
     _checkAndPerformUpKeep(robotKeeper);
 
-    assertEq(
-      IStaticATokenLM(wethStaticAToken).isRegisteredRewardToken(
-        REWARD_TOKEN
-      ),
-      true
-    );
-    assertEq(
-      IStaticATokenLM(wbtcStaticAToken).isRegisteredRewardToken(
-        REWARD_TOKEN
-      ),
-      true
-    );
-    assertEq(
-      IStaticATokenLM(maiStaticAToken).isRegisteredRewardToken(
-        REWARD_TOKEN
-      ),
-      true
-    );
-    assertEq(
-      IStaticATokenLM(fraxStaticAToken).isRegisteredRewardToken(
-        REWARD_TOKEN
-      ),
-      true
-    );
+    assertEq(IStaticATokenLM(wethStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), true);
+    assertEq(IStaticATokenLM(wbtcStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), true);
+    assertEq(IStaticATokenLM(maiStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), true);
+    assertEq(IStaticATokenLM(fraxStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), true);
   }
 
   function _checkAndPerformUpKeep(RefreshRobotKeeper votingChainRobotKeeper) internal {
@@ -109,15 +68,14 @@ contract RefreshRobotKeeperTest is BaseTest {
   }
 
   function _createNewLM() internal {
-    deal(
-      REWARD_TOKEN,
-      EMISSION_ADMIN,
-      TOTAL_DISTRIBUTION
-    );
+    deal(REWARD_TOKEN, EMISSION_ADMIN, TOTAL_DISTRIBUTION);
     vm.stopPrank();
 
     vm.startPrank(EMISSION_ADMIN);
-    IERC20(AaveV3AvalancheAssets.WBTCe_UNDERLYING).approve(address(TRANSFER_STRATEGY), TOTAL_DISTRIBUTION);
+    IERC20(AaveV3AvalancheAssets.WBTCe_UNDERLYING).approve(
+      address(TRANSFER_STRATEGY),
+      TOTAL_DISTRIBUTION
+    );
     IEmissionManager(AaveV3Avalanche.EMISSION_MANAGER).configureAssets(_getAssetConfigs());
     vm.stopPrank();
   }
@@ -174,5 +132,4 @@ contract RefreshRobotKeeperTest is BaseTest {
     require(value <= type(uint88).max, "SafeCast: value doesn't fit in 88 bits");
     return uint88(value);
   }
-
 }
