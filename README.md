@@ -2,8 +2,6 @@
 
 ## Disclaimer
 
-The certora audit is still in progress and therefore production use is not recommended.
-
 <p align="center">
 <img src="./wrapping.jpg" width="300">
 </p>
@@ -23,6 +21,11 @@ This repository contains an [EIP-4626](https://eips.ethereum.org/EIPS/eip-4626) 
 
 See [IStaticATokenLM.sol](./src/interfaces/IStaticATokenLM.sol) for detailed method documentation.
 
+## Deployed Addresses
+
+The staticATokenFactory is deployed for all major Aave v3 pools.
+An up to date address can be fetched from the respective [address-book pool library](https://github.com/bgd-labs/aave-address-book/blob/main/src/AaveV3Ethereum.sol#L67).
+
 ## Limitations
 
 The `stataToken` is not natively integrated into the aave protocol and therefore cannot hook into the emissionManager.
@@ -34,7 +37,7 @@ As this process is not currently automated users might be missing out on rewards
 For this project, the security procedures applied/being finished are:
 
 - The test suite of the codebase itself.
-- **In progress**. Certora audit/property checking for all the dynamics of the `stataToken`, including respecting all the specs of [EIP-4626](https://eips.ethereum.org/EIPS/eip-4626).
+- Certora [audit/property checking](./audits/Foraml_Verification_Report_staticAToken.pdf) for all the dynamics of the `stataToken`, including respecting all the specs of [EIP-4626](https://eips.ethereum.org/EIPS/eip-4626).
 
 ## Development
 
