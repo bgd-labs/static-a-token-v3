@@ -21,4 +21,3 @@ deploy-polygon :; forge script scripts/Deploy.s.sol:DeployPolygon --rpc-url poly
 deploy-avalanche :; forge script scripts/Deploy.s.sol:DeployAvalanche --rpc-url avalanche --broadcast --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv --verify
 deploy-optimism :; forge script scripts/Deploy.s.sol:DeployOptimism --rpc-url optimism --broadcast --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv --verify
 deploy-arbitrum :; forge script scripts/Deploy.s.sol:DeployArbitrum --rpc-url arbitrum --broadcast --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv --verify
-deploy-avalanche-tokens :; forge script scripts/Deploy.s.sol:DeployAvalancheTokens --rpc-url avalanche --broadcast --ledger --mnemonic-indexes ${MNEMONIC_INDEX} --sender ${LEDGER_SENDER} --slow -vvvv --verify
