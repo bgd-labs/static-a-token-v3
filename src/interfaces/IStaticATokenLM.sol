@@ -210,7 +210,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   function rewardTokens() external view returns (address[] memory);
 
   /**
-   * @notice Fetches all rewardTokens from the incentivecontroller and registes the missing ones.
+   * @notice Fetches all rewardTokens from the incentivecontroller and registers the missing ones.
    */
   function refreshRewardTokens() external;
 
