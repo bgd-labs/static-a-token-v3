@@ -71,6 +71,7 @@ contract StaticATokenLM is
     string calldata staticATokenName,
     string calldata staticATokenSymbol
   ) external initializer {
+    require(IAToken(newAToken).POOL() == address(POOL));
     _aToken = IERC20(newAToken);
 
     name = staticATokenName;
