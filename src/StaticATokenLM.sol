@@ -482,7 +482,7 @@ contract StaticATokenLM is
 
     _mint(recipient, shares);
 
-    emit Deposit(msg.sender, recipient, assets, shares);
+    emit Deposit(depositor, recipient, assets, shares);
 
     return shares;
   }
