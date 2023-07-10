@@ -408,12 +408,12 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function deposit(uint256 assets, address receiver) public virtual returns (uint256) {
+  function deposit(uint256 assets, address receiver) external virtual returns (uint256) {
     return _deposit(msg.sender, receiver, assets, 0, false);
   }
 
   ///@inheritdoc IERC4626
-  function mint(uint256 shares, address receiver) public virtual returns (uint256) {
+  function mint(uint256 shares, address receiver) external virtual returns (uint256) {
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
     require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
@@ -428,7 +428,7 @@ contract StaticATokenLM is
     uint256 assets,
     address receiver,
     address owner
-  ) public virtual returns (uint256) {
+  ) external virtual returns (uint256) {
     require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
 
     (uint256 shares, ) = _withdraw(owner, receiver, 0, assets, false);
@@ -441,7 +441,7 @@ contract StaticATokenLM is
     uint256 shares,
     address receiver,
     address owner
-  ) public virtual returns (uint256) {
+  ) external virtual returns (uint256) {
     require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
 
     (, uint256 assets) = _withdraw(owner, receiver, shares, 0, false);
