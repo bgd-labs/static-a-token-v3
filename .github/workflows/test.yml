@@ -1,12 +1,16 @@
 name: Main workflow
 
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 on:
   pull_request:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   test:
     uses: bgd-labs/github-workflows/.github/workflows/foundry-test.yml@main
+    secrets: inherit
