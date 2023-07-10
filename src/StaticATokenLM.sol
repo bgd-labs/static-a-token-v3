@@ -364,7 +364,7 @@ contract StaticATokenLM is
     address cachedATokenUnderlying = _aTokenUnderlying;
     DataTypes.ReserveData memory reserveData = POOL.getReserveData(cachedATokenUnderlying);
 
-    // if paused or inactive users cannot withraw underlying
+    // if paused or inactive users cannot withdraw underlying
     if (
       !ReserveConfiguration.getActive(reserveData.configuration) ||
       ReserveConfiguration.getPaused(reserveData.configuration)
@@ -533,9 +533,8 @@ contract StaticATokenLM is
    * @notice Updates rewards for senders and receiver in a transfer (not updating rewards for address(0))
    * @param from The address of the sender of tokens
    * @param to The address of the receiver of tokens
-   * @param amount The amount of tokens to transfer in WAD
    */
-  function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
+  function _beforeTokenTransfer(address from, address to, uint256) internal override {
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
       address rewardToken = address(_rewardTokens[i]);
       uint256 rewardsIndex = getCurrentRewardsIndex(rewardToken);
