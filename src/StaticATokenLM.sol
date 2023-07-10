@@ -42,11 +42,11 @@ contract StaticATokenLM is
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
-      'Deposit(address depositor,address recipient,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline,PermitParams permit)'
+      'Deposit(address depositor,address receiver,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline,PermitParams permit)'
     );
   bytes32 public constant METAWITHDRAWAL_TYPEHASH =
     keccak256(
-      'Withdraw(address owner,address recipient,uint256 staticAmount,uint256 dynamicAmount,bool toUnderlying,uint256 nonce,uint256 deadline)'
+      'Withdraw(address owner,address receiver,uint256 staticAmount,uint256 dynamicAmount,bool toUnderlying,uint256 nonce,uint256 deadline)'
     );
 
   uint256 public constant STATIC__ATOKEN_LM_REVISION = 1;
@@ -104,17 +104,17 @@ contract StaticATokenLM is
   ///@inheritdoc IStaticATokenLM
   function deposit(
     uint256 assets,
-    address recipient,
+    address receiver,
     uint16 referralCode,
     bool fromUnderlying
   ) external returns (uint256) {
-    return _deposit(msg.sender, recipient, assets, referralCode, fromUnderlying);
+    return _deposit(msg.sender, receiver, assets, referralCode, fromUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
   function metaDeposit(
     address depositor,
-    address recipient,
+    address receiver,
     uint256 value,
     uint16 referralCode,
     bool fromUnderlying,
@@ -138,7 +138,7 @@ contract StaticATokenLM is
             abi.encode(
               METADEPOSIT_TYPEHASH,
               depositor,
-              recipient,
+              receiver,
               value,
               referralCode,
               fromUnderlying,
@@ -167,13 +167,13 @@ contract StaticATokenLM is
         permit.s
       );
     }
-    return _deposit(depositor, recipient, value, referralCode, fromUnderlying);
+    return _deposit(depositor, receiver, value, referralCode, fromUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
   function metaWithdraw(
     address owner,
-    address recipient,
+    address receiver,
     uint256 staticAmount,
     uint256 dynamicAmount,
     bool toUnderlying,
@@ -195,7 +195,7 @@ contract StaticATokenLM is
             abi.encode(
               METAWITHDRAWAL_TYPEHASH,
               owner,
-              recipient,
+              receiver,
               staticAmount,
               dynamicAmount,
               toUnderlying,
@@ -211,7 +211,7 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
-    return _withdraw(owner, recipient, staticAmount, dynamicAmount, toUnderlying);
+    return _withdraw(owner, receiver, staticAmount, dynamicAmount, toUnderlying);
   }
 
   ///@inheritdoc IERC4626
@@ -331,8 +331,8 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function convertToShares(uint256 amount) external view returns (uint256) {
-    return _convertToShares(amount, Rounding.DOWN);
+  function convertToShares(uint256 assets) external view returns (uint256) {
+    return _convertToShares(assets, Rounding.DOWN);
   }
 
   ///@inheritdoc IERC4626
@@ -464,12 +464,12 @@ contract StaticATokenLM is
 
   function _deposit(
     address depositor,
-    address recipient,
+    address receiver,
     uint256 assets,
     uint16 referralCode,
     bool fromUnderlying
   ) internal returns (uint256) {
-    require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
+    require(receiver != address(0), StaticATokenErrors.INVALID_RECIPIENT);
     uint256 shares = previewDeposit(assets);
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
 
@@ -481,21 +481,21 @@ contract StaticATokenLM is
       _aToken.safeTransferFrom(depositor, address(this), assets);
     }
 
-    _mint(recipient, shares);
+    _mint(receiver, shares);
 
-    emit Deposit(depositor, recipient, assets, shares);
+    emit Deposit(depositor, receiver, assets, shares);
 
     return shares;
   }
 
   function _withdraw(
     address owner,
-    address recipient,
+    address receiver,
     uint256 staticAmount,
     uint256 dynamicAmount,
     bool toUnderlying
   ) internal returns (uint256, uint256) {
-    require(recipient != address(0), StaticATokenErrors.INVALID_RECIPIENT);
+    require(receiver != address(0), StaticATokenErrors.INVALID_RECIPIENT);
     require(
       staticAmount == 0 || dynamicAmount == 0,
       StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
@@ -519,12 +519,12 @@ contract StaticATokenLM is
 
     _burn(owner, shares);
 
-    emit Withdraw(msg.sender, recipient, owner, amountToWithdraw, shares);
+    emit Withdraw(msg.sender, receiver, owner, amountToWithdraw, shares);
 
     if (toUnderlying) {
-      POOL.withdraw(_aTokenUnderlying, amountToWithdraw, recipient);
+      POOL.withdraw(_aTokenUnderlying, amountToWithdraw, receiver);
     } else {
-      _aToken.safeTransfer(recipient, amountToWithdraw);
+      _aToken.safeTransfer(receiver, amountToWithdraw);
     }
 
     return (shares, amountToWithdraw);
@@ -593,6 +593,7 @@ contract StaticATokenLM is
    * @param user The address of the user
    * @param reward The address of the reward
    * @param balance The balance of the user in WAD
+   * @param currentRewardsIndex The current rewards index
    * @return The total rewards that can be claimed by the user (if `fresh` flag true, after updating rewards)
    */
   function _getClaimableRewards(
@@ -660,9 +661,9 @@ contract StaticATokenLM is
     }
   }
 
-  function _convertToShares(uint256 amount, Rounding rounding) internal view returns (uint256) {
-    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
-    return amount.rayDivRoundDown(rate());
+  function _convertToShares(uint256 assets, Rounding rounding) internal view returns (uint256) {
+    if (rounding == Rounding.UP) return assets.rayDivRoundUp(rate());
+    return assets.rayDivRoundDown(rate());
   }
 
   function _convertToAssets(uint256 shares, Rounding rounding) internal view returns (uint256) {
