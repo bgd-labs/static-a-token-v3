@@ -331,8 +331,8 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function convertToShares(uint256 amount) external view returns (uint256) {
-    return _convertToShares(amount, Rounding.DOWN);
+  function convertToShares(uint256 assets) external view returns (uint256) {
+    return _convertToShares(assets, Rounding.DOWN);
   }
 
   ///@inheritdoc IERC4626
@@ -593,6 +593,7 @@ contract StaticATokenLM is
    * @param user The address of the user
    * @param reward The address of the reward
    * @param balance The balance of the user in WAD
+   * @param currentRewardsIndex The current rewards index
    * @return The total rewards that can be claimed by the user (if `fresh` flag true, after updating rewards)
    */
   function _getClaimableRewards(
@@ -660,9 +661,9 @@ contract StaticATokenLM is
     }
   }
 
-  function _convertToShares(uint256 amount, Rounding rounding) internal view returns (uint256) {
-    if (rounding == Rounding.UP) return amount.rayDivRoundUp(rate());
-    return amount.rayDivRoundDown(rate());
+  function _convertToShares(uint256 assets, Rounding rounding) internal view returns (uint256) {
+    if (rounding == Rounding.UP) return assets.rayDivRoundUp(rate());
+    return assets.rayDivRoundDown(rate());
   }
 
   function _convertToAssets(uint256 shares, Rounding rounding) internal view returns (uint256) {
