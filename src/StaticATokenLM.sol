@@ -456,7 +456,7 @@ contract StaticATokenLM is
     address receiver,
     address owner,
     bool toUnderlying
-  ) public virtual returns (uint256, uint256) {
+  ) external virtual returns (uint256, uint256) {
     require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
 
     return _withdraw(owner, receiver, shares, 0, toUnderlying);
