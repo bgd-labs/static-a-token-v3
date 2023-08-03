@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.7.0) (interfaces/IERC4626.sol)
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
 /**
  * @dev Interface of the ERC4626 "Tokenized Vault Standard", as defined in
@@ -68,12 +68,14 @@ interface IERC4626 {
   function convertToAssets(uint256 shares) external view returns (uint256 assets);
 
   /**
-   * @dev Returns the maximum amount of the underlying asset that can be deposited into the Vault for the receiver,
+   * @dev Returns the maximum amount of the underlying aToken asset that can be deposited into the Vault for the receiver,
    * through a deposit call.
-   *
+   * While deposit of aToken is not affected by aave pool configrations, deposit of the aTokenUnderlying will need to deposit to aave
+   * so it is affected by current aave pool configuration.
+   * Reference: https://github.com/aave/aave-v3-core/blob/29ff9b9f89af7cd8255231bc5faf26c3ce0fb7ce/contracts/protocol/libraries/logic/ValidationLogic.sol#L57
    * - MUST return a limited value if receiver is subject to some deposit limit.
    * - MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of assets that may be deposited.
-   * - MUST NOT revert unless due to integer overflow caused by an unreasonably large input.
+   * - MUST NOT revert.
    */
   function maxDeposit(address receiver) external view returns (uint256 maxAssets);
 
@@ -192,8 +194,10 @@ interface IERC4626 {
 
   /**
    * @dev Returns the maximum amount of Vault shares that can be redeemed from the owner balance in the Vault,
-   * through a redeem call.
-   *
+   * through a redeem call to the aToken underlying.
+   * While redeem of aToken is not affected by aave pool configrations, redeeming of the aTokenUnderlying will need to redeem from aave
+   * so it is affected by current aave pool configuration.
+   * Reference: https://github.com/aave/aave-v3-core/blob/29ff9b9f89af7cd8255231bc5faf26c3ce0fb7ce/contracts/protocol/libraries/logic/ValidationLogic.sol#L87
    * - MUST return a limited value if owner is subject to some withdrawal limit or timelock.
    * - MUST return balanceOf(owner) if owner is not subject to any withdrawal limit or timelock.
    * - MUST NOT revert.

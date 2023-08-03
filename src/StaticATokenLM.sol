@@ -307,17 +307,12 @@ contract StaticATokenLM is
 
   ///@inheritdoc IERC4626
   function asset() external view returns (address) {
-    return address(_aToken);
+    return address(_aTokenUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
   function aToken() external view returns (IERC20) {
     return _aToken;
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function aTokenUnderlying() external view returns (IERC20) {
-    return IERC20(_aTokenUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -341,11 +336,6 @@ contract StaticATokenLM is
   }
 
   ///@inheritdoc IERC4626
-  function maxDeposit(address) public view virtual returns (uint256) {
-    return type(uint256).max;
-  }
-
-  ///@inheritdoc IERC4626
   function maxMint(address) public view virtual returns (uint256) {
     return type(uint256).max;
   }
@@ -357,11 +347,6 @@ contract StaticATokenLM is
 
   ///@inheritdoc IERC4626
   function maxRedeem(address owner) public view virtual returns (uint256) {
-    return balanceOf[owner];
-  }
-
-  ///@inheritdoc IStaticATokenLM
-  function maxRedeemUnderlying(address owner) external view virtual returns (uint256) {
     address cachedATokenUnderlying = _aTokenUnderlying;
     DataTypes.ReserveData memory reserveData = POOL.getReserveData(cachedATokenUnderlying);
 
@@ -385,8 +370,8 @@ contract StaticATokenLM is
         : underlyingTokenBalanceInShares;
   }
 
-  ///@inheritdoc IStaticATokenLM
-  function maxDepositUnderlying(address) external view virtual returns (uint256) {
+  ///@inheritdoc IERC4626
+  function maxDeposit(address) public view virtual returns (uint256) {
     DataTypes.ReserveData memory reserveData = POOL.getReserveData(_aTokenUnderlying);
 
     // if inactive, paused or frozen users cannot deposit underlying
@@ -410,7 +395,7 @@ contract StaticATokenLM is
 
   ///@inheritdoc IERC4626
   function deposit(uint256 assets, address receiver) external virtual returns (uint256) {
-    return _deposit(msg.sender, receiver, assets, 0, false);
+    return _deposit(msg.sender, receiver, assets, 0, true);
   }
 
   ///@inheritdoc IERC4626
@@ -432,7 +417,7 @@ contract StaticATokenLM is
   ) external virtual returns (uint256) {
     require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
 
-    (uint256 shares, ) = _withdraw(owner, receiver, 0, assets, false);
+    (uint256 shares, ) = _withdraw(owner, receiver, 0, assets, true);
 
     return shares;
   }
@@ -445,7 +430,7 @@ contract StaticATokenLM is
   ) external virtual returns (uint256) {
     require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
 
-    (, uint256 assets) = _withdraw(owner, receiver, shares, 0, false);
+    (, uint256 assets) = _withdraw(owner, receiver, shares, 0, true);
 
     return assets;
   }
@@ -474,6 +459,7 @@ contract StaticATokenLM is
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
 
     if (fromUnderlying) {
+      require(assets <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
       address cachedATokenUnderlying = _aTokenUnderlying;
       IERC20(cachedATokenUnderlying).safeTransferFrom(depositor, address(this), assets);
       POOL.deposit(cachedATokenUnderlying, assets, address(this), referralCode);
