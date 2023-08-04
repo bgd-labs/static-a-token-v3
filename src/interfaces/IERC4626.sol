@@ -75,7 +75,7 @@ interface IERC4626 {
    * Reference: https://github.com/aave/aave-v3-core/blob/29ff9b9f89af7cd8255231bc5faf26c3ce0fb7ce/contracts/protocol/libraries/logic/ValidationLogic.sol#L57
    * - MUST return a limited value if receiver is subject to some deposit limit.
    * - MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of assets that may be deposited.
-   * - MUST NOT revert.
+   * - MUST NOT revert unless due to integer overflow caused by an unreasonably large input.
    */
   function maxDeposit(address receiver) external view returns (uint256 maxAssets);
 

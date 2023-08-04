@@ -406,7 +406,7 @@ contract StaticATokenLM is
     require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
     uint256 assets = previewMint(shares);
-    _deposit(msg.sender, receiver, assets, 0, false);
+    _deposit(msg.sender, receiver, assets, 0, true);
 
     return assets;
   }
