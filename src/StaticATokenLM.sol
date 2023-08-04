@@ -337,12 +337,14 @@ contract StaticATokenLM is
 
   ///@inheritdoc IERC4626
   function maxMint(address) public view virtual returns (uint256) {
-    return type(uint256).max;
+    uint256 assets = maxDeposit(address(0));
+    return assets == 0 ? 0 : _convertToShares(assets, Rounding.DOWN);
   }
 
   ///@inheritdoc IERC4626
   function maxWithdraw(address owner) public view virtual returns (uint256) {
-    return _convertToAssets(balanceOf[owner], Rounding.DOWN);
+    uint256 shares = maxRedeem(owner);
+    return shares == 0 ? 0 : _convertToAssets(shares, Rounding.DOWN);
   }
 
   ///@inheritdoc IERC4626
