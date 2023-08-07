@@ -403,7 +403,6 @@ contract StaticATokenLM is
   ///@inheritdoc IERC4626
   function mint(uint256 shares, address receiver) external virtual returns (uint256) {
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
-    require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
 
     uint256 assets = previewMint(shares);
     _deposit(msg.sender, receiver, assets, 0, true);
