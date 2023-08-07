@@ -349,7 +349,7 @@ contract StaticATokenLMTest is BaseTest {
   }
 
   /**
-   * maxDepositUnderlying test
+   * maxDeposit test
    */
   function test_maxDeposit_freeze() public {
     vm.stopPrank();
@@ -477,8 +477,8 @@ contract StaticATokenLMTest is BaseTest {
     address borrowUser = 0xAD69de0CE8aB50B729d3f798d7bC9ac7b4e79267;
     address usdc = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
     vm.startPrank(borrowUser);
-    deal(usdc, borrowUser, 200_000_000_000000);
-    AaveV3Avalanche.POOL.deposit(usdc, 200_000_000_000000, borrowUser, 0);
+    deal(usdc, borrowUser, 200_000_000e6);
+    AaveV3Avalanche.POOL.deposit(usdc, 200_000_000e6, borrowUser, 0);
 
     // borrow all available
     AaveV3Avalanche.POOL.borrow(UNDERLYING, underlyingBalanceBefore, 2, 0, borrowUser);
