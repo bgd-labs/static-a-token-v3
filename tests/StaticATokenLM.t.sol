@@ -160,8 +160,7 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _underlyingToAToken(amountToDeposit, user);
-    IERC20(A_TOKEN).approve(address(staticATokenLM), amountToDeposit);
+    IERC20(UNDERLYING).approve(address(staticATokenLM), amountToDeposit);
     uint256 shares = 1 ether;
     staticATokenLM.mint(shares, user);
     assertEq(shares, staticATokenLM.balanceOf(user));

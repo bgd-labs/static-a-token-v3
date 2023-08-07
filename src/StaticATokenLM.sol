@@ -417,8 +417,6 @@ contract StaticATokenLM is
     address receiver,
     address owner
   ) external virtual returns (uint256) {
-    require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
-
     (uint256 shares, ) = _withdraw(owner, receiver, 0, assets, true);
 
     return shares;
@@ -430,8 +428,6 @@ contract StaticATokenLM is
     address receiver,
     address owner
   ) external virtual returns (uint256) {
-    require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
-
     (, uint256 assets) = _withdraw(owner, receiver, shares, 0, true);
 
     return assets;
@@ -444,8 +440,6 @@ contract StaticATokenLM is
     address owner,
     bool toUnderlying
   ) external virtual returns (uint256, uint256) {
-    require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
-
     return _withdraw(owner, receiver, shares, 0, toUnderlying);
   }
 
@@ -479,24 +473,23 @@ contract StaticATokenLM is
   function _withdraw(
     address owner,
     address receiver,
-    uint256 staticAmount,
-    uint256 dynamicAmount,
+    uint256 _shares,
+    uint256 _assets,
     bool toUnderlying
   ) internal returns (uint256, uint256) {
     require(receiver != address(0), StaticATokenErrors.INVALID_RECIPIENT);
-    require(
-      staticAmount == 0 || dynamicAmount == 0,
-      StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED
-    );
-    require(staticAmount != dynamicAmount, StaticATokenErrors.INVALID_ZERO_AMOUNT);
+    require(_shares == 0 || _assets == 0, StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED);
+    require(_shares != _assets, StaticATokenErrors.INVALID_ZERO_AMOUNT);
 
-    uint256 amountToWithdraw = dynamicAmount;
-    uint256 shares = staticAmount;
+    uint256 assets = _assets;
+    uint256 shares = _shares;
 
-    if (staticAmount > 0) {
-      amountToWithdraw = previewRedeem(staticAmount);
+    if (shares > 0) {
+      require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
+      assets = previewRedeem(shares);
     } else {
-      shares = previewWithdraw(dynamicAmount);
+      require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
+      shares = previewWithdraw(assets);
     }
 
     if (msg.sender != owner) {
@@ -507,15 +500,15 @@ contract StaticATokenLM is
 
     _burn(owner, shares);
 
-    emit Withdraw(msg.sender, receiver, owner, amountToWithdraw, shares);
+    emit Withdraw(msg.sender, receiver, owner, assets, shares);
 
     if (toUnderlying) {
-      POOL.withdraw(_aTokenUnderlying, amountToWithdraw, receiver);
+      POOL.withdraw(_aTokenUnderlying, assets, receiver);
     } else {
-      _aToken.safeTransfer(receiver, amountToWithdraw);
+      _aToken.safeTransfer(receiver, assets);
     }
 
-    return (shares, amountToWithdraw);
+    return (shares, assets);
   }
 
   /**
