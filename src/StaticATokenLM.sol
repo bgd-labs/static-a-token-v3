@@ -498,10 +498,14 @@ contract StaticATokenLM is
     uint256 shares = _shares;
 
     if (shares > 0) {
-      require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
+      if (toUnderlying) {
+        require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
+      }
       assets = previewRedeem(shares);
     } else {
-      require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
+      if (toUnderlying) {
+        require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
+      }
       shares = previewWithdraw(assets);
     }
 
