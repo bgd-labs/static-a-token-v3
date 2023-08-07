@@ -108,9 +108,6 @@ contract StaticATokenLM is
     uint16 referralCode,
     bool fromUnderlying
   ) external returns (uint256) {
-    if (fromUnderlying) {
-      require(assets <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
-    }
     (uint256 shares, ) = _deposit(msg.sender, receiver, 0, assets, referralCode, fromUnderlying);
     return shares;
   }
