@@ -68,7 +68,7 @@ interface IERC4626 {
   function convertToAssets(uint256 shares) external view returns (uint256 assets);
 
   /**
-   * @dev Returns the maximum amount of the underlying aToken asset that can be deposited into the Vault for the receiver,
+   * @dev Returns the maximum amount of the underlying asset that can be deposited into the Vault for the receiver,
    * through a deposit call.
    * While deposit of aToken is not affected by aave pool configrations, deposit of the aTokenUnderlying will need to deposit to aave
    * so it is affected by current aave pool configuration.
