@@ -42,7 +42,7 @@ contract StaticATokenLM is
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
-      'Deposit(address depositor,address receiver,uint256 value,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline,PermitParams permit)'
+      'Deposit(address depositor,address receiver,uint256 assets,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline,PermitParams permit)'
     );
   bytes32 public constant METAWITHDRAWAL_TYPEHASH =
     keccak256(
@@ -115,7 +115,7 @@ contract StaticATokenLM is
   function metaDeposit(
     address depositor,
     address receiver,
-    uint256 value,
+    uint256 assets,
     uint16 referralCode,
     bool fromUnderlying,
     uint256 deadline,
@@ -139,7 +139,7 @@ contract StaticATokenLM is
               METADEPOSIT_TYPEHASH,
               depositor,
               receiver,
-              value,
+              assets,
               referralCode,
               fromUnderlying,
               nonce,
@@ -167,7 +167,7 @@ contract StaticATokenLM is
         permit.s
       );
     }
-    return _deposit(depositor, receiver, value, referralCode, fromUnderlying);
+    return _deposit(depositor, receiver, assets, referralCode, fromUnderlying);
   }
 
   ///@inheritdoc IStaticATokenLM
