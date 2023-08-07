@@ -75,7 +75,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * https://github.com/ethereum/EIPs/blob/8a34d644aacf0f9f8f00815307fd7dd5da07655f/EIPS/eip-2612.md
    * @param depositor Address from which the funds to deposit are going to be pulled
    * @param receiver Address that will receive the staticATokens, in the average case, same as the `depositor`
-   * @param value The amount to deposit
+   * @param assets The amount to deposit
    * @param referralCode Code used to register the integrator originating the operation, for potential rewards.
    *   0 if the action is executed directly by the user, without any middle-man
    * @param fromUnderlying bool
@@ -88,7 +88,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   function metaDeposit(
     address depositor,
     address receiver,
-    uint256 value,
+    uint256 assets,
     uint16 referralCode,
     bool fromUnderlying,
     uint256 deadline,
