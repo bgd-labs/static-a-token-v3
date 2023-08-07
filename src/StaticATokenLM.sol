@@ -456,10 +456,14 @@ contract StaticATokenLM is
     uint256 assets = _assets;
     uint256 shares = _shares;
     if (shares > 0) {
-      require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
+      if (fromUnderlying) {
+        require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
+      }
       assets = previewMint(shares);
     } else {
-      require(assets <= maxDeposit(receiver), 'ERC4626: deposit more than max');
+      if (fromUnderlying) {
+        require(assets <= maxDeposit(receiver), 'ERC4626: deposit more than max');
+      }
       shares = previewDeposit(assets);
     }
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
