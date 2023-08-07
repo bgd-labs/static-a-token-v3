@@ -101,8 +101,8 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * https://github.com/ethereum/EIPs/blob/8a34d644aacf0f9f8f00815307fd7dd5da07655f/EIPS/eip-2612.md
    * @param owner Address owning the staticATokens
    * @param receiver Address that will receive the underlying withdrawn from Aave
-   * @param staticAmount The amount of staticAToken to withdraw. If > 0, `dynamicAmount` needs to be 0
-   * @param dynamicAmount The amount of underlying/aToken to withdraw. If > 0, `staticAmount` needs to be 0
+   * @param shares The amount of staticAToken to withdraw. If > 0, `assets` needs to be 0
+   * @param assets The amount of underlying/aToken to withdraw. If > 0, `shares` needs to be 0
    * @param toUnderlying bool
    * - `true` for the receiver to get underlying tokens (e.g. USDC)
    * - `false` for the receiver to get aTokens (e.g. aUSDC)
@@ -114,8 +114,8 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
   function metaWithdraw(
     address owner,
     address receiver,
-    uint256 staticAmount,
-    uint256 dynamicAmount,
+    uint256 shares,
+    uint256 assets,
     bool toUnderlying,
     uint256 deadline,
     SignatureParams calldata sigParams

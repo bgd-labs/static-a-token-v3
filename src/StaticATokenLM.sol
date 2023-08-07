@@ -46,7 +46,7 @@ contract StaticATokenLM is
     );
   bytes32 public constant METAWITHDRAWAL_TYPEHASH =
     keccak256(
-      'Withdraw(address owner,address receiver,uint256 staticAmount,uint256 dynamicAmount,bool toUnderlying,uint256 nonce,uint256 deadline)'
+      'Withdraw(address owner,address receiver,uint256 shares,uint256 assets,bool toUnderlying,uint256 nonce,uint256 deadline)'
     );
 
   uint256 public constant STATIC__ATOKEN_LM_REVISION = 1;
@@ -180,8 +180,8 @@ contract StaticATokenLM is
   function metaWithdraw(
     address owner,
     address receiver,
-    uint256 staticAmount,
-    uint256 dynamicAmount,
+    uint256 shares,
+    uint256 assets,
     bool toUnderlying,
     uint256 deadline,
     SignatureParams calldata sigParams
@@ -202,8 +202,8 @@ contract StaticATokenLM is
               METAWITHDRAWAL_TYPEHASH,
               owner,
               receiver,
-              staticAmount,
-              dynamicAmount,
+              shares,
+              assets,
               toUnderlying,
               nonce,
               deadline
@@ -217,7 +217,7 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
-    return _withdraw(owner, receiver, staticAmount, dynamicAmount, toUnderlying);
+    return _withdraw(owner, receiver, shares, assets, toUnderlying);
   }
 
   ///@inheritdoc IERC4626
