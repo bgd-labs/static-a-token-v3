@@ -108,7 +108,6 @@ contract StaticATokenLM is
     uint16 referralCode,
     bool fromUnderlying
   ) external returns (uint256) {
-    require(assets <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
     return _deposit(msg.sender, receiver, assets, referralCode, fromUnderlying);
   }
 
@@ -168,7 +167,6 @@ contract StaticATokenLM is
         permit.s
       );
     }
-    require(value <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
     return _deposit(depositor, receiver, value, referralCode, fromUnderlying);
   }
 
@@ -399,7 +397,6 @@ contract StaticATokenLM is
 
   ///@inheritdoc IERC4626
   function deposit(uint256 assets, address receiver) external virtual returns (uint256) {
-    require(assets <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
     return _deposit(msg.sender, receiver, assets, 0, true);
   }
 
@@ -458,6 +455,7 @@ contract StaticATokenLM is
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
 
     if (fromUnderlying) {
+      require(assets <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
       address cachedATokenUnderlying = _aTokenUnderlying;
       IERC20(cachedATokenUnderlying).safeTransferFrom(depositor, address(this), assets);
       POOL.deposit(cachedATokenUnderlying, assets, address(this), referralCode);
