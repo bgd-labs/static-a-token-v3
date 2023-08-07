@@ -111,7 +111,8 @@ contract StaticATokenLM is
     if (fromUnderlying) {
       require(assets <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
     }
-    return _deposit(msg.sender, receiver, assets, referralCode, fromUnderlying);
+    (uint256 shares, ) = _deposit(msg.sender, receiver, 0, assets, referralCode, fromUnderlying);
+    return shares;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -170,10 +171,8 @@ contract StaticATokenLM is
         permit.s
       );
     }
-    if (fromUnderlying) {
-      require(assets <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
-    }
-    return _deposit(depositor, receiver, assets, referralCode, fromUnderlying);
+    (, uint256 shares) = _deposit(depositor, receiver, 0, assets, referralCode, fromUnderlying);
+    return shares;
   }
 
   ///@inheritdoc IStaticATokenLM
@@ -403,17 +402,13 @@ contract StaticATokenLM is
 
   ///@inheritdoc IERC4626
   function deposit(uint256 assets, address receiver) external virtual returns (uint256) {
-    require(assets <= maxDeposit(address(0)), 'ERC4626: deposit more than max');
-    return _deposit(msg.sender, receiver, assets, 0, true);
+    (uint256 shares, ) = _deposit(msg.sender, receiver, 0, assets, 0, true);
+    return shares;
   }
 
   ///@inheritdoc IERC4626
   function mint(uint256 shares, address receiver) external virtual returns (uint256) {
-    require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
-    require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
-
-    uint256 assets = previewMint(shares);
-    _deposit(msg.sender, receiver, assets, 0, true);
+    (, uint256 assets) = _deposit(msg.sender, receiver, shares, 0, 0, true);
 
     return assets;
   }
@@ -453,12 +448,23 @@ contract StaticATokenLM is
   function _deposit(
     address depositor,
     address receiver,
-    uint256 assets,
+    uint256 _shares,
+    uint256 _assets,
     uint16 referralCode,
     bool fromUnderlying
-  ) internal returns (uint256) {
+  ) internal returns (uint256, uint256) {
     require(receiver != address(0), StaticATokenErrors.INVALID_RECIPIENT);
-    uint256 shares = previewDeposit(assets);
+    require(_shares == 0 || _assets == 0, StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED);
+
+    uint256 assets = _assets;
+    uint256 shares = _shares;
+    if (shares > 0) {
+      require(shares <= maxMint(receiver), 'ERC4626: redeem more than max');
+      assets = previewMint(shares);
+    } else {
+      require(assets <= maxDeposit(receiver), 'ERC4626: withdraw more than max');
+      shares = previewDeposit(assets);
+    }
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
 
     if (fromUnderlying) {
@@ -473,7 +479,7 @@ contract StaticATokenLM is
 
     emit Deposit(depositor, receiver, assets, shares);
 
-    return shares;
+    return (shares, assets);
   }
 
   function _withdraw(
