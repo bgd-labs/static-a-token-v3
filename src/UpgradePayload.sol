@@ -5,15 +5,15 @@ import {TransparentUpgradeableProxy} from 'solidity-utils/contracts/transparent-
 import {ProxyAdmin} from 'solidity-utils/contracts/transparent-proxy/ProxyAdmin.sol';
 
 contract UpgradePayload {
-  ProxyAdmin immutable ADMIN;
-  address immutable FACTORY;
-  address immutable NEW_TOKEN_IMPLEMENTATION;
-  address immutable NEW_FACTORY_IMPLEMENTATION;
+  ProxyAdmin public immutable ADMIN;
+  StaticATokenFactory public immutable FACTORY;
+  address public immutable NEW_TOKEN_IMPLEMENTATION;
+  StaticATokenFactory public immutable NEW_FACTORY_IMPLEMENTATION;
 
   constructor(
     address admin,
-    address factory,
-    address newFactoryImpl,
+    StaticATokenFactory factory,
+    StaticATokenFactory newFactoryImpl,
     address newTokenImplementation
   ) {
     ADMIN = ProxyAdmin(admin);
@@ -23,10 +23,13 @@ contract UpgradePayload {
   }
 
   function execute() external {
-    address[] memory tokens = StaticATokenFactory(FACTORY).getStaticATokens();
+    address[] memory tokens = FACTORY.getStaticATokens();
     for (uint256 i = 0; i < tokens.length; i++) {
       ADMIN.upgrade(TransparentUpgradeableProxy(payable(tokens[i])), NEW_TOKEN_IMPLEMENTATION);
     }
-    ADMIN.upgrade(TransparentUpgradeableProxy(payable(FACTORY)), NEW_FACTORY_IMPLEMENTATION);
+    ADMIN.upgrade(
+      TransparentUpgradeableProxy(payable(address(FACTORY))),
+      address(NEW_FACTORY_IMPLEMENTATION)
+    );
   }
 }

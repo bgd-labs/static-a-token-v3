@@ -12,34 +12,32 @@ import {UpgradePayload} from '../src/UpgradePayload.sol';
 import {StaticATokenFactory} from '../src/StaticATokenFactory.sol';
 import {StaticATokenLM} from '../src/StaticATokenLM.sol';
 import {ITransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/interfaces/ITransparentProxyFactory.sol';
+import {TransparentUpgradeableProxy} from 'solidity-utils/contracts/transparent-proxy/TransparentUpgradeableProxy.sol';
+import {DeployUpgrade} from '../scripts/DeployUpgrade.s.sol';
 
 contract UpgradeTest is Test {
-  address payload;
+  UpgradePayload payload;
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('mainnet'), 17869617);
-    StaticATokenLM staticToken = new StaticATokenLM(
-      AaveV3Ethereum.POOL,
-      IRewardsController(AaveV3Ethereum.DEFAULT_INCENTIVES_CONTROLLER)
-    );
-    payload = address(
-      new UpgradePayload(
-        AaveMisc.PROXY_ADMIN_ETHEREUM,
-        AaveV3Ethereum.STATIC_A_TOKEN_FACTORY,
-        address(
-          new StaticATokenFactory(
-            AaveV3Ethereum.POOL,
-            AaveMisc.PROXY_ADMIN_ETHEREUM,
-            ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ETHEREUM),
-            address(staticToken)
-          )
-        ),
-        address(staticToken)
-      )
-    );
+    payload = UpgradePayload(DeployUpgrade.deployMainnet());
   }
 
   function test_upgrade() external {
-    GovHelpers.executePayload(vm, payload, AaveGovernanceV2.SHORT_EXECUTOR);
+    GovHelpers.executePayload(vm, address(payload), AaveGovernanceV2.SHORT_EXECUTOR);
+
+    address newImpl = payload.FACTORY().STATIC_A_TOKEN_IMPL();
+
+    // check factory is updated
+    assertEq(newImpl, payload.NEW_TOKEN_IMPLEMENTATION());
+    // check all tokens are updated
+    address[] memory tokens = payload.FACTORY().getStaticATokens();
+    vm.startPrank(address(payload.ADMIN()));
+    for (uint256 i = 0; i < tokens.length; i++) {
+      assertEq(
+        TransparentUpgradeableProxy(payable(tokens[i])).implementation(),
+        payload.NEW_TOKEN_IMPLEMENTATION()
+      );
+    }
   }
 }
