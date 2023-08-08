@@ -49,7 +49,7 @@ contract StaticATokenLM is
       'Withdraw(address owner,address receiver,uint256 shares,uint256 assets,bool toUnderlying,uint256 nonce,uint256 deadline)'
     );
 
-  uint256 public constant STATIC__ATOKEN_LM_REVISION = 1;
+  uint256 public constant STATIC__ATOKEN_LM_REVISION = 2;
 
   IPool public immutable POOL;
   IRewardsController public immutable INCENTIVES_CONTROLLER;
@@ -60,7 +60,7 @@ contract StaticATokenLM is
   mapping(address => RewardIndexCache) internal _startIndex;
   mapping(address => mapping(address => UserRewardsData)) internal _userRewardsData;
 
-  constructor(IPool pool, IRewardsController rewardsController) {
+  constructor(IPool pool, IRewardsController rewardsController) Initializable() {
     POOL = pool;
     INCENTIVES_CONTROLLER = rewardsController;
   }
