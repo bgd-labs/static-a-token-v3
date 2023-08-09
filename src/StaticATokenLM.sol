@@ -42,11 +42,11 @@ contract StaticATokenLM is
 
   bytes32 public constant METADEPOSIT_TYPEHASH =
     keccak256(
-      'Deposit(address depositor,address receiver,uint256 assets,uint16 referralCode,bool fromUnderlying,uint256 nonce,uint256 deadline,PermitParams permit)'
+      'Deposit(address depositor,address receiver,uint256 assets,uint16 referralCode,bool depositToAave,uint256 nonce,uint256 deadline,PermitParams permit)'
     );
   bytes32 public constant METAWITHDRAWAL_TYPEHASH =
     keccak256(
-      'Withdraw(address owner,address receiver,uint256 shares,uint256 assets,bool toUnderlying,uint256 nonce,uint256 deadline)'
+      'Withdraw(address owner,address receiver,uint256 shares,uint256 assets,bool withdrawFromAave,uint256 nonce,uint256 deadline)'
     );
 
   uint256 public constant STATIC__ATOKEN_LM_REVISION = 2;
@@ -106,9 +106,9 @@ contract StaticATokenLM is
     uint256 assets,
     address receiver,
     uint16 referralCode,
-    bool fromUnderlying
+    bool depositToAave
   ) external returns (uint256) {
-    (uint256 shares, ) = _deposit(msg.sender, receiver, 0, assets, referralCode, fromUnderlying);
+    (uint256 shares, ) = _deposit(msg.sender, receiver, 0, assets, referralCode, depositToAave);
     return shares;
   }
 
@@ -118,7 +118,7 @@ contract StaticATokenLM is
     address receiver,
     uint256 assets,
     uint16 referralCode,
-    bool fromUnderlying,
+    bool depositToAave,
     uint256 deadline,
     PermitParams calldata permit,
     SignatureParams calldata sigParams
@@ -142,7 +142,7 @@ contract StaticATokenLM is
               receiver,
               assets,
               referralCode,
-              fromUnderlying,
+              depositToAave,
               nonce,
               deadline,
               permit
@@ -158,7 +158,7 @@ contract StaticATokenLM is
     }
     // assume if deadline 0 no permit was supplied
     if (permit.deadline != 0) {
-      IERC20WithPermit(fromUnderlying ? address(_aTokenUnderlying) : address(_aToken)).permit(
+      IERC20WithPermit(depositToAave ? address(_aTokenUnderlying) : address(_aToken)).permit(
         depositor,
         address(this),
         permit.value,
@@ -168,7 +168,7 @@ contract StaticATokenLM is
         permit.s
       );
     }
-    (, uint256 shares) = _deposit(depositor, receiver, 0, assets, referralCode, fromUnderlying);
+    (, uint256 shares) = _deposit(depositor, receiver, 0, assets, referralCode, depositToAave);
     return shares;
   }
 
@@ -178,7 +178,7 @@ contract StaticATokenLM is
     address receiver,
     uint256 shares,
     uint256 assets,
-    bool toUnderlying,
+    bool withdrawFromAave,
     uint256 deadline,
     SignatureParams calldata sigParams
   ) external returns (uint256, uint256) {
@@ -200,7 +200,7 @@ contract StaticATokenLM is
               receiver,
               shares,
               assets,
-              toUnderlying,
+              withdrawFromAave,
               nonce,
               deadline
             )
@@ -213,7 +213,7 @@ contract StaticATokenLM is
         StaticATokenErrors.INVALID_SIGNATURE
       );
     }
-    return _withdraw(owner, receiver, shares, assets, toUnderlying);
+    return _withdraw(owner, receiver, shares, assets, withdrawFromAave);
   }
 
   ///@inheritdoc IERC4626
@@ -437,9 +437,9 @@ contract StaticATokenLM is
     uint256 shares,
     address receiver,
     address owner,
-    bool toUnderlying
+    bool withdrawFromAave
   ) external virtual returns (uint256, uint256) {
-    return _withdraw(owner, receiver, shares, 0, toUnderlying);
+    return _withdraw(owner, receiver, shares, 0, withdrawFromAave);
   }
 
   function _deposit(
@@ -448,7 +448,7 @@ contract StaticATokenLM is
     uint256 _shares,
     uint256 _assets,
     uint16 referralCode,
-    bool fromUnderlying
+    bool depositToAave
   ) internal returns (uint256, uint256) {
     require(receiver != address(0), StaticATokenErrors.INVALID_RECIPIENT);
     require(_shares == 0 || _assets == 0, StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED);
@@ -456,19 +456,19 @@ contract StaticATokenLM is
     uint256 assets = _assets;
     uint256 shares = _shares;
     if (shares > 0) {
-      if (fromUnderlying) {
+      if (depositToAave) {
         require(shares <= maxMint(receiver), 'ERC4626: mint more than max');
       }
       assets = previewMint(shares);
     } else {
-      if (fromUnderlying) {
+      if (depositToAave) {
         require(assets <= maxDeposit(receiver), 'ERC4626: deposit more than max');
       }
       shares = previewDeposit(assets);
     }
     require(shares != 0, StaticATokenErrors.INVALID_ZERO_AMOUNT);
 
-    if (fromUnderlying) {
+    if (depositToAave) {
       address cachedATokenUnderlying = _aTokenUnderlying;
       IERC20(cachedATokenUnderlying).safeTransferFrom(depositor, address(this), assets);
       POOL.deposit(cachedATokenUnderlying, assets, address(this), referralCode);
@@ -488,7 +488,7 @@ contract StaticATokenLM is
     address receiver,
     uint256 _shares,
     uint256 _assets,
-    bool toUnderlying
+    bool withdrawFromAave
   ) internal returns (uint256, uint256) {
     require(receiver != address(0), StaticATokenErrors.INVALID_RECIPIENT);
     require(_shares == 0 || _assets == 0, StaticATokenErrors.ONLY_ONE_AMOUNT_FORMAT_ALLOWED);
@@ -498,12 +498,12 @@ contract StaticATokenLM is
     uint256 shares = _shares;
 
     if (shares > 0) {
-      if (toUnderlying) {
+      if (withdrawFromAave) {
         require(shares <= maxRedeem(owner), 'ERC4626: redeem more than max');
       }
       assets = previewRedeem(shares);
     } else {
-      if (toUnderlying) {
+      if (withdrawFromAave) {
         require(assets <= maxWithdraw(owner), 'ERC4626: withdraw more than max');
       }
       shares = previewWithdraw(assets);
@@ -519,7 +519,7 @@ contract StaticATokenLM is
 
     emit Withdraw(msg.sender, receiver, owner, assets, shares);
 
-    if (toUnderlying) {
+    if (withdrawFromAave) {
       POOL.withdraw(_aTokenUnderlying, assets, receiver);
     } else {
       _aToken.safeTransfer(receiver, assets);

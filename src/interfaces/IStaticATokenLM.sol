@@ -39,7 +39,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @notice Burns `amount` of static aToken, with receiver receiving the corresponding amount of `ASSET`
    * @param shares The amount to withdraw, in static balance of StaticAToken
    * @param receiver The address that will receive the amount of `ASSET` withdrawn from the Aave protocol
-   * @param toUnderlying bool
+   * @param withdrawFromAave bool
    * - `true` for the receiver to get underlying tokens (e.g. USDC)
    * - `false` for the receiver to get aTokens (e.g. aUSDC)
    * @return amountToBurn: StaticATokens burnt, static balance
@@ -49,7 +49,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     uint256 shares,
     address receiver,
     address owner,
-    bool toUnderlying
+    bool withdrawFromAave
   ) external returns (uint256, uint256);
 
   /**
@@ -58,7 +58,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param receiver The address that will receive the static aTokens
    * @param referralCode Code used to register the integrator originating the operation, for potential rewards.
    *   0 if the action is executed directly by the user, without any middle-man
-   * @param fromUnderlying bool
+   * @param depositToAave bool
    * - `true` if the msg.sender comes with underlying tokens (e.g. USDC)
    * - `false` if the msg.sender comes already with aTokens (e.g. aUSDC)
    * @return uint256 The amount of StaticAToken minted, static balance
@@ -67,7 +67,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     uint256 assets,
     address receiver,
     uint16 referralCode,
-    bool fromUnderlying
+    bool depositToAave
   ) external returns (uint256);
 
   /**
@@ -78,7 +78,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param assets The amount to deposit
    * @param referralCode Code used to register the integrator originating the operation, for potential rewards.
    *   0 if the action is executed directly by the user, without any middle-man
-   * @param fromUnderlying bool
+   * @param depositToAave bool
    * - `true` if the msg.sender comes with underlying tokens (e.g. USDC)
    * - `false` if the msg.sender comes already with aTokens (e.g. aUSDC)
    * @param deadline The deadline timestamp, type(uint256).max for max deadline
@@ -90,7 +90,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     address receiver,
     uint256 assets,
     uint16 referralCode,
-    bool fromUnderlying,
+    bool depositToAave,
     uint256 deadline,
     PermitParams calldata permit,
     SignatureParams calldata sigParams
@@ -103,7 +103,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
    * @param receiver Address that will receive the underlying withdrawn from Aave
    * @param shares The amount of staticAToken to withdraw. If > 0, `assets` needs to be 0
    * @param assets The amount of underlying/aToken to withdraw. If > 0, `shares` needs to be 0
-   * @param toUnderlying bool
+   * @param withdrawFromAave bool
    * - `true` for the receiver to get underlying tokens (e.g. USDC)
    * - `false` for the receiver to get aTokens (e.g. aUSDC)
    * @param deadline The deadline timestamp, type(uint256).max for max deadline
@@ -116,7 +116,7 @@ interface IStaticATokenLM is IInitializableStaticATokenLM {
     address receiver,
     uint256 shares,
     uint256 assets,
-    bool toUnderlying,
+    bool withdrawFromAave,
     uint256 deadline,
     SignatureParams calldata sigParams
   ) external returns (uint256, uint256);
