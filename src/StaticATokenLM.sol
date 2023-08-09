@@ -60,7 +60,7 @@ contract StaticATokenLM is
   mapping(address => RewardIndexCache) internal _startIndex;
   mapping(address => mapping(address => UserRewardsData)) internal _userRewardsData;
 
-  constructor(IPool pool, IRewardsController rewardsController) Initializable() {
+  constructor(IPool pool, IRewardsController rewardsController) {
     POOL = pool;
     INCENTIVES_CONTROLLER = rewardsController;
   }

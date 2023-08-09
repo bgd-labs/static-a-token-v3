@@ -34,6 +34,12 @@ contract StaticATokenLMTest is BaseTest {
     super.setUp();
   }
 
+  function test_initializeShouldRevert() public {
+    address impl = factory.STATIC_A_TOKEN_IMPL();
+    vm.expectRevert();
+    IStaticATokenLM(impl).initialize(0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8, 'hey', 'ho');
+  }
+
   function test_getters() public {
     assertEq(staticATokenLM.name(), 'Static Aave Avalanche WETH');
     assertEq(staticATokenLM.symbol(), 'stataAvaWETH');

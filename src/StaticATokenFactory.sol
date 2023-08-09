@@ -31,7 +31,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
     address proxyAdmin,
     ITransparentProxyFactory transparentProxyFactory,
     address staticATokenImpl
-  ) Initializable() {
+  ) {
     POOL = pool;
     ADMIN = proxyAdmin;
     TRANSPARENT_PROXY_FACTORY = transparentProxyFactory;
