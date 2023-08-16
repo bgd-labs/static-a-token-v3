@@ -168,7 +168,7 @@ contract StaticATokenLM is
         permit.s
       );
     }
-    (, uint256 shares) = _deposit(depositor, receiver, 0, assets, referralCode, depositToAave);
+    (uint256 shares, ) = _deposit(depositor, receiver, 0, assets, referralCode, depositToAave);
     return shares;
   }
 

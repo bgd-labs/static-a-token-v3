@@ -115,17 +115,19 @@ contract StaticATokenMetaTransactions is BaseTest {
       deadline: permit.deadline,
       permit: permitParams
     });
-    bytes32 digest = SigUtils.getTypedDepositHash(
-      depositPermit,
-      staticATokenLM.METADEPOSIT_TYPEHASH(),
-      staticATokenLM.DOMAIN_SEPARATOR()
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+      userPrivateKey,
+      SigUtils.getTypedDepositHash(
+        depositPermit,
+        staticATokenLM.METADEPOSIT_TYPEHASH(),
+        staticATokenLM.DOMAIN_SEPARATOR()
+      )
     );
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
 
     IStaticATokenLM.SignatureParams memory sigParams = IStaticATokenLM.SignatureParams(v, r, s);
 
     uint256 previewDeposit = staticATokenLM.previewDeposit(depositPermit.value);
-    staticATokenLM.metaDeposit(
+    uint256 shares = staticATokenLM.metaDeposit(
       depositPermit.owner,
       depositPermit.spender,
       depositPermit.value,
@@ -135,7 +137,7 @@ contract StaticATokenMetaTransactions is BaseTest {
       permitParams,
       sigParams
     );
-
+    assertEq(shares, previewDeposit);
     assertEq(staticATokenLM.balanceOf(depositPermit.spender), previewDeposit);
   }
 
