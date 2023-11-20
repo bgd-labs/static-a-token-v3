@@ -3,7 +3,11 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import {Script} from 'forge-std/Script.sol';
-import {AaveMisc} from 'aave-address-book/AaveMisc.sol';
+import {MiscEthereum} from 'aave-address-book/MiscEthereum.sol';
+import {MiscPolygon} from 'aave-address-book/MiscPolygon.sol';
+import {MiscAvalanche} from 'aave-address-book/MiscAvalanche.sol';
+import {MiscArbitrum} from 'aave-address-book/MiscArbitrum.sol';
+import {MiscOptimism} from 'aave-address-book/MiscOptimism.sol';
 import {AaveV3Ethereum, IPool} from 'aave-address-book/AaveV3Ethereum.sol';
 import {AaveV3Polygon} from 'aave-address-book/AaveV3Polygon.sol';
 import {AaveV3Avalanche} from 'aave-address-book/AaveV3Avalanche.sol';
@@ -49,8 +53,8 @@ contract DeployMainnet is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ETHEREUM),
-      AaveMisc.PROXY_ADMIN_ETHEREUM,
+      ITransparentProxyFactory(MiscEthereum.TRANSPARENT_PROXY_FACTORY),
+      MiscEthereum.PROXY_ADMIN,
       AaveV3Ethereum.POOL,
       IRewardsController(AaveV3Ethereum.DEFAULT_INCENTIVES_CONTROLLER)
     );
@@ -62,8 +66,8 @@ contract DeployPolygon is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_POLYGON),
-      AaveMisc.PROXY_ADMIN_POLYGON,
+      ITransparentProxyFactory(MiscPolygon.TRANSPARENT_PROXY_FACTORY),
+      MiscPolygon.PROXY_ADMIN,
       AaveV3Polygon.POOL,
       IRewardsController(AaveV3Polygon.DEFAULT_INCENTIVES_CONTROLLER)
     );
@@ -75,8 +79,8 @@ contract DeployAvalanche is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_AVALANCHE),
-      AaveMisc.PROXY_ADMIN_AVALANCHE,
+      ITransparentProxyFactory(MiscAvalanche.TRANSPARENT_PROXY_FACTORY),
+      MiscAvalanche.PROXY_ADMIN,
       AaveV3Avalanche.POOL,
       IRewardsController(AaveV3Avalanche.DEFAULT_INCENTIVES_CONTROLLER)
     );
@@ -88,8 +92,8 @@ contract DeployOptimism is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_OPTIMISM),
-      AaveMisc.PROXY_ADMIN_OPTIMISM,
+      ITransparentProxyFactory(MiscOptimism.TRANSPARENT_PROXY_FACTORY),
+      MiscOptimism.PROXY_ADMIN,
       AaveV3Optimism.POOL,
       IRewardsController(AaveV3Optimism.DEFAULT_INCENTIVES_CONTROLLER)
     );
@@ -101,21 +105,8 @@ contract DeployArbitrum is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
-      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ARBITRUM),
-      AaveMisc.PROXY_ADMIN_ARBITRUM,
-      AaveV3Arbitrum.POOL,
-      IRewardsController(AaveV3Arbitrum.DEFAULT_INCENTIVES_CONTROLLER)
-    );
-    vm.stopBroadcast();
-  }
-}
-
-contract DeploySepolia is Script {
-  function run() external {
-    vm.startBroadcast();
-    DeployATokenFactory._deploy(
-      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ARBITRUM),
-      AaveMisc.PROXY_ADMIN_ARBITRUM,
+      ITransparentProxyFactory(MiscArbitrum.TRANSPARENT_PROXY_FACTORY),
+      MiscArbitrum.PROXY_ADMIN,
       AaveV3Arbitrum.POOL,
       IRewardsController(AaveV3Arbitrum.DEFAULT_INCENTIVES_CONTROLLER)
     );
