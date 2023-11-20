@@ -3,7 +3,6 @@ pragma solidity ^0.8.16;
 
 import 'forge-std/Test.sol';
 
-import {AaveMisc} from 'aave-address-book/AaveMisc.sol';
 import {AaveV3Ethereum} from 'aave-address-book/AaveV3Ethereum.sol';
 import {GovHelpers} from 'aave-helpers/GovHelpers.sol';
 import {AaveGovernanceV2} from 'aave-address-book/AaveGovernanceV2.sol';
