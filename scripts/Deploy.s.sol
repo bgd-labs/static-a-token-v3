@@ -9,7 +9,6 @@ import {AaveV3Polygon} from 'aave-address-book/AaveV3Polygon.sol';
 import {AaveV3Avalanche} from 'aave-address-book/AaveV3Avalanche.sol';
 import {AaveV3Optimism} from 'aave-address-book/AaveV3Optimism.sol';
 import {AaveV3Arbitrum} from 'aave-address-book/AaveV3Arbitrum.sol';
-import {AaveGovernanceV2} from 'aave-address-book/AaveGovernanceV2.sol';
 import {ITransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/interfaces/ITransparentProxyFactory.sol';
 import {StaticATokenFactory} from '../src/StaticATokenFactory.sol';
 import {StaticATokenLM} from '../src/StaticATokenLM.sol';
@@ -99,6 +98,19 @@ contract DeployOptimism is Script {
 }
 
 contract DeployArbitrum is Script {
+  function run() external {
+    vm.startBroadcast();
+    DeployATokenFactory._deploy(
+      ITransparentProxyFactory(AaveMisc.TRANSPARENT_PROXY_FACTORY_ARBITRUM),
+      AaveMisc.PROXY_ADMIN_ARBITRUM,
+      AaveV3Arbitrum.POOL,
+      IRewardsController(AaveV3Arbitrum.DEFAULT_INCENTIVES_CONTROLLER)
+    );
+    vm.stopBroadcast();
+  }
+}
+
+contract DeploySepolia is Script {
   function run() external {
     vm.startBroadcast();
     DeployATokenFactory._deploy(
