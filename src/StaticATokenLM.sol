@@ -7,7 +7,7 @@ import {IScaledBalanceToken} from 'aave-v3-core/contracts/interfaces/IScaledBala
 import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {WadRayMath} from 'aave-v3-core/contracts/protocol/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'aave-v3-core/contracts/protocol/libraries/math/MathUtils.sol';
-import {SafeCast} from 'openzeppelin-contracts/contracts/utils/math/SafeCast.sol';
+import {SafeCast} from 'solidity-utils/contracts/oz-common/SafeCast.sol';
 import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
 import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
 import {IERC20Metadata} from 'solidity-utils/contracts/oz-common/interfaces/IERC20Metadata.sol';
@@ -79,7 +79,7 @@ contract StaticATokenLM is
     decimals = IERC20Metadata(newAToken).decimals();
 
     _aTokenUnderlying = IAToken(newAToken).UNDERLYING_ASSET_ADDRESS();
-    IERC20(_aTokenUnderlying).safeApprove(address(POOL), type(uint256).max);
+    IERC20(_aTokenUnderlying).forceApprove(address(POOL), type(uint256).max);
 
     if (INCENTIVES_CONTROLLER != IRewardsController(address(0))) {
       refreshRewardTokens();

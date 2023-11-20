@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import 'forge-std/Test.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
-import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
+import {AaveV3Avalanche, IPool, AaveV3AvalancheAssets} from 'aave-address-book/AaveV3Avalanche.sol';
 import {DataTypes, ReserveConfiguration} from 'aave-v3-core/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
 import {RayMathExplicitRounding, Rounding} from '../src/RayMathExplicitRounding.sol';
@@ -15,8 +15,8 @@ import {BaseTest} from './TestBase.sol';
 contract StaticATokenLMTest is BaseTest {
   using RayMathExplicitRounding for uint256;
 
-  address public constant override UNDERLYING = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
-  address public constant override A_TOKEN = 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
+  address public constant override UNDERLYING = AaveV3AvalancheAssets.WETHe_UNDERLYING;
+  address public constant override A_TOKEN = AaveV3AvalancheAssets.WETHe_A_TOKEN;
   address public constant EMISSION_ADMIN = 0xCba0B614f13eCdd98B8C0026fcAD11cec8Eb4343;
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
@@ -28,7 +28,7 @@ contract StaticATokenLMTest is BaseTest {
   }
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
+    vm.createSelectFork(vm.rpcUrl('avalanche'), 38011791);
     rewardTokens.push(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
 
     super.setUp();
@@ -387,11 +387,11 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(max, type(uint256).max);
   }
 
-  // should be 0 as supply is ~24.7k in forked block
-  function test_maxDeposit_20kCap() public {
+  // should be 0 as supply is ~14.04k in forked block
+  function test_maxDeposit_10kCap() public {
     vm.stopPrank();
     vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
-    AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 20_000);
+    AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 10_000);
 
     uint256 max = staticATokenLM.maxDeposit(address(0));
     assertEq(max, 0);
@@ -453,10 +453,10 @@ contract StaticATokenLMTest is BaseTest {
     uint256 underlyingBalanceBefore = IERC20Metadata(UNDERLYING).balanceOf(A_TOKEN);
     // create rich user
     address borrowUser = 0xAD69de0CE8aB50B729d3f798d7bC9ac7b4e79267;
-    address usdc = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
+    address usdc = AaveV3AvalancheAssets.USDC_UNDERLYING;
     vm.startPrank(borrowUser);
-    deal(usdc, borrowUser, 200_000_000_000000);
-    AaveV3Avalanche.POOL.deposit(usdc, 200_000_000_000000, borrowUser, 0);
+    deal(usdc, borrowUser, 100_000_000e6);
+    AaveV3Avalanche.POOL.deposit(usdc, 100_000_000e6, borrowUser, 0);
 
     // borrow all available
     AaveV3Avalanche.POOL.borrow(
@@ -481,10 +481,10 @@ contract StaticATokenLMTest is BaseTest {
     uint256 underlyingBalanceBefore = IERC20Metadata(UNDERLYING).balanceOf(A_TOKEN);
     // create rich user
     address borrowUser = 0xAD69de0CE8aB50B729d3f798d7bC9ac7b4e79267;
-    address usdc = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
+    address usdc = AaveV3AvalancheAssets.USDC_UNDERLYING;
     vm.startPrank(borrowUser);
-    deal(usdc, borrowUser, 200_000_000e6);
-    AaveV3Avalanche.POOL.deposit(usdc, 200_000_000e6, borrowUser, 0);
+    deal(usdc, borrowUser, 100_000_000e6);
+    AaveV3Avalanche.POOL.deposit(usdc, 100_000_000e6, borrowUser, 0);
 
     // borrow all available
     AaveV3Avalanche.POOL.borrow(UNDERLYING, underlyingBalanceBefore, 2, 0, borrowUser);
