@@ -1,8 +1,10 @@
-ds-test/=lib/forge-std/lib/ds-test/src/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
-forge-std/=lib/forge-std/src/
-aave-v3-core/=lib/aave-v3-core/
-aave-v3-periphery/=lib/aave-v3-periphery/
-solidity-utils/=lib/solidity-utils/src/
-aave-address-book/=lib/aave-address-book/src/
+ds-test/=lib/aave-helpers/lib/forge-std/lib/ds-test/src/
+forge-std/=lib/aave-helpers/lib/forge-std/src/
+solidity-utils/=lib/aave-helpers/lib/solidity-utils/src/
+aave-address-book/=lib/aave-helpers/lib/aave-address-book/src/
 aave-helpers/=lib/aave-helpers/src/
+@aave/core-v3/=lib/aave-helpers/lib/aave-address-book/lib/aave-v3-core/
+@aave/periphery-v3/=lib/aave-helpers/lib/aave-address-book/lib/aave-v3-periphery/
+aave-v3-core/=lib/aave-helpers/lib/aave-address-book/lib/aave-v3-core/
+aave-v3-periphery/=lib/aave-helpers/lib/aave-address-book/lib/aave-v3-periphery/
