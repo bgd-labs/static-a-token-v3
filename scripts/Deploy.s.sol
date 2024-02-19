@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
-import {EthereumScript, PolygonScript, AvalancheScript, ArbitrumScript, OptimismScript, MetisScript, BaseScript} from 'aave-helpers/ScriptUtils.sol';
+import {EthereumScript, PolygonScript, AvalancheScript, ArbitrumScript, OptimismScript, MetisScript, BaseScript, BNBScript, ScrollScript} from 'aave-helpers/ScriptUtils.sol';
 import {MiscEthereum} from 'aave-address-book/MiscEthereum.sol';
 import {MiscPolygon} from 'aave-address-book/MiscPolygon.sol';
 import {MiscAvalanche} from 'aave-address-book/MiscAvalanche.sol';
@@ -10,6 +10,8 @@ import {MiscArbitrum} from 'aave-address-book/MiscArbitrum.sol';
 import {MiscOptimism} from 'aave-address-book/MiscOptimism.sol';
 import {MiscMetis} from 'aave-address-book/MiscMetis.sol';
 import {MiscBase} from 'aave-address-book/MiscBase.sol';
+import {MiscBNB} from 'aave-address-book/MiscBNB.sol';
+import {MiscScroll} from 'aave-address-book/MiscScroll.sol';
 import {AaveV3Ethereum, IPool} from 'aave-address-book/AaveV3Ethereum.sol';
 import {AaveV3Polygon} from 'aave-address-book/AaveV3Polygon.sol';
 import {AaveV3Avalanche} from 'aave-address-book/AaveV3Avalanche.sol';
@@ -17,6 +19,8 @@ import {AaveV3Optimism} from 'aave-address-book/AaveV3Optimism.sol';
 import {AaveV3Arbitrum} from 'aave-address-book/AaveV3Arbitrum.sol';
 import {AaveV3Metis} from 'aave-address-book/AaveV3Metis.sol';
 import {AaveV3Base} from 'aave-address-book/AaveV3Base.sol';
+import {AaveV3BNB} from 'aave-address-book/AaveV3BNB.sol';
+import {AaveV3Scroll} from 'aave-address-book/AaveV3Scroll.sol';
 import {ITransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/interfaces/ITransparentProxyFactory.sol';
 import {StaticATokenFactory} from '../src/StaticATokenFactory.sol';
 import {StaticATokenLM} from '../src/StaticATokenLM.sol';
@@ -48,7 +52,7 @@ library DeployATokenFactory {
         abi.encodeWithSelector(StaticATokenFactory.initialize.selector)
       )
     );
-    factory.createStaticATokens(pool.getReservesList());
+    // factory.createStaticATokens(pool.getReservesList());
     return factory;
   }
 }
@@ -126,6 +130,34 @@ contract DeployBase is BaseScript {
       MiscBase.PROXY_ADMIN,
       AaveV3Base.POOL,
       IRewardsController(AaveV3Base.DEFAULT_INCENTIVES_CONTROLLER)
+    );
+  }
+}
+
+/**
+ * make deploy-ledger contract=scripts/Deploy.s.sol:DeployBNB chain=bnb
+ */
+contract DeployBNB is BNBScript {
+  function run() external broadcast {
+    DeployATokenFactory._deploy(
+      ITransparentProxyFactory(MiscBNB.TRANSPARENT_PROXY_FACTORY),
+      MiscBNB.PROXY_ADMIN,
+      AaveV3BNB.POOL,
+      IRewardsController(AaveV3BNB.DEFAULT_INCENTIVES_CONTROLLER)
+    );
+  }
+}
+
+/**
+ * make deploy-ledger contract=scripts/Deploy.s.sol:DeployScroll chain=scroll
+ */
+contract DeployScroll is ScrollScript {
+  function run() external broadcast {
+    DeployATokenFactory._deploy(
+      ITransparentProxyFactory(MiscScroll.TRANSPARENT_PROXY_FACTORY),
+      MiscScroll.PROXY_ADMIN,
+      AaveV3Scroll.POOL,
+      IRewardsController(AaveV3Scroll.DEFAULT_INCENTIVES_CONTROLLER)
     );
   }
 }
