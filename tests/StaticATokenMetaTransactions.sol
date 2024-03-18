@@ -5,7 +5,7 @@ import 'forge-std/Test.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {IERC20WithPermit} from 'solidity-utils/contracts/oz-common/interfaces/IERC20WithPermit.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
-import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
+import {AaveV3Avalanche, AaveV3AvalancheAssets, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata} from '../src/StaticATokenLM.sol';
 import {IStaticATokenLM} from '../src/interfaces/IStaticATokenLM.sol';
 import {SigUtils} from './SigUtils.sol';
@@ -15,8 +15,8 @@ import {BaseTest} from './TestBase.sol';
  * Testing meta transactions with frax as WETH does not support permit
  */
 contract StaticATokenMetaTransactions is BaseTest {
-  address public constant override UNDERLYING = 0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64;
-  address public constant override A_TOKEN = 0xc45A479877e1e9Dfe9FcD4056c699575a1045dAA;
+  address public constant override UNDERLYING = AaveV3AvalancheAssets.FRAX_UNDERLYING;
+  address public constant override A_TOKEN = AaveV3AvalancheAssets.FRAX_A_TOKEN;
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
 
@@ -31,6 +31,19 @@ contract StaticATokenMetaTransactions is BaseTest {
     rewardTokens.push(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
 
     super.setUp();
+  }
+
+  function test_validateDomainSeparator() public {
+    address[] memory staticATokens = factory.getStaticATokens();
+    for (uint256 i = 0; i < staticATokens.length; i++) {
+      bytes32 separator1 = StaticATokenLM(staticATokens[i]).DOMAIN_SEPARATOR();
+      for (uint256 j = 0; j < staticATokens.length; j++) {
+        if (i != j) {
+          bytes32 separator2 = StaticATokenLM(staticATokens[j]).DOMAIN_SEPARATOR();
+          assertNotEq(separator1, separator2, 'DOMAIN_SEPARATOR_MUST_BE_UNIQUE');
+        }
+      }
+    }
   }
 
   function test_metaDepositATokenUnderlyingNoPermit() public {
@@ -89,6 +102,7 @@ contract StaticATokenMetaTransactions is BaseTest {
 
     bytes32 permitDigest = SigUtils.getTypedDataHash(
       permit,
+      staticATokenLM.PERMIT_TYPEHASH(),
       IERC20WithPermit(UNDERLYING).DOMAIN_SEPARATOR()
     );
 
@@ -157,6 +171,7 @@ contract StaticATokenMetaTransactions is BaseTest {
 
     bytes32 permitDigest = SigUtils.getTypedDataHash(
       permit,
+      staticATokenLM.PERMIT_TYPEHASH(),
       IERC20WithPermit(A_TOKEN).DOMAIN_SEPARATOR()
     );
 

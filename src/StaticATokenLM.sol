@@ -158,15 +158,17 @@ contract StaticATokenLM is
     }
     // assume if deadline 0 no permit was supplied
     if (permit.deadline != 0) {
-      IERC20WithPermit(depositToAave ? address(_aTokenUnderlying) : address(_aToken)).permit(
-        depositor,
-        address(this),
-        permit.value,
-        permit.deadline,
-        permit.v,
-        permit.r,
-        permit.s
-      );
+      try
+        IERC20WithPermit(depositToAave ? address(_aTokenUnderlying) : address(_aToken)).permit(
+          depositor,
+          address(this),
+          permit.value,
+          permit.deadline,
+          permit.v,
+          permit.r,
+          permit.s
+        )
+      {} catch {}
     }
     (uint256 shares, ) = _deposit(depositor, receiver, 0, assets, referralCode, depositToAave);
     return shares;
@@ -340,6 +342,7 @@ contract StaticATokenLM is
   ///@inheritdoc IERC4626
   function maxMint(address) public view virtual returns (uint256) {
     uint256 assets = maxDeposit(address(0));
+    if (assets == type(uint256).max) return type(uint256).max;
     return _convertToShares(assets, Rounding.DOWN);
   }
 

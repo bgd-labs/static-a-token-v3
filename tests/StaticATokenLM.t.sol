@@ -382,9 +382,11 @@ contract StaticATokenLMTest is BaseTest {
     vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
     AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 0);
 
-    uint256 max = staticATokenLM.maxDeposit(address(0));
+    uint256 maxDeposit = staticATokenLM.maxDeposit(address(0));
+    uint256 maxMint = staticATokenLM.maxMint(address(0));
 
-    assertEq(max, type(uint256).max);
+    assertEq(maxDeposit, type(uint256).max);
+    assertEq(maxMint, type(uint256).max);
   }
 
   // should be 0 as supply is ~14.04k in forked block
@@ -491,6 +493,70 @@ contract StaticATokenLMTest is BaseTest {
 
     uint256 maxRedeemAfter = staticATokenLM.maxRedeem(address(user));
     assertEq(maxRedeemAfter, 0);
+  }
+
+  function test_permit() public {
+    address spender = address(4242);
+    SigUtils.Permit memory permit = SigUtils.Permit({
+      owner: user,
+      spender: spender,
+      value: 1 ether,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp + 1 days
+    });
+
+    bytes32 permitDigest = SigUtils.getTypedDataHash(
+      permit,
+      staticATokenLM.PERMIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, permitDigest);
+
+    staticATokenLM.permit(permit.owner, permit.spender, permit.value, permit.deadline, v, r, s);
+
+    assertEq(staticATokenLM.allowance(permit.owner, spender), permit.value);
+  }
+
+  function test_permit_expired() public {
+    address spender = address(4242);
+    SigUtils.Permit memory permit = SigUtils.Permit({
+      owner: user,
+      spender: spender,
+      value: 1 ether,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp - 1 days
+    });
+
+    bytes32 permitDigest = SigUtils.getTypedDataHash(
+      permit,
+      staticATokenLM.PERMIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, permitDigest);
+
+    vm.expectRevert('PERMIT_DEADLINE_EXPIRED');
+    staticATokenLM.permit(permit.owner, permit.spender, permit.value, permit.deadline, v, r, s);
+  }
+
+  function test_permit_invalidSigner() public {
+    address spender = address(4242);
+    SigUtils.Permit memory permit = SigUtils.Permit({
+      owner: address(424242),
+      spender: spender,
+      value: 1 ether,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp + 1 days
+    });
+
+    bytes32 permitDigest = SigUtils.getTypedDataHash(
+      permit,
+      staticATokenLM.PERMIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, permitDigest);
+
+    vm.expectRevert('INVALID_SIGNER');
+    staticATokenLM.permit(permit.owner, permit.spender, permit.value, permit.deadline, v, r, s);
   }
 
   /**
