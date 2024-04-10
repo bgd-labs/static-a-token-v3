@@ -54,7 +54,7 @@ abstract contract BaseTest is Test {
     vm.startPrank(user);
   }
 
-  function _fundUser(uint128 amountToDeposit, address targetUser) internal {
+  function _fundUser(uint256 amountToDeposit, address targetUser) internal {
     deal(this.UNDERLYING(), targetUser, amountToDeposit);
   }
 

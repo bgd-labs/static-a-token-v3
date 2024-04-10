@@ -29,26 +29,19 @@ contract StataOracleTest is BaseTest {
     uint256 stataPrice = oracle.getAssetPrice(address(staticATokenLM));
     uint256 underlyingPrice = AaveV3Avalanche.ORACLE.getAssetPrice(UNDERLYING);
     assertGt(stataPrice, underlyingPrice);
-    assertApproxEqAbs(
-      stataPrice,
-      underlyingPrice,
-      ((underlyingPrice * AaveV3Avalanche.POOL.getReserveNormalizedIncome(UNDERLYING)) / 1e27) -
-        underlyingPrice
-    );
+    assertEq(stataPrice, (underlyingPrice * staticATokenLM.convertToAssets(1e18)) / 1e18);
   }
 
-  function test_deposit() public {
-    uint128 amountToDeposit = 5 ether;
-    _fundUser(amountToDeposit, user);
-    _depositAToken(amountToDeposit, user);
-
-    uint256 stataPrice = oracle.getAssetPrice(address(staticATokenLM));
-    uint256 underlyingPrice = AaveV3Avalanche.ORACLE.getAssetPrice(UNDERLYING);
+  function test_error(uint256 shares) public {
+    vm.assume(shares <= staticATokenLM.maxMint(address(0)));
+    uint256 pricePerShare = oracle.getAssetPrice(address(staticATokenLM));
+    uint256 pricePerAsset = AaveV3Avalanche.ORACLE.getAssetPrice(UNDERLYING);
+    uint256 assets = staticATokenLM.convertToAssets(shares);
 
     assertApproxEqAbs(
-      (stataPrice * staticATokenLM.balanceOf(user)) / 1e18,
-      (underlyingPrice * amountToDeposit) / 1e18,
-      10
+      (pricePerShare * shares) / 1e18,
+      (pricePerAsset * assets) / 1e18,
+      (assets / 1e18) + 1 // there can be imprecision of 1 wei, which will accumulate for each asset
     );
   }
 }
