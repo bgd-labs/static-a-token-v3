@@ -12,8 +12,8 @@ import {BaseTest} from './TestBase.sol';
 contract StataOracleTest is BaseTest {
   using RayMathExplicitRounding for uint256;
 
-  address public constant override UNDERLYING = AaveV3AvalancheAssets.WETHe_UNDERLYING;
-  address public constant override A_TOKEN = AaveV3AvalancheAssets.WETHe_A_TOKEN;
+  address public constant override UNDERLYING = AaveV3AvalancheAssets.DAIe_UNDERLYING;
+  address public constant override A_TOKEN = AaveV3AvalancheAssets.DAIe_A_TOKEN;
   address public constant EMISSION_ADMIN = 0xCba0B614f13eCdd98B8C0026fcAD11cec8Eb4343;
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
@@ -34,6 +34,21 @@ contract StataOracleTest is BaseTest {
       underlyingPrice,
       ((underlyingPrice * AaveV3Avalanche.POOL.getReserveNormalizedIncome(UNDERLYING)) / 1e27) -
         underlyingPrice
+    );
+  }
+
+  function test_deposit() public {
+    uint128 amountToDeposit = 5 ether;
+    _fundUser(amountToDeposit, user);
+    _depositAToken(amountToDeposit, user);
+
+    uint256 stataPrice = oracle.getAssetPrice(address(staticATokenLM));
+    uint256 underlyingPrice = AaveV3Avalanche.ORACLE.getAssetPrice(UNDERLYING);
+
+    assertApproxEqAbs(
+      (stataPrice * staticATokenLM.balanceOf(user)) / 1e18,
+      (underlyingPrice * amountToDeposit) / 1e18,
+      10
     );
   }
 }
