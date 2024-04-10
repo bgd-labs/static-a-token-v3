@@ -15,12 +15,12 @@ import {IERC4626} from './interfaces/IERC4626.sol';
  * @notice Contract to get asset prices of stata tokens
  */
 contract StataOracle is IStataOracle {
-  IPoolAddressesProvider public immutable POOL_ADDRESSES_PROVIDER;
+  /// @inheritdoc IStataOracle
   IPool public immutable POOL;
+  /// @inheritdoc IStataOracle
   IAaveOracle public immutable AAVE_ORACLE;
 
   constructor(IPoolAddressesProvider provider) {
-    POOL_ADDRESSES_PROVIDER = provider;
     POOL = IPool(provider.getPool());
     AAVE_ORACLE = IAaveOracle(provider.getPriceOracle());
   }
