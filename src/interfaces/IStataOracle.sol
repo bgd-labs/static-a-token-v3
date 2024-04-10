@@ -1,7 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
+import {IPool} from 'aave-v3-core/contracts/interfaces/IPool.sol';
+import {IAaveOracle} from 'aave-v3-core/contracts/interfaces/IAaveOracle.sol';
 
 interface IStataOracle {
+  /**
+   * @return The pool used for fetching the rate on the aggregator oracle
+   */
+  function POOL() external view returns (IPool);
+
+  /**
+   * @return The aave oracle used for fetching the price of the underlying
+   */
+  function AAVE_ORACLE() external view returns (IAaveOracle);
+
   /**
    * @notice Returns the prices of an asset address
    * @param asset The asset address
