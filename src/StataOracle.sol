@@ -16,7 +16,7 @@ import {IERC4626} from './interfaces/IERC4626.sol';
  */
 contract StataOracle is IStataOracle {
   IPoolAddressesProvider public immutable POOL_ADDRESSES_PROVIDER;
-  IPool public POOL;
+  IPool public immutable POOL;
   IAaveOracle public immutable AAVE_ORACLE;
 
   constructor(IPoolAddressesProvider provider) {
