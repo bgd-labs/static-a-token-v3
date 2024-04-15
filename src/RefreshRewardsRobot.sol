@@ -1,33 +1,41 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
-import {StaticATokenFactory} from './StaticATokenFactory.sol';
-import {IRefreshRobotKeeper} from './interfaces/IRefreshRobotKeeper.sol';
+import {IStaticATokenFactory} from './interfaces/IStaticATokenFactory.sol';
+import {IRefreshRewardsRobot, AutomationCompatibleInterface} from './interfaces/IRefreshRewardsRobot.sol';
 import {IStaticATokenLM} from './interfaces/IStaticATokenLM.sol';
 import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {Ownable} from 'solidity-utils/contracts/oz-common/Ownable.sol';
 
 /**
- * @title RefreshRobotKeeper
+ * @title RefreshRewardsRobot
  * @author BGD Labs
  * @notice Automation contract to automate refresh rewards for staticATokens if a reward
  *         is added after staticAToken creation to register the missing rewards.
  */
-contract RefreshRobotKeeper is Ownable, IRefreshRobotKeeper {
+contract RefreshRewardsRobot is Ownable, IRefreshRewardsRobot {
   mapping(address => bool) internal disabledStaticATokens;
 
-  StaticATokenFactory public immutable STATIC_A_TOKEN_FACTORY;
+  /// @inheritdoc IRefreshRewardsRobot
+  IStaticATokenFactory public immutable STATIC_A_TOKEN_FACTORY;
+
+  /// @inheritdoc IRefreshRewardsRobot
   IRewardsController public immutable REWARDS_CONTROLLER;
 
+  /// @inheritdoc IRefreshRewardsRobot
   uint256 public constant MAX_ACTIONS = 10;
-  error NoRefreshCanBePerformed();
 
-  constructor(StaticATokenFactory staticATokenFactory, IRewardsController rewardsController) {
-    STATIC_A_TOKEN_FACTORY = staticATokenFactory;
-    REWARDS_CONTROLLER = rewardsController;
+  /**
+   * @param staticATokenFactory address of the static a token factory contract.
+   * @param rewardsController address of the rewards controller of the protocol.
+   */
+  constructor(address staticATokenFactory, address rewardsController) {
+    STATIC_A_TOKEN_FACTORY = IStaticATokenFactory(staticATokenFactory);
+    REWARDS_CONTROLLER = IRewardsController(rewardsController);
   }
 
   /**
+   * @inheritdoc AutomationCompatibleInterface
    * @dev runs off-chain, checks if there is a reward added after statToken creation which needs to be registered.
    */
   function checkUpkeep(bytes calldata) external view override returns (bool, bytes memory) {
@@ -69,26 +77,20 @@ contract RefreshRobotKeeper is Ownable, IRefreshRobotKeeper {
    */
   function performUpkeep(bytes calldata performData) external override {
     address[] memory staticATokensToRefresh = abi.decode(performData, (address[]));
-    bool isRefreshPerformed;
 
     for (uint256 i = 0; i < staticATokensToRefresh.length; i++) {
-      try IStaticATokenLM(staticATokensToRefresh[i]).refreshRewardTokens() {
-        isRefreshPerformed = true;
-      } catch Error(string memory reason) {
-        emit RefreshFailed(staticATokensToRefresh[i], reason);
-      }
+      IStaticATokenLM(staticATokensToRefresh[i]).refreshRewardTokens();
+      emit RefreshSucceeded(staticATokensToRefresh[i]);
     }
-
-    if (!isRefreshPerformed) revert NoRefreshCanBePerformed();
   }
 
-  /// @inheritdoc IRefreshRobotKeeper
+  /// @inheritdoc IRefreshRewardsRobot
   function isDisabled(address staticAToken) public view returns (bool) {
     return disabledStaticATokens[staticAToken];
   }
 
-  /// @inheritdoc IRefreshRobotKeeper
-  function disableAutomation(address staticAToken) external onlyOwner {
-    disabledStaticATokens[staticAToken] = true;
+  /// @inheritdoc IRefreshRewardsRobot
+  function disableAutomation(address staticAToken, bool disable) external onlyOwner {
+    disabledStaticATokens[staticAToken] = disable;
   }
 }

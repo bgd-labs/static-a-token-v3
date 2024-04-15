@@ -2,12 +2,12 @@
 pragma solidity ^0.8.10;
 
 import {AaveV3Avalanche, AaveV3AvalancheAssets, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
-import {RefreshRobotKeeper} from '../src/RefreshRobotKeeper.sol';
+import {RefreshRewardsRobot} from '../src/RefreshRewardsRobot.sol';
 import {IEmissionManager, RewardsDataTypes, IEACAggregatorProxy} from 'aave-v3-periphery/contracts/rewards/interfaces/IEmissionManager.sol';
 import {ITransferStrategyBase} from 'aave-v3-periphery/contracts/rewards/interfaces/ITransferStrategyBase.sol';
 import './TestBase.sol';
 
-contract RefreshRobotKeeperTest is BaseTest {
+contract RefreshRewardsRobotTest is BaseTest {
   uint256 constant TOTAL_DISTRIBUTION = 10000 ether;
   uint88 constant DURATION_DISTRIBUTION = 180 days;
 
@@ -22,28 +22,32 @@ contract RefreshRobotKeeperTest is BaseTest {
     ITransferStrategyBase(0x190110114Eff8B111123BEa9b517Fc86b677D94A);
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
-  RefreshRobotKeeper robotKeeper;
+  RefreshRewardsRobot robotKeeper;
 
   address public constant override UNDERLYING = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
   address public constant override A_TOKEN = 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
   address public constant EMISSION_ADMIN = 0xa35b76E4935449E33C56aB24b23fcd3246f13470;
   address public REWARD_TOKEN = AaveV3AvalancheAssets.AAVEe_UNDERLYING;
+  address public GUARDIAN = address(22);
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
 
     super.setUp();
-    robotKeeper = new RefreshRobotKeeper(
-      factory,
-      IRewardsController(AaveV3Avalanche.DEFAULT_INCENTIVES_CONTROLLER)
+    vm.stopPrank();
+
+    vm.prank(GUARDIAN);
+    robotKeeper = new RefreshRewardsRobot(
+      address(factory),
+      AaveV3Avalanche.DEFAULT_INCENTIVES_CONTROLLER
     );
   }
 
   function testRefreshRewards() public {
-    address wethStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WBTCe_UNDERLYING);
+    address wethStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WETHe_UNDERLYING);
     address wbtcStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WBTCe_UNDERLYING);
-    address maiStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WBTCe_UNDERLYING);
-    address fraxStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WBTCe_UNDERLYING);
+    address maiStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.MAI_UNDERLYING);
+    address fraxStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.FRAX_UNDERLYING);
 
     _createNewLM();
 
@@ -52,7 +56,8 @@ contract RefreshRobotKeeperTest is BaseTest {
     assertEq(IStaticATokenLM(maiStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
     assertEq(IStaticATokenLM(fraxStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
 
-    _checkAndPerformUpKeep(robotKeeper);
+    bool didRobotRun = _checkAndPerformUpKeep(robotKeeper);
+    assertTrue(didRobotRun);
 
     assertEq(IStaticATokenLM(wethStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), true);
     assertEq(IStaticATokenLM(wbtcStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), true);
@@ -60,11 +65,59 @@ contract RefreshRobotKeeperTest is BaseTest {
     assertEq(IStaticATokenLM(fraxStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), true);
   }
 
-  function _checkAndPerformUpKeep(RefreshRobotKeeper votingChainRobotKeeper) internal {
+  function test_disableAutomation() public {
+    address wethStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WETHe_UNDERLYING);
+    address wbtcStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WBTCe_UNDERLYING);
+    address maiStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.MAI_UNDERLYING);
+    address fraxStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.FRAX_UNDERLYING);
+
+    _createNewLM();
+
+    assertEq(IStaticATokenLM(wethStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(wbtcStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(maiStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(fraxStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+
+    vm.startPrank(GUARDIAN);
+    robotKeeper.disableAutomation(wethStaticAToken, true);
+    robotKeeper.disableAutomation(wbtcStaticAToken, true);
+    robotKeeper.disableAutomation(maiStaticAToken, true);
+    robotKeeper.disableAutomation(fraxStaticAToken, true);
+    vm.stopPrank();
+
+    assertTrue(robotKeeper.isDisabled(wethStaticAToken));
+    assertTrue(robotKeeper.isDisabled(wbtcStaticAToken));
+    assertTrue(robotKeeper.isDisabled(maiStaticAToken));
+    assertTrue(robotKeeper.isDisabled(wethStaticAToken));
+
+    bool didRobotRun = _checkAndPerformUpKeep(robotKeeper);
+    assertFalse(didRobotRun);
+
+    assertEq(IStaticATokenLM(wethStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(wbtcStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(maiStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+    assertEq(IStaticATokenLM(fraxStaticAToken).isRegisteredRewardToken(REWARD_TOKEN), false);
+  }
+
+  function test_auth_disableAutomation() public {
+    address caller = address(54);
+    address staticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WETHe_UNDERLYING);
+
+    vm.prank(caller);
+    vm.expectRevert(bytes('Ownable: caller is not the owner'));
+    robotKeeper.disableAutomation(staticAToken, true);
+
+    vm.prank(GUARDIAN);
+    robotKeeper.disableAutomation(staticAToken, true);
+    assertTrue(robotKeeper.isDisabled(staticAToken));
+  }
+
+  function _checkAndPerformUpKeep(RefreshRewardsRobot votingChainRobotKeeper) internal returns (bool) {
     (bool shouldRunKeeper, bytes memory performData) = votingChainRobotKeeper.checkUpkeep('');
     if (shouldRunKeeper) {
       votingChainRobotKeeper.performUpkeep(performData);
     }
+    return shouldRunKeeper;
   }
 
   function _createNewLM() internal {
@@ -72,10 +125,6 @@ contract RefreshRobotKeeperTest is BaseTest {
     vm.stopPrank();
 
     vm.startPrank(EMISSION_ADMIN);
-    IERC20(AaveV3AvalancheAssets.WBTCe_UNDERLYING).approve(
-      address(TRANSFER_STRATEGY),
-      TOTAL_DISTRIBUTION
-    );
     IEmissionManager(AaveV3Avalanche.EMISSION_MANAGER).configureAssets(_getAssetConfigs());
     vm.stopPrank();
   }
