@@ -31,7 +31,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
     address proxyAdmin,
     ITransparentProxyFactory transparentProxyFactory,
     address staticATokenImpl
-  ) Initializable() {
+  ) {
     POOL = pool;
     ADMIN = proxyAdmin;
     TRANSPARENT_PROXY_FACTORY = transparentProxyFactory;
@@ -41,7 +41,7 @@ contract StaticATokenFactory is Initializable, IStaticATokenFactory {
   function initialize() external initializer {}
 
   ///@inheritdoc IStaticATokenFactory
-  function createStaticATokens(address[] memory underlyings) public returns (address[] memory) {
+  function createStaticATokens(address[] memory underlyings) external returns (address[] memory) {
     address[] memory staticATokens = new address[](underlyings.length);
     for (uint256 i = 0; i < underlyings.length; i++) {
       address cachedStaticAToken = _underlyingToStaticAToken[underlyings[i]];

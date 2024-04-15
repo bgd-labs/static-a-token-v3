@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import 'forge-std/Test.sol';
 import {AToken} from 'aave-v3-core/contracts/protocol/tokenization/AToken.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
-import {AaveV3Avalanche, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
+import {AaveV3Avalanche, IPool, AaveV3AvalancheAssets} from 'aave-address-book/AaveV3Avalanche.sol';
 import {DataTypes, ReserveConfiguration} from 'aave-v3-core/contracts/protocol/libraries/configuration/ReserveConfiguration.sol';
 import {StaticATokenLM, IERC20, IERC20Metadata, ERC20} from '../src/StaticATokenLM.sol';
 import {RayMathExplicitRounding, Rounding} from '../src/RayMathExplicitRounding.sol';
@@ -15,8 +15,8 @@ import {BaseTest} from './TestBase.sol';
 contract StaticATokenLMTest is BaseTest {
   using RayMathExplicitRounding for uint256;
 
-  address public constant override UNDERLYING = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
-  address public constant override A_TOKEN = 0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8;
+  address public constant override UNDERLYING = AaveV3AvalancheAssets.WETHe_UNDERLYING;
+  address public constant override A_TOKEN = AaveV3AvalancheAssets.WETHe_A_TOKEN;
   address public constant EMISSION_ADMIN = 0xCba0B614f13eCdd98B8C0026fcAD11cec8Eb4343;
 
   IPool public override pool = IPool(AaveV3Avalanche.POOL);
@@ -28,10 +28,16 @@ contract StaticATokenLMTest is BaseTest {
   }
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
+    vm.createSelectFork(vm.rpcUrl('avalanche'), 38011791);
     rewardTokens.push(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
 
     super.setUp();
+  }
+
+  function test_initializeShouldRevert() public {
+    address impl = factory.STATIC_A_TOKEN_IMPL();
+    vm.expectRevert();
+    IStaticATokenLM(impl).initialize(0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8, 'hey', 'ho');
   }
 
   function test_getters() public {
@@ -41,10 +47,7 @@ contract StaticATokenLMTest is BaseTest {
     IERC20 aToken = staticATokenLM.aToken();
     assertEq(address(aToken), A_TOKEN);
 
-    address aTokenAddress = staticATokenLM.asset();
-    assertEq(aTokenAddress, A_TOKEN);
-
-    address underlyingAddress = address(staticATokenLM.aTokenUnderlying());
+    address underlyingAddress = address(staticATokenLM.asset());
     assertEq(underlyingAddress, UNDERLYING);
 
     IERC20Metadata underlying = IERC20Metadata(underlyingAddress);
@@ -78,21 +81,21 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(staticATokenLM.maxRedeem(user), staticATokenLM.balanceOf(user));
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertLe(IERC20(A_TOKEN).balanceOf(user), amountToDeposit);
-    assertApproxEqAbs(IERC20(A_TOKEN).balanceOf(user), amountToDeposit, 1);
+    assertLe(IERC20(UNDERLYING).balanceOf(user), amountToDeposit);
+    assertApproxEqAbs(IERC20(UNDERLYING).balanceOf(user), amountToDeposit, 1);
   }
 
-  function test_redeemUnderlying() public {
+  function test_redeemAToken() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
     _depositAToken(amountToDeposit, user);
 
     assertEq(staticATokenLM.maxRedeem(user), staticATokenLM.balanceOf(user));
-    staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user, true);
+    staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user, user, false);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertLe(IERC20(UNDERLYING).balanceOf(user), amountToDeposit);
-    assertApproxEqAbs(IERC20(UNDERLYING).balanceOf(user), amountToDeposit, 1);
+    assertLe(IERC20(A_TOKEN).balanceOf(user), amountToDeposit);
+    assertApproxEqAbs(IERC20(A_TOKEN).balanceOf(user), amountToDeposit, 1);
   }
 
   function test_redeemAllowance() public {
@@ -106,8 +109,8 @@ contract StaticATokenLMTest is BaseTest {
     vm.startPrank(user1);
     staticATokenLM.redeem(staticATokenLM.maxRedeem(user), user1, user);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertLe(IERC20(A_TOKEN).balanceOf(user1), amountToDeposit);
-    assertApproxEqAbs(IERC20(A_TOKEN).balanceOf(user1), amountToDeposit, 1);
+    assertLe(IERC20(UNDERLYING).balanceOf(user1), amountToDeposit);
+    assertApproxEqAbs(IERC20(UNDERLYING).balanceOf(user1), amountToDeposit, 1);
   }
 
   function testFail_redeemOverflowAllowance() public {
@@ -142,8 +145,8 @@ contract StaticATokenLMTest is BaseTest {
     assertLe(staticATokenLM.maxWithdraw(user), amountToDeposit);
     staticATokenLM.withdraw(staticATokenLM.maxWithdraw(user), user, user);
     assertEq(staticATokenLM.balanceOf(user), 0);
-    assertLe(IERC20(A_TOKEN).balanceOf(user), amountToDeposit);
-    assertApproxEqAbs(IERC20(A_TOKEN).balanceOf(user), amountToDeposit, 1);
+    assertLe(IERC20(UNDERLYING).balanceOf(user), amountToDeposit);
+    assertApproxEqAbs(IERC20(UNDERLYING).balanceOf(user), amountToDeposit, 1);
   }
 
   function testFail_withdrawAboveBalance() public {
@@ -163,8 +166,7 @@ contract StaticATokenLMTest is BaseTest {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
-    _underlyingToAToken(amountToDeposit, user);
-    IERC20(A_TOKEN).approve(address(staticATokenLM), amountToDeposit);
+    IERC20(UNDERLYING).approve(address(staticATokenLM), amountToDeposit);
     uint256 shares = 1 ether;
     staticATokenLM.mint(shares, user);
     assertEq(shares, staticATokenLM.balanceOf(user));
@@ -271,7 +273,7 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(staticATokenLM.balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN()), 0);
     assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN()), 0);
-    assertGt(AToken(A_TOKEN).balanceOf(user), 5 ether);
+    assertGt(AToken(UNDERLYING).balanceOf(user), 5 ether);
   }
 
   function test_depositWETHClaimWithdrawClaim() public {
@@ -306,7 +308,7 @@ contract StaticATokenLMTest is BaseTest {
     assertEq(staticATokenLM.balanceOf(user), 0);
     assertEq(staticATokenLM.getClaimableRewards(user, REWARD_TOKEN()), 0);
     assertEq(staticATokenLM.getTotalClaimableRewards(REWARD_TOKEN()), 0);
-    assertGt(AToken(A_TOKEN).balanceOf(user), 5 ether);
+    assertGt(AToken(UNDERLYING).balanceOf(user), 5 ether);
   }
 
   function test_transfer() public {
@@ -353,54 +355,56 @@ contract StaticATokenLMTest is BaseTest {
   }
 
   /**
-   * maxDepositUnderlying test
+   * maxDeposit test
    */
-  function test_maxDepositUnderlying_freeze() public {
+  function test_maxDeposit_freeze() public {
     vm.stopPrank();
     vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
     AaveV3Avalanche.POOL_CONFIGURATOR.setReserveFreeze(UNDERLYING, true);
 
-    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+    uint256 max = staticATokenLM.maxDeposit(address(0));
 
     assertEq(max, 0);
   }
 
-  function test_maxDepositUnderlying_paused() public {
+  function test_maxDeposit_paused() public {
     vm.stopPrank();
     vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
     AaveV3Avalanche.POOL_CONFIGURATOR.setReservePause(UNDERLYING, true);
 
-    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+    uint256 max = staticATokenLM.maxDeposit(address(0));
 
     assertEq(max, 0);
   }
 
-  function test_maxDepositUnderlying_noCap() public {
+  function test_maxDeposit_noCap() public {
     vm.stopPrank();
     vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
     AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 0);
 
-    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+    uint256 maxDeposit = staticATokenLM.maxDeposit(address(0));
+    uint256 maxMint = staticATokenLM.maxMint(address(0));
 
-    assertEq(max, type(uint256).max);
+    assertEq(maxDeposit, type(uint256).max);
+    assertEq(maxMint, type(uint256).max);
   }
 
-  // should be 0 as supply is ~24.7k in forked block
-  function test_maxDepositUnderlying_20kCap() public {
+  // should be 0 as supply is ~14.04k in forked block
+  function test_maxDeposit_10kCap() public {
     vm.stopPrank();
     vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
-    AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 20_000);
+    AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 10_000);
 
-    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+    uint256 max = staticATokenLM.maxDeposit(address(0));
     assertEq(max, 0);
   }
 
-  function test_maxDepositUnderlying_50kCap() public {
+  function test_maxDeposit_50kCap() public {
     vm.stopPrank();
     vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
     AaveV3Avalanche.POOL_CONFIGURATOR.setSupplyCap(UNDERLYING, 50_000);
 
-    uint256 max = staticATokenLM.maxDepositUnderlying(address(0));
+    uint256 max = staticATokenLM.maxDeposit(address(0));
     DataTypes.ReserveData memory reserveData = this.pool().getReserveData(UNDERLYING);
     assertEq(
       max,
@@ -412,9 +416,9 @@ contract StaticATokenLMTest is BaseTest {
   }
 
   /**
-   * maxRedeemUnderlying test
+   * maxRedeem test
    */
-  function test_maxRedeemUnderlying_paused() public {
+  function test_maxRedeem_paused() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
@@ -424,39 +428,37 @@ contract StaticATokenLMTest is BaseTest {
     vm.startPrank(address(AaveV3Avalanche.ACL_ADMIN));
     AaveV3Avalanche.POOL_CONFIGURATOR.setReservePause(UNDERLYING, true);
 
-    uint256 max = staticATokenLM.maxRedeemUnderlying(address(user));
+    uint256 max = staticATokenLM.maxRedeem(address(user));
 
     assertEq(max, 0);
   }
 
-  function test_maxRedeemUnderlying_allAvailable() public {
+  function test_maxRedeem_allAvailable() public {
     uint128 amountToDeposit = 5 ether;
     _fundUser(amountToDeposit, user);
 
     _depositAToken(amountToDeposit, user);
 
-    uint256 max = staticATokenLM.maxRedeemUnderlying(address(user));
+    uint256 max = staticATokenLM.maxRedeem(address(user));
 
     assertEq(max, staticATokenLM.balanceOf(user));
   }
 
-  function test_maxRedeemUnderlying_partAvailable() public {
+  function test_maxRedeem_partAvailable() public {
     uint128 amountToDeposit = 50 ether;
     _fundUser(amountToDeposit, user);
 
     _depositAToken(amountToDeposit, user);
     vm.stopPrank();
 
-    uint256 maxRedeemBefore = staticATokenLM.previewRedeem(
-      staticATokenLM.maxRedeemUnderlying(address(user))
-    );
+    uint256 maxRedeemBefore = staticATokenLM.previewRedeem(staticATokenLM.maxRedeem(address(user)));
     uint256 underlyingBalanceBefore = IERC20Metadata(UNDERLYING).balanceOf(A_TOKEN);
     // create rich user
     address borrowUser = 0xAD69de0CE8aB50B729d3f798d7bC9ac7b4e79267;
-    address usdc = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
+    address usdc = AaveV3AvalancheAssets.USDC_UNDERLYING;
     vm.startPrank(borrowUser);
-    deal(usdc, borrowUser, 200_000_000_000000);
-    AaveV3Avalanche.POOL.deposit(usdc, 200_000_000_000000, borrowUser, 0);
+    deal(usdc, borrowUser, 100_000_000e6);
+    AaveV3Avalanche.POOL.deposit(usdc, 100_000_000e6, borrowUser, 0);
 
     // borrow all available
     AaveV3Avalanche.POOL.borrow(
@@ -467,13 +469,11 @@ contract StaticATokenLMTest is BaseTest {
       borrowUser
     );
 
-    uint256 maxRedeemAfter = staticATokenLM.previewRedeem(
-      staticATokenLM.maxRedeemUnderlying(address(user))
-    );
+    uint256 maxRedeemAfter = staticATokenLM.previewRedeem(staticATokenLM.maxRedeem(address(user)));
     assertApproxEqAbs(maxRedeemAfter, (maxRedeemBefore / 2), 1);
   }
 
-  function test_maxRedeemUnderlying_nonAvailable() public {
+  function test_maxRedeem_nonAvailable() public {
     uint128 amountToDeposit = 50 ether;
     _fundUser(amountToDeposit, user);
 
@@ -483,16 +483,80 @@ contract StaticATokenLMTest is BaseTest {
     uint256 underlyingBalanceBefore = IERC20Metadata(UNDERLYING).balanceOf(A_TOKEN);
     // create rich user
     address borrowUser = 0xAD69de0CE8aB50B729d3f798d7bC9ac7b4e79267;
-    address usdc = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
+    address usdc = AaveV3AvalancheAssets.USDC_UNDERLYING;
     vm.startPrank(borrowUser);
-    deal(usdc, borrowUser, 200_000_000_000000);
-    AaveV3Avalanche.POOL.deposit(usdc, 200_000_000_000000, borrowUser, 0);
+    deal(usdc, borrowUser, 100_000_000e6);
+    AaveV3Avalanche.POOL.deposit(usdc, 100_000_000e6, borrowUser, 0);
 
     // borrow all available
     AaveV3Avalanche.POOL.borrow(UNDERLYING, underlyingBalanceBefore, 2, 0, borrowUser);
 
-    uint256 maxRedeemAfter = staticATokenLM.maxRedeemUnderlying(address(user));
+    uint256 maxRedeemAfter = staticATokenLM.maxRedeem(address(user));
     assertEq(maxRedeemAfter, 0);
+  }
+
+  function test_permit() public {
+    address spender = address(4242);
+    SigUtils.Permit memory permit = SigUtils.Permit({
+      owner: user,
+      spender: spender,
+      value: 1 ether,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp + 1 days
+    });
+
+    bytes32 permitDigest = SigUtils.getTypedDataHash(
+      permit,
+      staticATokenLM.PERMIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, permitDigest);
+
+    staticATokenLM.permit(permit.owner, permit.spender, permit.value, permit.deadline, v, r, s);
+
+    assertEq(staticATokenLM.allowance(permit.owner, spender), permit.value);
+  }
+
+  function test_permit_expired() public {
+    address spender = address(4242);
+    SigUtils.Permit memory permit = SigUtils.Permit({
+      owner: user,
+      spender: spender,
+      value: 1 ether,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp - 1 days
+    });
+
+    bytes32 permitDigest = SigUtils.getTypedDataHash(
+      permit,
+      staticATokenLM.PERMIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, permitDigest);
+
+    vm.expectRevert('PERMIT_DEADLINE_EXPIRED');
+    staticATokenLM.permit(permit.owner, permit.spender, permit.value, permit.deadline, v, r, s);
+  }
+
+  function test_permit_invalidSigner() public {
+    address spender = address(4242);
+    SigUtils.Permit memory permit = SigUtils.Permit({
+      owner: address(424242),
+      spender: spender,
+      value: 1 ether,
+      nonce: staticATokenLM.nonces(user),
+      deadline: block.timestamp + 1 days
+    });
+
+    bytes32 permitDigest = SigUtils.getTypedDataHash(
+      permit,
+      staticATokenLM.PERMIT_TYPEHASH(),
+      staticATokenLM.DOMAIN_SEPARATOR()
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, permitDigest);
+
+    vm.expectRevert('INVALID_SIGNER');
+    staticATokenLM.permit(permit.owner, permit.spender, permit.value, permit.deadline, v, r, s);
   }
 
   /**

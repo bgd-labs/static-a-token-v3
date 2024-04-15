@@ -54,7 +54,7 @@ abstract contract BaseTest is Test {
     vm.startPrank(user);
   }
 
-  function _fundUser(uint128 amountToDeposit, address targetUser) internal {
+  function _fundUser(uint256 amountToDeposit, address targetUser) internal {
     deal(this.UNDERLYING(), targetUser, amountToDeposit);
   }
 
@@ -71,7 +71,7 @@ abstract contract BaseTest is Test {
   function _depositAToken(uint256 amountToDeposit, address targetUser) internal returns (uint256) {
     _underlyingToAToken(amountToDeposit, targetUser);
     IERC20(this.A_TOKEN()).approve(address(staticATokenLM), amountToDeposit);
-    return staticATokenLM.deposit(amountToDeposit, targetUser);
+    return staticATokenLM.deposit(amountToDeposit, targetUser, 10, false);
   }
 
   function testAdmin() public {

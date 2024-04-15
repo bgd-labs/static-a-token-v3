@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
+import {ECDSA} from './ECDSA.sol';
+
 /// @notice Modern and gas efficient ERC20 + EIP-2612 implementation.
 /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC20.sol)
 /// @author Modified from Uniswap (https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/UniswapV2ERC20.sol)
 /// @dev Do not manually set balances without updating totalSupply, as the sum of all user balances must not exceed it.
 abstract contract ERC20 {
+  bytes32 public constant PERMIT_TYPEHASH =
+    keccak256('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)');
+
   /* //////////////////////////////////////////////////////////////
                         EVENTS
   ////////////////////////////////////////////////////////////// */
@@ -38,10 +43,6 @@ abstract contract ERC20 {
                         EIP-2612 STORAGE
   ////////////////////////////////////////////////////////////// */
 
-  uint256 internal immutable INITIAL_CHAIN_ID;
-
-  bytes32 internal immutable INITIAL_DOMAIN_SEPARATOR;
-
   mapping(address => uint256) public nonces;
 
   /* //////////////////////////////////////////////////////////////
@@ -52,9 +53,6 @@ abstract contract ERC20 {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
-
-    INITIAL_CHAIN_ID = block.chainid;
-    INITIAL_DOMAIN_SEPARATOR = computeDomainSeparator();
   }
 
   /* //////////////////////////////////////////////////////////////
@@ -121,23 +119,12 @@ abstract contract ERC20 {
     // Unchecked because the only math done is incrementing
     // the owner's nonce which cannot realistically overflow.
     unchecked {
-      address recoveredAddress = ecrecover(
+      address signer = ECDSA.recover(
         keccak256(
           abi.encodePacked(
             '\x19\x01',
             DOMAIN_SEPARATOR(),
-            keccak256(
-              abi.encode(
-                keccak256(
-                  'Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'
-                ),
-                owner,
-                spender,
-                value,
-                nonces[owner]++,
-                deadline
-              )
-            )
+            keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
           )
         ),
         v,
@@ -145,16 +132,16 @@ abstract contract ERC20 {
         s
       );
 
-      require(recoveredAddress != address(0) && recoveredAddress == owner, 'INVALID_SIGNER');
+      require(signer == owner, 'INVALID_SIGNER');
 
-      allowance[recoveredAddress][spender] = value;
+      allowance[signer][spender] = value;
     }
 
     emit Approval(owner, spender, value);
   }
 
   function DOMAIN_SEPARATOR() public view virtual returns (bytes32) {
-    return block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : computeDomainSeparator();
+    return computeDomainSeparator();
   }
 
   function computeDomainSeparator() internal view virtual returns (bytes32) {
