@@ -11,3 +11,7 @@
 [submodule "lib/aave-helpers"]
 	path = lib/aave-helpers
 	url = https://github.com/bgd-labs/aave-helpers
+[submodule "lib/aave-governance-v3-robot"]
+	path = lib/aave-governance-v3-robot
+	url = https://github.com/bgd-labs/aave-governance-v3-robot
+	branch = fix/operator

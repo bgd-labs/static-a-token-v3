@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
-import {IStaticATokenFactory} from './interfaces/IStaticATokenFactory.sol';
-import {IRefreshRewardsRobot, AutomationCompatibleInterface} from './interfaces/IRefreshRewardsRobot.sol';
-import {IStaticATokenLM} from './interfaces/IStaticATokenLM.sol';
+import {IStaticATokenFactory} from '../interfaces/IStaticATokenFactory.sol';
+import {IRefreshRewardsRobot, AutomationCompatibleInterface} from '../interfaces/IRefreshRewardsRobot.sol';
+import {IStaticATokenLM} from '../interfaces/IStaticATokenLM.sol';
 import {IRewardsController} from 'aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 import {Ownable} from 'solidity-utils/contracts/oz-common/Ownable.sol';
 
@@ -38,7 +38,7 @@ contract RefreshRewardsRobot is Ownable, IRefreshRewardsRobot {
    * @inheritdoc AutomationCompatibleInterface
    * @dev runs off-chain, checks if there is a reward added after statToken creation which needs to be registered.
    */
-  function checkUpkeep(bytes calldata) external view override returns (bool, bytes memory) {
+  function checkUpkeep(bytes memory) public view virtual override returns (bool, bytes memory) {
     address[] memory staticATokensToRefresh = new address[](MAX_ACTIONS);
     address[] memory staticATokens = STATIC_A_TOKEN_FACTORY.getStaticATokens();
     uint256 actionsCount = 0;

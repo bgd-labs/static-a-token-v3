@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {AaveV3Avalanche, AaveV3AvalancheAssets, IPool} from 'aave-address-book/AaveV3Avalanche.sol';
-import {RefreshRewardsRobot} from '../src/RefreshRewardsRobot.sol';
+import {RefreshRewardsRobot} from '../src/robots/RefreshRewardsRobot.sol';
 import {IEmissionManager, RewardsDataTypes, IEACAggregatorProxy} from 'aave-v3-periphery/contracts/rewards/interfaces/IEmissionManager.sol';
 import {ITransferStrategyBase} from 'aave-v3-periphery/contracts/rewards/interfaces/ITransferStrategyBase.sol';
 import './TestBase.sol';
@@ -30,7 +30,7 @@ contract RefreshRewardsRobotTest is BaseTest {
   address public REWARD_TOKEN = AaveV3AvalancheAssets.AAVEe_UNDERLYING;
   address public GUARDIAN = address(22);
 
-  function setUp() public override {
+  function setUp() virtual public override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
 
     super.setUp();
