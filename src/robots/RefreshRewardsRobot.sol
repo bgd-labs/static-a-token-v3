@@ -54,6 +54,7 @@ contract RefreshRewardsRobot is Ownable, IRefreshRewardsRobot {
         if (!isRegisteredReward && actionsCount < MAX_ACTIONS && !isDisabled(staticATokens[i])) {
           staticATokensToRefresh[actionsCount] = staticATokens[i];
           actionsCount++;
+          break;
         }
       }
     }

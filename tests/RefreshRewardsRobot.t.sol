@@ -30,7 +30,7 @@ contract RefreshRewardsRobotTest is BaseTest {
   address public REWARD_TOKEN = AaveV3AvalancheAssets.AAVEe_UNDERLYING;
   address public GUARDIAN = address(22);
 
-  function setUp() virtual public override {
+  function setUp() public virtual override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
 
     super.setUp();
@@ -112,7 +112,9 @@ contract RefreshRewardsRobotTest is BaseTest {
     assertTrue(robotKeeper.isDisabled(staticAToken));
   }
 
-  function _checkAndPerformUpKeep(RefreshRewardsRobot votingChainRobotKeeper) internal returns (bool) {
+  function _checkAndPerformUpKeep(
+    RefreshRewardsRobot votingChainRobotKeeper
+  ) internal returns (bool) {
     (bool shouldRunKeeper, bytes memory performData) = votingChainRobotKeeper.checkUpkeep('');
     if (shouldRunKeeper) {
       votingChainRobotKeeper.performUpkeep(performData);

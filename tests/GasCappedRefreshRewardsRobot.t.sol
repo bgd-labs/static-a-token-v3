@@ -11,7 +11,7 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
 
   event MaxGasPriceSet(uint256 indexed maxGasPrice);
 
-  function setUp() virtual public override {
+  function setUp() public virtual override {
     vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
 
     super.setUp();
@@ -43,10 +43,7 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
     GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(newMaxGasPrice);
     vm.stopPrank();
 
-    assertEq(
-      GasCappedRefreshRewardsRobot(address(robotKeeper)).getMaxGasPrice(),
-      newMaxGasPrice
-    );
+    assertEq(GasCappedRefreshRewardsRobot(address(robotKeeper)).getMaxGasPrice(), newMaxGasPrice);
 
     vm.expectRevert('Ownable: caller is not the owner');
     vm.startPrank(address(5));
@@ -54,7 +51,7 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
     vm.stopPrank();
   }
 
-  function test_isGasPriceInRange() virtual public {
+  function test_isGasPriceInRange() public virtual {
     assertEq(GasCappedRefreshRewardsRobot(address(robotKeeper)).isGasPriceInRange(), true);
 
     vm.startPrank(GUARDIAN);
@@ -66,7 +63,7 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
     assertEq(GasCappedRefreshRewardsRobot(address(robotKeeper)).isGasPriceInRange(), false);
   }
 
-  function test_robotExecutionOnlyWhenGasPriceInRange() virtual public {
+  function test_robotExecutionOnlyWhenGasPriceInRange() public virtual {
     // set the max gas price of the robot to lesser than the current gas price
     vm.startPrank(GUARDIAN);
     GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(
@@ -84,7 +81,7 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
     // robot did not run as the network gas price is more than the max configured gas price of the robot
     bool didRobotRun = _checkAndPerformUpKeep(robotKeeper);
     assertEq(didRobotRun, false);
-    
+
     vm.startPrank(GUARDIAN);
     GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(
       uint256(AggregatorInterface(FAST_GAS_FEED).latestAnswer())

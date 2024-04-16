@@ -20,10 +20,13 @@ contract GasCappedRefreshRewardsRobot is RefreshRewardsRobot, GasCappedRobotBase
    * @param gasPriceOracle address of the gas price oracle contract.
    */
   constructor(
-    address staticATokenFactory, 
-    address rewardsController, address 
-    gasPriceOracle
-  ) RefreshRewardsRobot(staticATokenFactory, rewardsController) GasCappedRobotBase(gasPriceOracle) {}
+    address staticATokenFactory,
+    address rewardsController,
+    address gasPriceOracle
+  )
+    RefreshRewardsRobot(staticATokenFactory, rewardsController)
+    GasCappedRobotBase(gasPriceOracle)
+  {}
 
   /**
    * @inheritdoc AutomationCompatibleInterface
