@@ -12,8 +12,6 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
   event MaxGasPriceSet(uint256 indexed maxGasPrice);
 
   function setUp() public virtual override {
-    vm.createSelectFork(vm.rpcUrl('avalanche'), 25016463);
-
     super.setUp();
     vm.stopPrank();
 
@@ -55,9 +53,7 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
     assertEq(GasCappedRefreshRewardsRobot(address(robotKeeper)).isGasPriceInRange(), true);
 
     vm.startPrank(GUARDIAN);
-    GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(
-      uint256(AggregatorInterface(FAST_GAS_FEED).latestAnswer()) - 1
-    );
+    GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(CURRENT_GAS_PRICE - 1);
     vm.stopPrank();
 
     assertEq(GasCappedRefreshRewardsRobot(address(robotKeeper)).isGasPriceInRange(), false);
@@ -66,9 +62,7 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
   function test_robotExecutionOnlyWhenGasPriceInRange() public virtual {
     // set the max gas price of the robot to lesser than the current gas price
     vm.startPrank(GUARDIAN);
-    GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(
-      uint256(AggregatorInterface(FAST_GAS_FEED).latestAnswer()) - 1
-    );
+    GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(CURRENT_GAS_PRICE - 1);
     vm.stopPrank();
 
     address wethStaticAToken = factory.getStaticAToken(AaveV3AvalancheAssets.WETHe_UNDERLYING);
@@ -83,9 +77,7 @@ contract GasCappedRefreshRewardsRobotTest is RefreshRewardsRobotTest {
     assertEq(didRobotRun, false);
 
     vm.startPrank(GUARDIAN);
-    GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(
-      uint256(AggregatorInterface(FAST_GAS_FEED).latestAnswer())
-    );
+    GasCappedRefreshRewardsRobot(address(robotKeeper)).setMaxGasPrice(CURRENT_GAS_PRICE);
     vm.stopPrank();
 
     didRobotRun = _checkAndPerformUpKeep(robotKeeper);
