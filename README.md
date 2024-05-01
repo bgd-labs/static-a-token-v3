@@ -38,6 +38,7 @@ For this project, the security procedures applied/being finished are:
 
 - The test suite of the codebase itself.
 - Certora [audit/property checking](./audits/Formal_Verification_Report_staticAToken.pdf) for all the dynamics of the `stataToken`, including respecting all the specs of [EIP-4626](https://eips.ethereum.org/EIPS/eip-4626).
+- Certora [manual review of static aToken oracle](./audits/Certora-Review-StatAToken-Oracle.pdf)
 
 ## Development
 
