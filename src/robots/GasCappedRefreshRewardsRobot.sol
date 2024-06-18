@@ -33,7 +33,7 @@ contract GasCappedRefreshRewardsRobot is RefreshRewardsRobot, GasCappedRobotBase
    * @dev runs off-chain, checks if there is a reward added after statToken creation which needs to be registered.
    *      also checks that the gas price of the network in within range to perform actions.
    */
-  function checkUpkeep(bytes memory) public view override returns (bool, bytes memory) {
+  function checkUpkeep(bytes memory) public view virtual override returns (bool, bytes memory) {
     if (!isGasPriceInRange()) return (false, '');
 
     return super.checkUpkeep('');

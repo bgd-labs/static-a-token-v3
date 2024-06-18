@@ -21,6 +21,15 @@ contract GelatoGasCappedRefreshRewardsRobot is GasCappedRefreshRewardsRobot {
     address rewardsController
   ) GasCappedRefreshRewardsRobot(staticATokenFactory, rewardsController, address(0)) {}
 
+  /**
+   * @inheritdoc GasCappedRefreshRewardsRobot
+   * @dev the returned bytes is specific to gelato and is encoded with the function selector.
+   */
+  function checkUpkeep(bytes memory) public view override returns (bool, bytes memory) {
+    (bool upkeepNeeded, bytes memory encodedPayloadIdsToExecute) = super.checkUpkeep('');
+    return (upkeepNeeded, abi.encodeCall(this.performUpkeep, encodedPayloadIdsToExecute));
+  }
+
   /// @inheritdoc IGasPriceCappedRobot
   function isGasPriceInRange() public view virtual override returns (bool) {
     if (tx.gasprice > _maxGasPrice) {

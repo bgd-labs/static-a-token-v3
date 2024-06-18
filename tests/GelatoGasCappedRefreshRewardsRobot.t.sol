@@ -20,4 +20,15 @@ contract GelatoGasCappedRefreshRewardsRobotTest is GasCappedRefreshRewardsRobotT
     // set the gasPrice of the network, as the default is 0
     vm.txGasPrice(CURRENT_GAS_PRICE);
   }
+
+  function _checkAndPerformUpKeep(
+    RefreshRewardsRobot refreshRewardsRobot
+  ) internal override returns (bool) {
+    (bool shouldRunKeeper, bytes memory encodedPerformData) = refreshRewardsRobot.checkUpkeep('');
+    if (shouldRunKeeper) {
+      (bool status, ) = address(refreshRewardsRobot).call(encodedPerformData);
+      assertTrue(status, 'Perform Upkeep Failed');
+    }
+    return shouldRunKeeper;
+  }
 }

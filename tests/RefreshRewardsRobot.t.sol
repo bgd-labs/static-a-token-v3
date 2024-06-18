@@ -113,11 +113,11 @@ contract RefreshRewardsRobotTest is BaseTest {
   }
 
   function _checkAndPerformUpKeep(
-    RefreshRewardsRobot votingChainRobotKeeper
-  ) internal returns (bool) {
-    (bool shouldRunKeeper, bytes memory performData) = votingChainRobotKeeper.checkUpkeep('');
+    RefreshRewardsRobot refreshRewardsRobot
+  ) internal virtual returns (bool) {
+    (bool shouldRunKeeper, bytes memory performData) = refreshRewardsRobot.checkUpkeep('');
     if (shouldRunKeeper) {
-      votingChainRobotKeeper.performUpkeep(performData);
+      refreshRewardsRobot.performUpkeep(performData);
     }
     return shouldRunKeeper;
   }
