@@ -30,7 +30,8 @@ An up to date address can be fetched from the respective [address-book pool libr
 
 The `stataToken` is not natively integrated into the aave protocol and therefore cannot hook into the emissionManager.
 This means a `reward` added **after** `statToken` creation needs to be registered manually on the token via the permissionless `refreshRewardTokens()` method.
-As this process is not currently automated users might be missing out on rewards until the method is called.
+
+This process is currently automated using [RefreshRewardRobot](./src/robots/RefreshRewardsRobot.sol).
 
 ## Security procedures
 
