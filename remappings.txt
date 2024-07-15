@@ -8,3 +8,5 @@ aave-helpers/=lib/aave-helpers/src/
 aave-v3-core/=lib/aave-helpers/lib/aave-address-book/lib/aave-v3-core/
 aave-v3-periphery/=lib/aave-helpers/lib/aave-address-book/lib/aave-v3-periphery/
 @aave/periphery-v3/=lib/aave-helpers/lib/aave-address-book/lib/aave-v3-periphery/
+chainlink/=lib/chainlink/contracts/
+aave-governance-v3-robot/=lib/aave-governance-v3-robot/src/
