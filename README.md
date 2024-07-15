@@ -1,5 +1,7 @@
 # stataToken - Static aToken vault/wrapper
 
+Project has been moved to [Aave V3 Origin](https://github.com/aave-dao/aave-v3-origin/tree/main/src/periphery/contracts/static-a-token);
+
 ## Disclaimer
 
 <p align="center">
