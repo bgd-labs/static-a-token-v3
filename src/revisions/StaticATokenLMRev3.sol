@@ -18,5 +18,6 @@ contract StaticATokenLMRevision3 is StaticATokenLM, IReinitializer {
     IRewardsController rewardsController
   ) StaticATokenLM(pool, rewardsController) {}
 
+  /// @inheritdoc IReinitializer
   function initializeRevision() external reinitializer(3) {}
 }
